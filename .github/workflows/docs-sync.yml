@@ -1,0 +1,54 @@
+name: Documentation Sync
+
+on:
+  push:
+    paths:
+      - 'docs/en/**'
+    branches:
+      - main
+      - master
+
+jobs:
+  notify-translation:
+    name: Notify Translation Needed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: docs/en/**
+
+      - name: Create issue for translation
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
+            const issueBody = `
+            # Translation Update Required
+
+            The following English documentation files have been updated and need translation:
+
+            ${changedFiles.map(file => `- [ ] ${file} → de\n- [ ] ${file} → sq`).join('\n')}
+
+            Please update the corresponding files in:
+            - \`docs/de/\`
+            - \`docs/sq/\`
+
+            ## Guidelines
+            - Maintain consistent terminology across languages
+            - Preserve all code examples and technical terms
+            - Update any referenced line numbers or file paths
+            - Test all commands and examples after translation
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📚 Documentation Translation Required',
+              body: issueBody,
+              labels: ['documentation', 'translation-needed']
+            }); 
