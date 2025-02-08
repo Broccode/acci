@@ -1,0 +1,12 @@
+/target
+.DS_Store
+
+.vscode
+
+.env
+.env.dev
+.env.prod
+.env.test
+
+config.dev.toml
+config.prod.toml
