@@ -38,9 +38,26 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 
 - Use tokio for async runtime in production
 - Prefer Stream over handling vectors of futures
-- Implement proper cancellation handling
+- Implement proper cancellation handling:
+  - Ensure all async operations handle cancellation gracefully
+  - Test cancellation scenarios explicitly
+  - Implement proper cleanup on cancellation
+  - Use structured concurrency patterns
 - Use async-trait for traits with async functions
 - Keep async boundaries at edge of application
+- Test async operations thoroughly:
+  - Validate Stream-based operations under load
+  - Test backpressure handling
+  - Verify resource cleanup
+  - Test timeout scenarios
+  - Validate error propagation in async contexts
+  - Test concurrent access patterns
+  - Verify cancellation behavior
+- Monitor async operation performance:
+  - Track task completion times
+  - Monitor task queuing
+  - Observe cancellation patterns
+  - Profile async stack traces
 
 ### TESTING
 
