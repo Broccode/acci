@@ -3,6 +3,7 @@ name = "acci-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+description.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
@@ -12,6 +13,7 @@ rust-version.workspace = true
 tokio = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 
@@ -20,4 +22,4 @@ tokio-test = { workspace = true }
 pretty_assertions = { workspace = true }
 
 [lints]
-workspace = true 
+workspace = true # Enable workspace-wide lints

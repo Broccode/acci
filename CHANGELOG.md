@@ -120,6 +120,11 @@ Create a git tag for the version (e.g., v0.2.0)
 
 # [Unreleased]
 
+### Changed
+
+- Simplified core module structure by temporarily disabling unused modules (models, traits, types)
+- Adjusted core prelude exports to match current module structure
+
 ### Added
 
 - Initial project setup with workspace configuration
