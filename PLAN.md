@@ -70,7 +70,9 @@
 
 ### Internationalization
 
-- Built-in internationalization (EN, DE, SQ, FR, ES)
+- UI internationalization support (EN, DE, SQ, FR, ES) via Leptos
+- Repository documentation in EN, DE, SQ
+- API documentation in English only
 - Time Zone Management
 - RTL Language Support
 - Dynamic Language Switching

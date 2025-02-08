@@ -95,10 +95,7 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 
 ### DOCUMENTATION
 
-- Document all public APIs in all supported languages (EN, DE, SQ, FR, ES)
-- Ensure API documentation is synchronized across all languages
-- Maintain consistent terminology in API documentation across languages
-- Include language-specific examples in API documentation
+- Document all public APIs in English only
 - Include examples in documentation
 - Maintain CHANGELOG.md
 - Document unsafe blocks thoroughly
@@ -108,9 +105,9 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 - All variable names, function names, and other identifiers MUST be in English
 - Documentation must be clear, concise, and follow standard rustdoc conventions
 - Examples in documentation must be runnable and tested
-- API documentation must be available in EN, DE, SQ, FR, ES
-- API documentation must be kept in sync across all languages
-- API documentation must use consistent terminology across all languages
+- Repository documentation (excluding API docs) must be available in EN, DE, SQ
+- Repository documentation must be kept in sync across all supported languages
+- Repository documentation must use consistent terminology across all languages
 
 ### PROJECT MANAGEMENT
 
