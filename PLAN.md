@@ -113,6 +113,26 @@
 - NIST framework alignment
 - Security headers management
 - SSL/TLS certificate management
+- ISO 27001 Documentation Requirements:
+  - Information Security Management System (ISMS) Manual
+  - Risk Assessment and Treatment Documentation
+  - Statement of Applicability (SoA)
+  - Information Security Policies and Procedures
+  - Business Continuity Plans
+  - Incident Response Procedures
+  - Asset Management Documentation
+  - Access Control Documentation
+  - Cryptography Usage Policies
+  - Physical Security Documentation
+  - Operations Security Procedures
+  - Communications Security Policies
+  - System Acquisition and Development Standards
+  - Supplier Relationship Documentation
+  - Compliance Records and Audit Results
+  - Training and Awareness Programs
+  - Performance Metrics and Measurements
+  - Management Review Records
+  - Corrective Action Documentation
 
 ## Development Features
 
