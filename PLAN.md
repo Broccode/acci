@@ -33,7 +33,6 @@
 - API Versioning Support
 - API Rate Limiting
 - OpenAPI/Swagger Documentation
-- WebSocket Support
 - Integration Event Pattern Support
 - Multi-language API documentation
 
