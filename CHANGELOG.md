@@ -119,3 +119,20 @@ Commit all changes with message "release: Version X.Y.Z"
 Create a git tag for the version (e.g., v0.2.0)
 
 # [Unreleased]
+
+### Added
+
+- Initial project setup with workspace configuration
+- Basic crate structure (core, api, auth, db, frontend)
+- Core error handling implementation
+- Project documentation structure
+- Development Docker setup with PostgreSQL, Redis, and Traefik
+- Development Dockerfile for backend service
+
+### Technical
+
+- Set up Rust workspace with initial dependencies
+- Configured workspace-wide lints and MSRV
+- Implemented basic error handling in core crate
+- Added Docker Compose configuration for development environment
+- Configured multi-stage Dockerfile for development
