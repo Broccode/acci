@@ -156,3 +156,4 @@ Create a git tag for the version (e.g., v0.2.0)
 ### Fixed
 
 - Fixed SBOM generation in CI pipeline by correcting cargo-cyclonedx command syntax
+- Fixed Clippy lint group priorities for pedantic and nursery groups
