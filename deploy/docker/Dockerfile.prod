@@ -40,7 +40,7 @@ FROM gcr.io/distroless/cc-debian12 as runtime
 COPY --from=builder /app/target/release/acci /usr/local/bin/
 
 # Copy frontend assets
-COPY --from=builder /app/crates/acci-frontend/dist /usr/local/share/acci/frontend
+# COPY --from=builder /app/crates/acci-frontend/dist /usr/local/share/acci/frontend
 
 # Set environment variables
 ENV RUST_LOG=info
@@ -50,4 +50,4 @@ ENV FRONTEND_ASSETS=/usr/local/share/acci/frontend
 EXPOSE 8000
 
 # Set entrypoint
-ENTRYPOINT ["/usr/local/bin/acci"] 
+ENTRYPOINT ["/usr/local/bin/acci"]

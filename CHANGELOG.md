@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Technical
+
+- Modified production Docker build:
+  - Temporarily disabled frontend assets copying to container
+  - Simplified container image size by removing unused static files
+
 ## [0.1.5] - 2024-03-26
 
 ### Technical
