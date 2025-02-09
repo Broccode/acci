@@ -16,11 +16,22 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
+acci-api = { path = "crates/acci-api" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
+axum = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+tower-http = { workspace = true }
+hyper = { workspace = true, features = ["full"] }
+bytes = { workspace = true }
+serde_json = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [workspace]
 members = [
     "crates/acci-core",
-    #"crates/acci-api",
+    "crates/acci-api",
     #"crates/acci-auth",
     #"crates/acci-db",
     #"crates/acci-frontend",
@@ -42,6 +53,7 @@ axum = "0.8.1"
 tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 hyper = "1.6.0"
+bytes = "1.5.0"
 
 # Database
 sqlx = { version = "0.8.3", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "json"] }
