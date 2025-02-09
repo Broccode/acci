@@ -8,6 +8,10 @@ on:
       - main
       - master
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   notify-translation:
     name: Notify Translation Needed

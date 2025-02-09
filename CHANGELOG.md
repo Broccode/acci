@@ -136,6 +136,7 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Technical
 
+- Fixed permissions in docs-sync GitHub Action workflow to properly create translation issues
 - Added Cargo.toml configurations for all workspace crates:
   - acci-api: Added axum integration and dependencies on auth/db
   - acci-auth: Added core authentication dependencies
