@@ -29,6 +29,9 @@ This document defines the key milestones for developing our enterprise-grade Rus
 - [ ] Simple authentication
   - Basic login endpoint
   - Hardcoded test user
+- [ ] Basic license validation
+  - Simple license key check
+  - Basic feature flag system
 
 ### M1.3: MVP Frontend (Week 2-3)
 
@@ -99,6 +102,23 @@ This document defines the key milestones for developing our enterprise-grade Rus
 - [ ] PII data masking
 - [ ] Advanced audit logging
 - [ ] Compliance reporting
+
+### M3.4: License Management System
+
+- [ ] Enterprise License Management
+  - [ ] License key generation infrastructure
+  - [ ] Time-based license validation
+  - [ ] Feature-based access control
+  - [ ] Offline validation support
+  - [ ] License renewal workflow
+  - [ ] Usage analytics and reporting
+
+- [ ] Multi-tenant Feature Control
+  - [ ] Tenant feature configuration system
+  - [ ] Quota management implementation
+  - [ ] Resource tracking and analytics
+  - [ ] Tenant-specific policy engine
+  - [ ] Billing integration framework
 
 ## Phase 4: Production Readiness (M4)
 

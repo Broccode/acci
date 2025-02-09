@@ -120,10 +120,26 @@ Create a git tag for the version (e.g., v0.2.0)
 
 # [Unreleased]
 
+### Added
+
+- License Management Framework with enterprise licensing and tenant-specific feature control
+  - Basic license validation for MVP phase
+  - Feature flag system for license control
+  - Tenant-specific resource control
+  - Offline validation support
+  - License expiration notifications
+  - License key generation and validation
+  - Usage analytics and reporting capabilities
+  - Emergency override system for critical situations
+  - Tenant quota management system
+  - Resource allocation tracking
+
 ### Changed
 
 - Simplified core module structure by temporarily disabling unused modules (models, traits, types)
 - Adjusted core prelude exports to match current module structure
+- Enhanced multi-tenancy architecture with license and feature management capabilities
+- Extended tenant isolation system to support feature-based access control
 
 ### Added
 
