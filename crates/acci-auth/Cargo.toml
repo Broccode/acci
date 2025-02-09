@@ -1,0 +1,29 @@
+[package]
+name = "acci-auth"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+# Workspace Dependencies
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Internal Dependencies
+acci-core = { path = "../acci-core" }
+acci-db = { path = "../acci-db" }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true # Enable workspace-wide lints 

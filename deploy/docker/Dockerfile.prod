@@ -22,9 +22,7 @@ COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 
 # Create dummy source files for dependency build
-RUN mkdir -p crates/acci-core/src \
-    && echo "// Dummy file" > crates/acci-core/src/lib.rs \
-    && mkdir -p crates/acci-api/src \
+RUN mkdir -p crates/acci-api/src \
     && echo "// Dummy file" > crates/acci-api/src/lib.rs \
     && mkdir -p crates/acci-auth/src \
     && echo "// Dummy file" > crates/acci-auth/src/lib.rs \

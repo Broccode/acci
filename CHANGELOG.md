@@ -134,6 +134,15 @@ Create a git tag for the version (e.g., v0.2.0)
   - Tenant quota management system
   - Resource allocation tracking
 
+### Technical
+
+- Added Cargo.toml configurations for all workspace crates:
+  - acci-api: Added axum integration and dependencies on auth/db
+  - acci-auth: Added core authentication dependencies
+  - acci-db: Added SQLx integration for database access
+  - acci-frontend: Added Leptos framework and WASM testing support
+  - All crates inherit workspace-wide configuration and lints
+
 ## [0.1.0] - 2024-02-09
 
 ### Changed
