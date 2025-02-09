@@ -21,6 +21,9 @@ COPY crates/acci-auth/Cargo.toml ./crates/acci-auth/
 COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 
+# Create temporary source files for dependency build
+RUN mkdir -p src && echo 'fn main() { println!("Dummy main for dependency build"); }' > src/main.rs
+
 # Build dependencies
 RUN cargo build --release
 

@@ -120,6 +120,13 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Technical
+
+- Enhanced Docker build process:
+  - Added temporary main.rs for initial dependency build phase
+  - Optimized two-phase build process: dependencies first, then full application
+  - Improved build reliability by ensuring all required files exist during dependency resolution
+
 ## [0.1.4] - 2024-03-26
 
 ### Added
