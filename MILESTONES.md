@@ -153,6 +153,141 @@ This document defines the key milestones for developing our enterprise-grade Rus
 - Automated tests are required
 - Regular security audits
 - Continuous performance monitoring
+- For each completed milestone step:
+  - Developer documentation must be added to `/docs/{lang}` in all supported languages (EN, DE, SQ)
+  - Documentation must follow the established structure and terminology
+  - Documentation must be reviewed and approved before milestone completion
+  - Documentation must include:
+    - Technical architecture details
+    - Implementation decisions
+    - API documentation if applicable
+    - Configuration guidelines
+    - Troubleshooting guides
+    - Code examples
+    - Performance considerations
+    - Security implications
+
+## Documentation Strategy
+
+### Structure
+
+Each milestone's documentation will be organized in the following directories:
+
+- `/docs/en/` - English documentation (primary)
+- `/docs/de/` - German documentation
+- `/docs/sq/` - Albanian documentation
+
+### Documentation Requirements
+
+1. All milestone documentation must be:
+   - Written in clear, technical language
+   - Consistent across all supported languages
+   - Version controlled
+   - Reviewed by technical and language experts
+   - Updated with each milestone iteration
+   - Cross-referenced with related documentation
+   - Searchable and well-structured
+
+2. Documentation Format:
+   - Markdown files for general documentation
+   - OpenAPI/Swagger for API documentation
+   - Mermaid diagrams for visual representations
+   - Code examples with syntax highlighting
+   - Step-by-step guides where applicable
+
+3. Quality Assurance:
+   - Technical review of primary (English) documentation
+   - Translation review by native speakers
+   - Consistency check across all languages
+   - Validation of technical accuracy
+   - Verification of completeness
+
+## Testing Strategy
+
+### Test Organization
+
+1. Unit Tests:
+   - Located inline with the source code
+   - Fast execution for quick feedback
+   - Run by default with `cargo test`
+   - Focus on single components/functions
+   - Mock external dependencies
+
+2. Integration Tests:
+   - Separate test directory (`tests/`)
+   - Must use testcontainers-rs framework for container-based tests
+   - Excluded from default test run to avoid delays
+   - Run with `cargo test --test '*'`
+   - Test real interactions between components
+   - Test database interactions
+   - Test external service integrations
+
+### Test Directory Structure
+
+```
+tests/
+├── api/              # API integration tests
+├── database/         # Database integration tests
+├── e2e/             # End-to-end tests
+├── fixtures/         # Test fixtures and data
+├── helpers/         # Test helper functions
+└── services/        # Service integration tests
+```
+
+Each test directory should contain:
+
+- `mod.rs` - Module declarations and common utilities
+- `*_test.rs` - Actual test files
+- `common/` - Shared test utilities for that specific test category
+
+### Integration Test Guidelines
+
+1. File Naming:
+   - Test files must end with `_test.rs`
+   - Names should clearly indicate the tested component
+   - Example: `user_service_test.rs`, `auth_api_test.rs`
+
+2. Test Organization:
+   - One test file per component/service
+   - Clear test categories using test modules
+   - Shared setup in `mod.rs`
+   - Common utilities in `helpers/`
+
+3. Container Management:
+   - Container lifecycle in `helpers/containers.rs`
+   - Reuse containers where possible
+   - Proper cleanup in `Drop` implementations
+   - Version-pinned images in constants
+
+### Test Requirements
+
+1. Test Structure:
+   - Clear separation between unit and integration tests
+   - Proper test naming convention
+   - Descriptive test cases
+   - Comprehensive test coverage
+   - Performance considerations for test execution
+
+2. Container-based Testing:
+   - Use testcontainers-rs for all container-dependent tests
+   - Proper cleanup after test execution
+   - Isolated test environments
+   - Version-pinned container images
+   - Configurable container settings
+
+3. Test Quality:
+   - No flaky tests allowed
+   - Proper error messages
+   - Comprehensive assertions
+   - Clean test data management
+   - Proper mocking of external services
+
+4. CI/CD Integration:
+   - Separate pipeline stages for unit and integration tests
+   - Proper caching of test containers
+   - Parallel test execution where possible
+   - Test result reporting
+   - Coverage reporting
 
 ## Dependencies
 

@@ -140,6 +140,12 @@ Create a git tag for the version (e.g., v0.2.0)
 - Adjusted core prelude exports to match current module structure
 - Enhanced multi-tenancy architecture with license and feature management capabilities
 - Extended tenant isolation system to support feature-based access control
+- Defined comprehensive test organization structure:
+  - Separated unit tests (inline) and integration tests (/tests)
+  - Established clear test directory structure with dedicated categories
+  - Standardized test file naming and organization
+  - Implemented container management guidelines for integration tests
+  - Added test helper utilities and fixtures organization
 
 ### Added
 
@@ -168,6 +174,14 @@ Create a git tag for the version (e.g., v0.2.0)
   - Release automation
   - Documentation deployment
   - Translation synchronization
+- Enhanced test infrastructure:
+  - Defined `/tests` directory structure for integration tests
+  - Added support for testcontainers-rs framework
+  - Implemented test categories (api, database, e2e, services)
+  - Created helper utilities for container management
+  - Set up test fixtures organization
+  - Established naming conventions for test files
+  - Added guidelines for container lifecycle management
 
 ### Fixed
 
