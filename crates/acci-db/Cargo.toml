@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[lib]
+name = "acci_db"
+path = "src/lib.rs"
+
 [dependencies]
 # Workspace Dependencies
 tokio = { workspace = true }

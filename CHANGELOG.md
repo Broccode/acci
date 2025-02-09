@@ -120,6 +120,18 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Added proper library configurations for all workspace crates:
+  - Added [lib] sections with explicit name and path configurations
+  - Created initial lib.rs files with placeholder implementations
+  - Configured proper dependencies and workspace inheritance
+
+### Technical
+
+- Improved Docker build process by removing dummy file creation
+- Updated Rust version to 1.84.1 in Docker build
+
 ## [0.1.3] - 2024-03-26
 
 ### Added

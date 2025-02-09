@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Builder stage
-FROM rust:1.75-slim-bookworm as builder
+FROM rust:1.84.1-slim-bookworm as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -20,16 +20,6 @@ COPY crates/acci-api/Cargo.toml ./crates/acci-api/
 COPY crates/acci-auth/Cargo.toml ./crates/acci-auth/
 COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
-
-# Create dummy source files for dependency build
-RUN mkdir -p crates/acci-api/src \
-    && echo "// Dummy file" > crates/acci-api/src/lib.rs \
-    && mkdir -p crates/acci-auth/src \
-    && echo "// Dummy file" > crates/acci-auth/src/lib.rs \
-    && mkdir -p crates/acci-db/src \
-    && echo "// Dummy file" > crates/acci-db/src/lib.rs \
-    && mkdir -p crates/acci-frontend/src \
-    && echo "// Dummy file" > crates/acci-frontend/src/lib.rs
 
 # Build dependencies
 RUN cargo build --release
