@@ -146,18 +146,11 @@ Create a git tag for the version (e.g., v0.2.0)
   - Standardized test file naming and organization
   - Implemented container management guidelines for integration tests
   - Added test helper utilities and fixtures organization
-
-### Added
-
-- Initial project setup with workspace configuration
-- Basic crate structure (core, api, auth, db, frontend)
-- Core error handling implementation
-- Project documentation structure
-- Development Docker setup with PostgreSQL, Redis, and Traefik
-- Development Dockerfile for backend service
-- Comprehensive CI/CD pipeline with GitHub Actions
-- Production Dockerfile with multi-stage build
-- Automated documentation translation workflow
+- Enhanced development guidelines in `.cursorrules`:
+  - Added clear AI assistant role and expertise definition
+  - Added explicit references to project guideline files
+  - Improved formatting and structure of guidelines
+  - Enhanced markdown formatting for better readability
 
 ### Technical
 
@@ -182,6 +175,10 @@ Create a git tag for the version (e.g., v0.2.0)
   - Set up test fixtures organization
   - Established naming conventions for test files
   - Added guidelines for container lifecycle management
+- Updated development guidelines:
+  - Added explicit file references for PLAN.md, MILESTONES.md, and CHANGELOG.md
+  - Improved markdown formatting in `.cursorrules`
+  - Enhanced section organization in guidelines
 
 ### Fixed
 
