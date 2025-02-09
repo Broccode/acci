@@ -120,6 +120,11 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Added binary target configuration in root Cargo.toml
+- Created initial main.rs with basic logging setup and entry point
+
 ## [0.1.2] - 2024-03-26
 
 ### Fixed
