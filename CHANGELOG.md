@@ -134,6 +134,8 @@ Create a git tag for the version (e.g., v0.2.0)
   - Tenant quota management system
   - Resource allocation tracking
 
+## [0.1.0] - 2024-02-09
+
 ### Changed
 
 - Simplified core module structure by temporarily disabling unused modules (models, traits, types)
