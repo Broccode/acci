@@ -7,27 +7,30 @@
 Konfigurimi i infrastrukturës bazë është përfunduar me sukses, duke përfshirë:
 
 - [x] Konfigurimi bazë i repository-t
-  - Struktura e repository-t GitHub e vendosur
-  - Mjedisi i zhvillimit me Docker i konfiguruar
-  - Konfigurimi bazë i linting me Clippy dhe rregulla të personalizuara
+  - Struktura e repository-t GitHub
+  - Mjedisi i zhvillimit (Docker)
+  - Konfigurimi bazë i linting
 - [x] Baza e CI/CD
-  - Pipeline i GitHub Actions i implementuar
-  - Automatizimi bazë i testimit i konfiguruar
+  - Pipeline e thjeshtë e GitHub Actions
+  - Automatizimi bazë i testimit
 
 ### M1.2: MVP Backend (Në Progres)
 
-- [ ] Konfigurimi bazë i Axum
+- [x] Konfigurimi bazë i Axum
   - Endpoint-i i kontrollit të shëndetit
   - Trajtimi bazë i gabimeve
+  - Middleware për CORS dhe gjurmim
 - [ ] Integrimi i bazës së të dhënave
   - Konfigurimi i PostgreSQL
   - Tabela e thjeshtë e përdoruesve
 - [ ] Autentifikimi i thjeshtë
   - Endpoint-i bazë i hyrjes
-  - Përdoruesi test i koduar
+  - Përdoruesi test i paracaktuar
 - [ ] Validimi bazë i licencës
   - Kontrolli i thjeshtë i çelësit të licencës
   - Sistemi bazë i feature flag
+
+### M1.3: MVP Frontend (Java 2-3)
 
 [... pikat e mbetura kryesore siç janë përcaktuar në MILESTONES.md kryesor ...]
 

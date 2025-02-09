@@ -2,32 +2,33 @@
 
 ## MVP-Phase (M1)
 
-### M1.1: Kern-Infrastruktur ✅ (Abgeschlossen)
-
-Die Einrichtung der Kern-Infrastruktur wurde erfolgreich abgeschlossen, einschließlich:
+### M1.1: Kerninfrastruktur ✅ (Abgeschlossen)
 
 - [x] Basis-Repository-Setup
-  - GitHub-Repository-Struktur eingerichtet
-  - Entwicklungsumgebung mit Docker konfiguriert
-  - Basis-Linting-Setup mit Clippy und benutzerdefinierten Regeln
+  - GitHub-Repository-Struktur
+  - Entwicklungsumgebung (Docker)
+  - Basis-Linting-Einrichtung
 - [x] CI/CD-Grundlage
-  - GitHub Actions Pipeline implementiert
-  - Basis-Testautomatisierung konfiguriert
+  - Einfache GitHub-Actions-Pipeline
+  - Basis-Testautomatisierung
 
 ### M1.2: MVP Backend (In Bearbeitung)
 
-- [ ] Basis-Axum-Setup
-  - Gesundheitscheck-Endpunkt
-  - Grundlegende Fehlerbehandlung
+- [x] Basis-Axum-Setup
+  - Health-Check-Endpoint
+  - Basis-Fehlerbehandlung
+  - CORS- und Tracing-Middleware
 - [ ] Datenbankintegration
   - PostgreSQL-Setup
   - Einfache Benutzertabelle
 - [ ] Einfache Authentifizierung
-  - Basis-Login-Endpunkt
+  - Basis-Login-Endpoint
   - Hartcodierter Testbenutzer
 - [ ] Basis-Lizenzvalidierung
   - Einfache Lizenzschlüsselprüfung
   - Basis-Feature-Flag-System
+
+### M1.3: MVP Frontend (Woche 2-3)
 
 [... weitere Meilensteine wie im Haupt-MILESTONES.md definiert ...]
 

@@ -20,9 +20,10 @@ This document defines the key milestones for developing our enterprise-grade Rus
 
 ### M1.2: MVP Backend (In Progress)
 
-- [ ] Basic Axum setup
+- [x] Basic Axum setup
   - Health check endpoint
   - Basic error handling
+  - CORS and tracing middleware
 - [ ] Database integration
   - PostgreSQL setup
   - Simple user table

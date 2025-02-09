@@ -128,14 +128,15 @@ Create a git tag for the version (e.g., v0.2.0)
   - Initial linting configuration
   - Basic CI/CD pipeline with GitHub Actions
   - Test automation framework
-- Basic Axum setup with health check endpoint
-- Error handling structure with custom API errors
-- CORS and tracing middleware
-- Health check endpoint returning service status and version
-- Integration tests for health check endpoint:
-  - Test coverage for HTTP status codes
-  - Response payload validation
-  - Middleware integration testing
+- Partial completion of MVP Backend (M1.2):
+  - Basic Axum setup with health check endpoint
+  - Error handling structure with custom API errors
+  - CORS and tracing middleware
+  - Health check endpoint returning service status and version
+  - Integration tests for health check endpoint:
+    - Test coverage for HTTP status codes
+    - Response payload validation
+    - Middleware integration testing
 
 ### Technical
 
