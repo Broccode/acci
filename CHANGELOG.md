@@ -120,6 +120,8 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.6] - 2024-03-26
+
 ### Technical
 
 - Modified production Docker build:
