@@ -224,7 +224,7 @@ Each milestone's documentation will be organized in the following directories:
 
 ### Test Directory Structure
 
-```
+```text
 tests/
 ├── api/              # API integration tests
 ├── database/         # Database integration tests

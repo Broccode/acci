@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# Version Numbering
+## Version Numbering
 
 This project uses a three-number versioning system (X.Y.Z):
 
@@ -24,7 +24,7 @@ Major (X): When making incompatible changes that might break existing functional
 Minor (Y): When adding functionality in a backward-compatible manner
 Patch (Z): When making backward-compatible bug fixes
 
-# Making Changelog Entries For New Changes in Development
+## Making Changelog Entries For New Changes in Development
 
 Add changes under the [Unreleased] section
 
@@ -46,13 +46,13 @@ Technical for technical changes/dependencies
 
 Keep entries concise but descriptive
 
-# When Releasing a Version
+## When Releasing a Version
 
 Convert the [Unreleased] section to a version number with date (e.g., [1.0.0] - 2024-01-20)
 
 Create a new empty [Unreleased] section at the top
 
-# General Rules
+## General Rules
 
 Newest changes always go at the top of the file
 
@@ -62,7 +62,7 @@ Group related changes under the same category
 
 Use bullet points for each entry
 
-# Development Workflow
+## Development Workflow
 
 For Every Code Change:
 
@@ -84,7 +84,7 @@ Create a git tag for the version
 
 Create a new empty [Unreleased] section at the top
 
-# Release Process
+## Release Process
 
 When asked to make a release, follow these steps:
 
@@ -118,7 +118,7 @@ Commit all changes with message "release: Version X.Y.Z"
 
 Create a git tag for the version (e.g., v0.2.0)
 
-# [Unreleased]
+## [Unreleased]
 
 ### Added
 
