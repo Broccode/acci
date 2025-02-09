@@ -120,6 +120,23 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Completed core infrastructure setup (M1.1):
+  - Basic repository structure with workspace configuration
+  - Development environment with Docker setup
+  - Initial linting configuration
+  - Basic CI/CD pipeline with GitHub Actions
+  - Test automation framework
+
+### Technical
+
+- Enhanced documentation structure:
+  - Added multi-language support (EN, DE, SQ)
+  - Established documentation synchronization workflow
+  - Created initial documentation templates
+  - Set up documentation review process
+
 ## [0.1.6] - 2024-03-26
 
 ### Technical

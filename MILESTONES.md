@@ -8,17 +8,17 @@ This document defines the key milestones for developing our enterprise-grade Rus
 
 **Timeframe**: 2-3 weeks
 
-### M1.1: Core Infrastructure (Week 1)
+### M1.1: Core Infrastructure ✅ (Completed)
 
-- [ ] Basic repository setup
+- [x] Basic repository setup
   - GitHub repository structure
   - Development environment (Docker)
   - Basic linting setup
-- [ ] CI/CD foundation
+- [x] CI/CD foundation
   - Simple GitHub Actions pipeline
   - Basic test automation
 
-### M1.2: MVP Backend (Week 1-2)
+### M1.2: MVP Backend (In Progress)
 
 - [ ] Basic Axum setup
   - Health check endpoint
