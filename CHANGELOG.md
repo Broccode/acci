@@ -139,15 +139,20 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Technical
 
-- Enhanced documentation structure:
-  - Added multi-language support (EN, DE, SQ)
-  - Established documentation synchronization workflow
-  - Created initial documentation templates
-  - Set up documentation review process
-- Improved test infrastructure:
-  - Added test helpers and utilities
-  - Implemented proper test organization
-  - Set up integration test structure
+- Updated workspace dependencies to latest versions:
+  - tokio to 1.43.0
+  - axum to 0.8.1
+  - hyper to 1.6.0
+  - serde to 1.0.217
+  - Other dependencies updated to their latest stable versions
+- Enhanced development environment:
+  - Added structured shell scripts in devbox configuration
+  - Improved init_hook for better rustup integration
+  - Added convenient scripts for testing and documentation
+- Updated Rust toolchain configuration:
+  - Set specific Rust version to 1.84.1
+  - Added support for multiple targets including WebAssembly
+  - Configured minimal profile with essential components
 
 ## [0.1.6] - 2024-03-26
 
