@@ -6,7 +6,7 @@ Das Repository folgt einer Standard-Rust-Workspace-Struktur mit zusätzlicher Or
 
 ## Verzeichnisstruktur
 
-```
+```text
 acci/
 ├── .github/                    # GitHub-spezifische Konfigurationen
 │   └── workflows/             # CI/CD-Pipeline-Definitionen

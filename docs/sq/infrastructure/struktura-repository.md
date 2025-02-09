@@ -6,7 +6,7 @@ Repository ndjek një strukturë standarde të Rust workspace me organizim shtes
 
 ## Struktura e Direktorive
 
-```
+```text
 acci/
 ├── .github/                    # Konfigurimet specifike të GitHub
 │   └── workflows/             # Përkufizimet e pipeline-ve CI/CD

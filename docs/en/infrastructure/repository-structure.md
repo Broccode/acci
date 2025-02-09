@@ -6,7 +6,7 @@ The repository follows a standard Rust workspace structure with additional organ
 
 ## Directory Structure
 
-```
+```text
 acci/
 ├── .github/                    # GitHub specific configurations
 │   └── workflows/             # CI/CD pipeline definitions
