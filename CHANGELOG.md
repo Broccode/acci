@@ -152,3 +152,7 @@ Create a git tag for the version (e.g., v0.2.0)
   - Release automation
   - Documentation deployment
   - Translation synchronization
+
+### Fixed
+
+- Fixed SBOM generation in CI pipeline by correcting cargo-cyclonedx command syntax

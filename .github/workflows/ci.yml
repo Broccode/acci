@@ -79,7 +79,7 @@ jobs:
         run: cargo install cargo-cyclonedx
 
       - name: Generate SBOM
-        run: cargo cyclonedx --all-features --output bom.json
+        run: cargo cyclonedx --all-features > bom.json
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
