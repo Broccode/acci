@@ -10,3 +10,6 @@
 
 config.dev.toml
 config.prod.toml
+
+.devbox
+.rustup

@@ -2,7 +2,7 @@
 name = "acci"
 version = "0.1.6"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.84.1"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]
 description = "Enterprise-grade Rust-based system with multi-tenancy support"
 license = "MIT"
