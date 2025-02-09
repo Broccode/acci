@@ -1,6 +1,5 @@
 //! Error types for the ACCI system.
 
-use std::fmt;
 use thiserror::Error;
 
 /// A specialized Result type for ACCI operations.
