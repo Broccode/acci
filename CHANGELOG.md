@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.2] - 2024-03-26
+
+### Fixed
+
+- Added missing root crate target (lib.rs) to fix Docker build process
+
 ## [0.1.1] - 2024-03-26
 
 ### Added
