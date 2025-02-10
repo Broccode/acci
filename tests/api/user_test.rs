@@ -1,7 +1,7 @@
-use acci_db::{create_pool, repositories::UserRepository, run_migrations, DbConfig};
+use acci_db::{create_pool, repositories::UserRepository, run_migrations, sqlx::PgPool, DbConfig};
 use anyhow::Result;
 
-async fn setup() -> Result<(sqlx::PgPool, UserRepository)> {
+async fn setup() -> Result<(PgPool, UserRepository)> {
     let config = DbConfig::default();
     let pool = create_pool(config).await?;
     run_migrations(&pool).await?;

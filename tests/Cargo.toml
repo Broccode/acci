@@ -1,0 +1,10 @@
+[package]
+name = "acci-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlx = { workspace = true }
+acci-db = { path = "../crates/acci-db" }
+anyhow = { workspace = true }
+tokio = { workspace = true } 

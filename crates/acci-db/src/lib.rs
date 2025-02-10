@@ -13,6 +13,7 @@ pub mod repositories;
 
 pub use error::DbError;
 pub use repositories::*;
+pub use sqlx;
 
 /// Configuration for database connections.
 #[derive(Debug, Clone)]
