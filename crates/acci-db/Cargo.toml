@@ -32,7 +32,7 @@ acci-core = { path = "../acci-core" }
 
 # External Dependencies
 uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde", "clock"] }
+time = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }

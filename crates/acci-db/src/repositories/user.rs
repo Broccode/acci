@@ -1,8 +1,8 @@
 //! User repository implementation for database operations.
 
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use sqlx::PgPool;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 /// Represents a user in the system.
@@ -18,9 +18,9 @@ pub struct User {
     /// The full name of the user.
     pub full_name: String,
     /// The timestamp when the user was created.
-    pub created_at: DateTime<Utc>,
+    pub created_at: OffsetDateTime,
     /// The timestamp when the user was last updated.
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: OffsetDateTime,
 }
 
 /// Data required to create a new user.
