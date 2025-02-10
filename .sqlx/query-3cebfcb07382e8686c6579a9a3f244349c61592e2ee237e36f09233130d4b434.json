@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            FROM users\n            WHERE email = $1\n            ",
+  "query": "\n            SELECT \n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            FROM acci.users\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -36,7 +36,7 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -48,5 +48,5 @@
       false
     ]
   },
-  "hash": "07e5e4748db924e3cab71cabc8957b1c9954858ad035619feed4c31c1924efdc"
+  "hash": "3cebfcb07382e8686c6579a9a3f244349c61592e2ee237e36f09233130d4b434"
 }

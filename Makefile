@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare help
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy help
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -11,6 +11,7 @@ help:
 	@echo "  make db-reset     - Reset database (drop and recreate)"
 	@echo "  make db-migrate   - Run database migrations"
 	@echo "  make sqlx-prepare - Prepare SQLx offline mode"
+	@echo "  make clippy       - Run clippy with all targets and treat warnings as errors"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -34,3 +35,6 @@ db-migrate:
 
 sqlx-prepare:
 	cargo sqlx prepare --workspace
+
+clippy:
+	cargo clippy --all-targets --all-features -- -D warnings

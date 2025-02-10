@@ -1,47 +1,91 @@
+//! User repository implementation for database operations.
+
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+/// Represents a user in the system.
 #[derive(Debug, Clone)]
+#[allow(clippy::large_stack_arrays)]
 pub struct User {
+    /// The unique identifier of the user.
     pub id: Uuid,
+    /// The email address of the user.
     pub email: String,
+    /// The hashed password of the user.
     pub password_hash: String,
+    /// The full name of the user.
     pub full_name: String,
+    /// The timestamp when the user was created.
     pub created_at: DateTime<Utc>,
+    /// The timestamp when the user was last updated.
     pub updated_at: DateTime<Utc>,
 }
 
+/// Data required to create a new user.
 #[derive(Debug)]
 pub struct CreateUser {
+    /// The email address of the user.
     pub email: String,
+    /// The hashed password of the user.
     pub password_hash: String,
+    /// The full name of the user.
     pub full_name: String,
 }
 
+/// Data that can be updated for a user.
 #[derive(Debug)]
 pub struct UpdateUser {
+    /// The new email address of the user, if it should be updated.
     pub email: Option<String>,
+    /// The new hashed password of the user, if it should be updated.
     pub password_hash: Option<String>,
+    /// The new full name of the user, if it should be updated.
     pub full_name: Option<String>,
 }
 
+/// Repository for user-related database operations.
 #[derive(Debug, Clone)]
 pub struct UserRepository {
     pool: PgPool,
 }
 
 impl UserRepository {
-    pub fn new(pool: PgPool) -> Self {
+    /// Creates a new `UserRepository` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `pool` - The database connection pool to use.
+    #[must_use]
+    pub const fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
+    /// Creates a new user in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `user` - The user data to create.
+    ///
+    /// # Returns
+    ///
+    /// The created user with all fields populated.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// * The database operation fails
+    /// * The email is already in use
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the user data contains invalid UTF-8 characters.
     pub async fn create(&self, user: CreateUser) -> Result<User> {
         let user = sqlx::query_as!(
             User,
             r#"
-            INSERT INTO users (email, password_hash, full_name)
+            INSERT INTO acci.users (email, password_hash, full_name)
             VALUES ($1, $2, $3)
             RETURNING 
                 id as "id: Uuid",
@@ -61,6 +105,23 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// Retrieves a user by their ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the user to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// The user if found, None otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the database returns invalid UTF-8 characters.
     pub async fn get_by_id(&self, id: Uuid) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
@@ -72,7 +133,7 @@ impl UserRepository {
                 full_name,
                 created_at,
                 updated_at
-            FROM users
+            FROM acci.users
             WHERE id = $1
             "#,
             id
@@ -83,6 +144,23 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// Retrieves a user by their email address.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - The email address of the user to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// The user if found, None otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the database returns invalid UTF-8 characters.
     pub async fn get_by_email(&self, email: &str) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
@@ -94,7 +172,7 @@ impl UserRepository {
                 full_name,
                 created_at,
                 updated_at
-            FROM users
+            FROM acci.users
             WHERE email = $1
             "#,
             email
@@ -105,11 +183,31 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// Updates a user's information.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the user to update.
+    /// * `user` - The new user data.
+    ///
+    /// # Returns
+    ///
+    /// The updated user if found, None otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// * The database operation fails
+    /// * The new email is already in use
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the user data contains invalid UTF-8 characters.
     pub async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
-            UPDATE users
+            UPDATE acci.users
             SET 
                 email = COALESCE($1, email),
                 password_hash = COALESCE($2, password_hash),
@@ -134,10 +232,27 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// Deletes a user from the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the user to delete.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the user was deleted, `false` if the user was not found.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the database returns invalid UTF-8 characters.
     pub async fn delete(&self, id: Uuid) -> Result<bool> {
         let result = sqlx::query!(
             r#"
-            DELETE FROM users
+            DELETE FROM acci.users
             WHERE id = $1
             "#,
             id

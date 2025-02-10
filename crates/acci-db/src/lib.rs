@@ -1,21 +1,25 @@
-//! Database module for the ACCI application.
+#![deny(missing_docs)]
+//! Database functionality for the ACCI system.
+//!
+//! This crate provides database access and management functionality,
+//! including connection pooling, migrations, and repository implementations.
 
 use anyhow::Result;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 
 mod error;
-mod repositories;
+pub mod repositories;
 
 pub use error::DbError;
 pub use repositories::*;
 
-/// Database configuration
+/// Configuration for database connections.
 #[derive(Debug, Clone)]
 pub struct DbConfig {
-    /// Database connection URL
+    /// The database connection URL.
     pub url: String,
-    /// Maximum number of connections in the pool
+    /// The maximum number of connections in the pool.
     pub max_connections: u32,
     /// Connection timeout in seconds
     pub connect_timeout: u64,
@@ -31,7 +35,23 @@ impl Default for DbConfig {
     }
 }
 
-/// Creates a new database connection pool
+/// Creates a new database connection pool.
+///
+/// # Arguments
+///
+/// * `config` - The database configuration to use.
+///
+/// # Returns
+///
+/// A new connection pool configured according to the provided settings.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * The connection URL is invalid
+/// * The database is not accessible
+/// * The pool creation fails
+#[allow(clippy::missing_const_for_fn)]
 pub async fn create_pool(config: DbConfig) -> Result<PgPool> {
     PgPoolOptions::new()
         .max_connections(config.max_connections)
@@ -41,7 +61,23 @@ pub async fn create_pool(config: DbConfig) -> Result<PgPool> {
         .map_err(Into::into)
 }
 
-/// Runs database migrations
+/// Runs all pending database migrations.
+///
+/// # Arguments
+///
+/// * `pool` - The database connection pool to use.
+///
+/// # Returns
+///
+/// `Ok(())` if all migrations were successful.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * The migrations cannot be loaded
+/// * A migration fails to execute
+/// * The database is not accessible
+#[allow(clippy::large_stack_arrays)]
 pub async fn run_migrations(pool: &PgPool) -> Result<()> {
     sqlx::migrate!("./migrations")
         .run(pool)
@@ -49,11 +85,23 @@ pub async fn run_migrations(pool: &PgPool) -> Result<()> {
         .map_err(Into::into)
 }
 
-/// Test the database connection by running a simple query
+/// Tests the database connection.
+///
+/// # Arguments
+///
+/// * `pool` - The database connection pool to test.
+///
+/// # Returns
+///
+/// `Ok(true)` if the connection is successful, `Ok(false)` otherwise.
+///
+/// # Errors
+///
+/// Returns an error if the database query fails.
 pub async fn test_connection(pool: &PgPool) -> Result<bool> {
-    let result = sqlx::query!("SELECT 1 as test").fetch_one(pool).await?;
+    let result = sqlx::query!("SELECT 1 as one").fetch_one(pool).await?;
 
-    Ok(result.test == Some(1))
+    Ok(result.one == Some(1))
 }
 
 #[cfg(test)]

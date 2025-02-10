@@ -158,6 +158,12 @@ Create a git tag for the version (e.g., v0.2.0)
 ### Changed
 
 - Switched Leptos frontend framework from CSR (Client-Side Rendering) to SSR (Server-Side Rendering) for improved performance and SEO capabilities
+- Enhanced User Repository implementation:
+  - Added comprehensive documentation for all public types and functions
+  - Fixed schema usage to properly use 'acci' schema for all database operations
+  - Improved error handling documentation
+  - Added proper clippy configuration and fixed all warnings
+  - Added documentation for potential panics and error conditions
 
 ### Technical
 
