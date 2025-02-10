@@ -8,6 +8,7 @@ use tower_http::trace::TraceLayer;
 
 use acci_api::{middleware, routes::health::HealthResponse};
 
+#[allow(clippy::disallowed_methods)]
 #[tokio::test]
 async fn test_health_check() {
     // Arrange

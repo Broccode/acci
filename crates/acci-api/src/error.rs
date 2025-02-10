@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde_json::json;
+use serde_json::Value;
 use thiserror::Error;
 
 /// API specific error types
@@ -32,7 +32,10 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             Self::Internal(ref e) => {
-                tracing::error!("Internal server error: {:#}", e);
+                #[allow(clippy::large_stack_arrays)]
+                {
+                    tracing::error!(error.message = %e, error.display = %self);
+                }
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             },
             Self::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
@@ -40,14 +43,13 @@ impl IntoResponse for ApiError {
             Self::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
         };
 
-        let body = Json(json!({
-            "error": {
-                "message": message,
-                "code": status.as_u16()
-            }
-        }));
+        let mut error_obj = serde_json::Map::new();
+        let mut inner_obj = serde_json::Map::new();
+        inner_obj.insert("message".to_string(), Value::String(message));
+        inner_obj.insert("code".to_string(), Value::Number(status.as_u16().into()));
+        error_obj.insert("error".to_string(), Value::Object(inner_obj));
 
-        (status, body).into_response()
+        (status, Json(Value::Object(error_obj))).into_response()
     }
 }
 
