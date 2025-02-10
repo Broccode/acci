@@ -199,6 +199,16 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved JSON serialization without macro usage
   - Added proper test configuration for Clippy rules
 
+### Security
+
+- Updated sqlx to version 0.8.1 to fix Binary Protocol Misinterpretation vulnerability (RUSTSEC-2024-0363)
+
+### Technical
+
+- Updated Leptos stack to version 0.7 to address unmaintained dependencies:
+  - Resolved unmaintained `instant` dependency issue (RUSTSEC-2024-0384)
+  - Resolved unmaintained `proc-macro-error` dependency issue (RUSTSEC-2024-0370)
+
 ## [0.1.6] - 2024-03-26
 
 ### Technical

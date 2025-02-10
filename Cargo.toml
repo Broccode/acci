@@ -57,7 +57,7 @@ hyper = "1.6.0"
 bytes = "1.5.0"
 
 # Database
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8.1", features = [
     "runtime-tokio-rustls",
     "postgres",
     "uuid",
@@ -95,9 +95,9 @@ tokio-test = "0.4.4"
 pretty_assertions = "1.4.1"
 
 # Frontend
-leptos = { version = "0.6", features = ["ssr"] }
-leptos_meta = { version = "0.6", features = ["ssr"] }
-leptos_router = { version = "0.6", features = ["ssr"] }
+leptos = { version = "0.7", features = ["ssr"] }
+leptos_meta = { version = "0.7", features = ["ssr"] }
+leptos_router = { version = "0.7", features = ["ssr"] }
 wasm-bindgen-test = "0.3.42"
 
 [workspace.lints.rust]
