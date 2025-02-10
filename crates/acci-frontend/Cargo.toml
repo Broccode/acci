@@ -33,4 +33,4 @@ pretty_assertions = { workspace = true }
 wasm-bindgen-test = { workspace = true }
 
 [lints]
-workspace = true # Enable workspace-wide lints 
+workspace = true # Enable workspace-wide lints

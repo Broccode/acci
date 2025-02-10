@@ -137,6 +137,19 @@ Create a git tag for the version (e.g., v0.2.0)
     - Test coverage for HTTP status codes
     - Response payload validation
     - Middleware integration testing
+  - Database integration:
+    - PostgreSQL setup in Docker Compose
+    - SQLx integration with offline mode support
+    - Database migrations system
+    - CLI tool for database management
+    - Initial users table migration
+    - Make commands for database operations
+- Leptos frontend framework dependencies (leptos, leptos_meta, leptos_router) to workspace dependencies
+- wasm-bindgen-test for frontend testing capabilities
+
+### Changed
+
+- Switched Leptos frontend framework from CSR (Client-Side Rendering) to SSR (Server-Side Rendering) for improved performance and SEO capabilities
 
 ### Technical
 
@@ -154,6 +167,17 @@ Create a git tag for the version (e.g., v0.2.0)
   - Set specific Rust version to 1.84.1
   - Added support for multiple targets including WebAssembly
   - Configured minimal profile with essential components
+- Improved workspace configuration:
+  - Moved all dependency versions to workspace
+  - Added SQLx with runtime-tokio-rustls and macros support
+  - Added Clap for CLI tools
+  - Enabled acci-db crate in workspace
+  - Added acci-db binary target for database management
+- Enhanced development guidelines in `.cursorrules`:
+  - Added clear AI assistant role and expertise definition
+  - Added explicit references to project guideline files
+  - Improved formatting and structure of guidelines
+  - Enhanced markdown formatting for better readability
 
 ## [0.1.6] - 2024-03-26
 

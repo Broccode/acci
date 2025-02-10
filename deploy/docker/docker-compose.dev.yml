@@ -2,7 +2,7 @@ name: acci-dev
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17
     environment:
       POSTGRES_USER: acci
       POSTGRES_PASSWORD: development_only
@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U acci"]
       interval: 5s
@@ -46,4 +47,4 @@ services:
 
 volumes:
   postgres_data:
-  redis_data: 
+  redis_data:
