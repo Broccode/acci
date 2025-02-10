@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy help
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration help
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -12,6 +12,9 @@ help:
 	@echo "  make db-migrate   - Run database migrations"
 	@echo "  make sqlx-prepare - Prepare SQLx offline mode"
 	@echo "  make clippy       - Run clippy with all targets and treat warnings as errors"
+	@echo "  make test         - Run all tests"
+	@echo "  make test-unit    - Run unit tests only"
+	@echo "  make test-integration - Run integration tests only"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -38,3 +41,11 @@ sqlx-prepare:
 
 clippy:
 	cargo clippy --all-targets --all-features -- -D warnings
+
+test: test-unit test-integration
+
+test-unit:
+	cargo test --lib --bins --all-features
+
+test-integration:
+	cargo test --test '*' --all-features

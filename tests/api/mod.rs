@@ -1,3 +1,4 @@
 //! API integration tests.
 
-mod health_test;
+pub mod health_test;
+pub mod user_test;
