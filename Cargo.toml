@@ -28,6 +28,7 @@ hyper = { workspace = true, features = ["full"] }
 bytes = { workspace = true }
 serde_json = { workspace = true }
 pretty_assertions = { workspace = true }
+testcontainers = "4.0"
 
 [workspace]
 members = [

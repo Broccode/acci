@@ -207,6 +207,8 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added separate make commands for running unit and integration tests
   - Enhanced test documentation and organization
   - Optimized CI pipeline to run tests in correct order with proper database setup
+  - Switched to testcontainers for database integration tests
+  - Added Docker-in-Docker support for CI pipeline
 
 ### Security
 

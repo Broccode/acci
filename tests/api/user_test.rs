@@ -1,17 +1,27 @@
-use acci_db::{create_pool, repositories::UserRepository, run_migrations, sqlx::PgPool, DbConfig};
+use acci_db::{create_pool, repositories::UserRepository, run_migrations, DbConfig};
 use anyhow::Result;
+use testcontainers::{clients, Container, PostgresImage};
 
-async fn setup() -> Result<(PgPool, UserRepository)> {
-    let config = DbConfig::default();
+async fn setup() -> Result<(Container<'static, PostgresImage>, UserRepository)> {
+    let docker = clients::Cli::default();
+    let postgres = PostgresImage::default();
+    let container = docker.run(postgres);
+    let port = container.get_host_port_ipv4(5432);
+
+    let config = DbConfig {
+        url: format!("postgres://postgres:postgres@localhost:{}/postgres", port),
+        ..Default::default()
+    };
+
     let pool = create_pool(config).await?;
     run_migrations(&pool).await?;
-    let repo = UserRepository::new(pool.clone());
-    Ok((pool, repo))
+    let repo = UserRepository::new(pool);
+    Ok((container, repo))
 }
 
 #[tokio::test]
 async fn test_create_user() {
-    let (_pool, repo) = setup().await.unwrap();
+    let (_container, repo) = setup().await.unwrap();
 
     let user = acci_db::repositories::user::CreateUser {
         email: "test@example.com".to_string(),
@@ -26,7 +36,7 @@ async fn test_create_user() {
 
 #[tokio::test]
 async fn test_get_user_by_email() {
-    let (_pool, repo) = setup().await.unwrap();
+    let (_container, repo) = setup().await.unwrap();
 
     let user = acci_db::repositories::user::CreateUser {
         email: "find@example.com".to_string(),

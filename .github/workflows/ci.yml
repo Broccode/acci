@@ -14,20 +14,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: acci
-          POSTGRES_PASSWORD: testing
-          POSTGRES_DB: acci_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -51,8 +37,6 @@ jobs:
 
       - name: Run integration tests
         run: cargo test --test '*' --all-features
-        env:
-          DATABASE_URL: postgres://acci:testing@localhost:5432/acci_test
 
   security-audit:
     name: Security Audit
