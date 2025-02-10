@@ -174,6 +174,7 @@ Create a git tag for the version (e.g., v0.2.0)
   - serde to 1.0.217
   - Other dependencies updated to their latest stable versions
 - Switched from chrono to time crate for timestamp handling in User repository
+- Moved uuid dependency to workspace dependencies for better version management
 - Enhanced development environment:
   - Added structured shell scripts in devbox configuration
   - Improved init_hook for better rustup integration

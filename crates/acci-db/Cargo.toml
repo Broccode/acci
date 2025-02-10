@@ -31,7 +31,7 @@ clap = { workspace = true }
 acci-core = { path = "../acci-core" }
 
 # External Dependencies
-uuid = { version = "1.0", features = ["v4", "serde"] }
+uuid = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]

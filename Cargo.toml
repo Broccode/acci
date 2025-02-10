@@ -68,6 +68,7 @@ sqlx = { version = "0.8.1", features = [
 ] }
 sea-query = "0.32.1"
 time = { version = "0.3", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 # CLI
 clap = { version = "4.5", features = ["derive"] }
