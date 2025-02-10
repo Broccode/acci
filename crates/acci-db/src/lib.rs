@@ -5,8 +5,10 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 
 mod error;
+mod repositories;
 
 pub use error::DbError;
+pub use repositories::*;
 
 /// Database configuration
 #[derive(Debug, Clone)]

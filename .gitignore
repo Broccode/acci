@@ -13,5 +13,3 @@ config.prod.toml
 
 .devbox
 .rustup
-
-.sqlx/

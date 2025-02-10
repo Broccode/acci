@@ -146,6 +146,14 @@ Create a git tag for the version (e.g., v0.2.0)
     - Make commands for database operations
 - Leptos frontend framework dependencies (leptos, leptos_meta, leptos_router) to workspace dependencies
 - wasm-bindgen-test for frontend testing capabilities
+- User Repository implementation in acci-db:
+  - CRUD operations for user management
+  - Email-based user lookup
+  - Secure password hash storage
+  - Automatic timestamp handling
+  - Comprehensive test coverage
+  - SQLx integration with type-safe queries
+  - UUID-based user identification
 
 ### Changed
 
