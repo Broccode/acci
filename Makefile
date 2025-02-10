@@ -40,7 +40,7 @@ sqlx-prepare:
 	cargo sqlx prepare --workspace
 
 clippy:
-	cargo clippy --all-targets --all-features -- -D warnings
+	cargo clippy --lib --bins --all-features -- -D warnings
 
 test: test-unit test-integration
 

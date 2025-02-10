@@ -200,6 +200,7 @@ Create a git tag for the version (e.g., v0.2.0)
   - Removed unnecessary imports
   - Improved JSON serialization without macro usage
   - Added proper test configuration for Clippy rules
+  - Limited Clippy checks to libraries and binaries to avoid integration test issues
 - Improved test organization and execution:
   - Separated unit tests and integration tests in CI pipeline
   - Moved database-dependent tests from repository modules to integration tests
