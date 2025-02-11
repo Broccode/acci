@@ -120,6 +120,8 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.7] - 2024-03-27
+
 ### Added
 
 - Completed core infrastructure setup (M1.1):
@@ -229,16 +231,13 @@ Create a git tag for the version (e.g., v0.2.0)
   - Optimized CI pipeline to run tests in correct order with proper database setup
   - Switched to testcontainers for database integration tests
   - Added Docker-in-Docker support for CI pipeline
+- Updated Leptos stack to version 0.7 to address unmaintained dependencies:
+  - Resolved unmaintained `instant` dependency issue (RUSTSEC-2024-0384)
+  - Resolved unmaintained `proc-macro-error` dependency issue (RUSTSEC-2024-0370)
 
 ### Security
 
 - Updated sqlx to version 0.8.1 to fix Binary Protocol Misinterpretation vulnerability (RUSTSEC-2024-0363)
-
-### Technical
-
-- Updated Leptos stack to version 0.7 to address unmaintained dependencies:
-  - Resolved unmaintained `instant` dependency issue (RUSTSEC-2024-0384)
-  - Resolved unmaintained `proc-macro-error` dependency issue (RUSTSEC-2024-0370)
 
 ### Fixed
 
