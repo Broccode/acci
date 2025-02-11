@@ -120,6 +120,11 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+- Moved user repository tests from `user.rs` to integration tests in `user_test.rs`
+- Fixed UUID import in tests to use SQLx's UUID type instead of direct uuid crate
+
 ## [0.1.9] - 2024-03-27
 
 ### Technical
