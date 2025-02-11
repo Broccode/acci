@@ -10,6 +10,55 @@ Unsere Entwicklungsumgebung ist so konfiguriert, dass sie einen konsistenten und
 - Docker und Docker Compose
 - VS Code oder JetBrains RustRover
 - Git
+- devbox (optional, für Entwicklungsumgebungs-Isolation)
+
+## Entwicklungsumgebungs-Management
+
+### Devbox-Konfiguration (Optional)
+
+Das Projekt verwendet optional devbox für eine konsistente Isolation der Entwicklungsumgebung. Obwohl nicht erforderlich, bietet es zusätzliche Vorteile für reproduzierbare Entwicklungsumgebungen. Die Konfiguration ist in `devbox.json` definiert:
+
+```json
+{
+  "packages": [
+    "rustup@latest",
+    "libiconv@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "projectDir=$(dirname $(readlink -f \"$0\"))",
+      "rustupHomeDir=\"$projectDir\"/.rustup",
+      "mkdir -p $rustupHomeDir",
+      "export RUSTUP_HOME=$rustupHomeDir",
+      "export LIBRARY_PATH=$LIBRARY_PATH:\"$projectDir/nix/profile/default/lib\"",
+      "rustup default stable",
+      "cargo fetch"
+    ],
+    "scripts": {
+      "test": "cargo test -- --show-output",
+      "start": "cargo run",
+      "build-docs": "cargo doc"
+    }
+  }
+}
+```
+
+Hauptmerkmale:
+
+- Isolierte Rust-Toolchain pro Projekt
+- Automatische Umgebungsinitialisierung
+- Vordefinierte Entwicklungsskripte
+- Konsistente Bibliothekspfade
+- Reproduzierbare Entwicklungsumgebung
+
+### Verwendung von Devbox
+
+1. Installieren Sie devbox gemäß der offiziellen Anleitung
+2. Führen Sie `devbox shell` aus, um die isolierte Umgebung zu betreten
+3. Verwenden Sie vordefinierte Skripte:
+   - `devbox run test` - Tests mit Ausgabe ausführen
+   - `devbox run start` - Anwendung starten
+   - `devbox run build-docs` - Dokumentation generieren
 
 ## IDE-Konfiguration
 

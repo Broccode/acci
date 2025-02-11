@@ -120,6 +120,15 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Added `.editorconfig` file for consistent code formatting across different editors and IDEs:
+  - Configured specific rules for Rust files matching rustfmt settings
+  - Added specialized configurations for TOML, Markdown, YAML, and JSON files
+  - Set up proper Git commit message formatting
+  - Configured documentation-specific rules
+  - Added Makefile-specific tab configuration
+
 ## [0.1.10] - 2024-03-27
 
 ### Changed

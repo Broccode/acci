@@ -10,6 +10,55 @@ Mjedisi ynë i zhvillimit është konfiguruar për të siguruar një workflow t�
 - Docker dhe Docker Compose
 - VS Code ose JetBrains RustRover
 - Git
+- devbox (opsionale, për izolimin e mjedisit të zhvillimit)
+
+## Menaxhimi i Mjedisit të Zhvillimit
+
+### Konfigurimi i Devbox (Opsional)
+
+Projekti përdor në mënyrë opsionale devbox për izolim të qëndrueshëm të mjedisit të zhvillimit. Edhe pse nuk është i detyrueshëm, ofron përfitime shtesë për mjedise zhvillimi të riprodhueshme. Konfigurimi është përcaktuar në `devbox.json`:
+
+```json
+{
+  "packages": [
+    "rustup@latest",
+    "libiconv@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "projectDir=$(dirname $(readlink -f \"$0\"))",
+      "rustupHomeDir=\"$projectDir\"/.rustup",
+      "mkdir -p $rustupHomeDir",
+      "export RUSTUP_HOME=$rustupHomeDir",
+      "export LIBRARY_PATH=$LIBRARY_PATH:\"$projectDir/nix/profile/default/lib\"",
+      "rustup default stable",
+      "cargo fetch"
+    ],
+    "scripts": {
+      "test": "cargo test -- --show-output",
+      "start": "cargo run",
+      "build-docs": "cargo doc"
+    }
+  }
+}
+```
+
+Veçoritë kryesore:
+
+- Toolchain i izoluar i Rust për çdo projekt
+- Inicializimi automatik i mjedisit
+- Skripte të paracaktuara të zhvillimit
+- Rrugë të qëndrueshme të bibliotekave
+- Mjedis zhvillimi i riprodhueshëm
+
+### Përdorimi i Devbox
+
+1. Instaloni devbox duke ndjekur udhëzimet zyrtare
+2. Ekzekutoni `devbox shell` për të hyrë në mjedisin e izoluar
+3. Përdorni skriptet e paracaktuara:
+   - `devbox run test` - Ekzekutoni testet me output
+   - `devbox run start` - Startoni aplikacionin
+   - `devbox run build-docs` - Gjeneroni dokumentacionin
 
 ## Konfigurimi i IDE
 
