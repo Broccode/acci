@@ -32,6 +32,8 @@ dependencies = [
  "acci-db",
  "anyhow",
  "axum",
+ "bytes",
+ "http-body-util",
  "hyper",
  "pretty_assertions",
  "serde",

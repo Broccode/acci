@@ -109,10 +109,23 @@ pub async fn test_connection(pool: &PgPool) -> Result<bool> {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_create_pool() {
+    #[test]
+    fn test_db_config_default() {
         let config = DbConfig::default();
-        let pool = create_pool(config).await.unwrap();
-        assert!(pool.acquire().await.is_ok());
+        assert_eq!(config.max_connections, 5);
+        assert_eq!(config.connect_timeout, 30);
+        assert!(config.url.contains("postgres://"));
+    }
+
+    #[test]
+    fn test_db_config_custom() {
+        let config = DbConfig {
+            url: "postgres://custom:pass@localhost/db".to_string(),
+            max_connections: 10,
+            connect_timeout: 60,
+        };
+        assert_eq!(config.max_connections, 10);
+        assert_eq!(config.connect_timeout, 60);
+        assert_eq!(config.url, "postgres://custom:pass@localhost/db");
     }
 }

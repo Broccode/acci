@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration help
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html help
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -15,6 +15,8 @@ help:
 	@echo "  make test         - Run all tests"
 	@echo "  make test-unit    - Run unit tests only"
 	@echo "  make test-integration - Run integration tests only"
+	@echo "  make coverage     - Generate LCOV coverage report"
+	@echo "  make coverage-html - Generate HTML coverage report"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -45,7 +47,15 @@ clippy:
 test: test-unit test-integration
 
 test-unit:
-	cargo test --lib --bins --all-features
+	cargo test --lib --bins --all-features --workspace
 
 test-integration:
 	cargo test --test '*' --all-features
+
+coverage:
+	cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+	@echo "Coverage info written to lcov.info"
+
+coverage-html:
+	cargo llvm-cov --all-features --workspace --html
+	@echo "HTML coverage report generated in target/llvm-cov/html/index.html"

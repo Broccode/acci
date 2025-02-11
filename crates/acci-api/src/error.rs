@@ -55,3 +55,62 @@ impl IntoResponse for ApiError {
 
 /// Result type for API operations
 pub type ApiResult<T> = Result<T, ApiError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::StatusCode;
+    use http_body_util::BodyExt;
+
+    #[tokio::test]
+    async fn test_api_error_internal() {
+        let error = ApiError::Internal(anyhow::anyhow!("test error"));
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = response_to_json(response).await;
+        assert_eq!(body["error"]["code"], 500);
+        assert_eq!(body["error"]["message"], "Internal server error");
+    }
+
+    #[tokio::test]
+    async fn test_api_error_not_found() {
+        let error = ApiError::NotFound;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        let body = response_to_json(response).await;
+        assert_eq!(body["error"]["code"], 404);
+        assert_eq!(body["error"]["message"], "Resource not found");
+    }
+
+    #[tokio::test]
+    async fn test_api_error_bad_request() {
+        let error = ApiError::BadRequest("Invalid input".to_string());
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+        let body = response_to_json(response).await;
+        assert_eq!(body["error"]["code"], 400);
+        assert_eq!(body["error"]["message"], "Invalid input");
+    }
+
+    #[tokio::test]
+    async fn test_api_error_unauthorized() {
+        let error = ApiError::Unauthorized;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+        let body = response_to_json(response).await;
+        assert_eq!(body["error"]["code"], 401);
+        assert_eq!(body["error"]["message"], "Unauthorized");
+    }
+
+    // Helper function to convert response to JSON Value
+    async fn response_to_json(response: Response) -> Value {
+        let body = response.into_body();
+        let bytes = body.collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8(bytes.to_vec()).unwrap();
+        serde_json::from_str(&body_str).unwrap()
+    }
+}
