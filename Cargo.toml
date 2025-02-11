@@ -1,6 +1,6 @@
 [package]
 name = "acci"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 rust-version = "1.84.1"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]

@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.8] - 2024-03-27
+
+### Fixed
+
+- Fixed Docker build process by creating proper dummy source files for each crate and maintaining correct directory structure during build phases
+
 ## [0.1.7] - 2024-03-27
 
 ### Added
