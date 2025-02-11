@@ -21,14 +21,30 @@ COPY crates/acci-auth/Cargo.toml ./crates/acci-auth/
 COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 
-# Create temporary source files for dependency build
-RUN mkdir -p src && echo 'fn main() { println!("Dummy main for dependency build"); }' > src/main.rs
+# Create dummy source files for dependency build
+RUN mkdir -p crates/acci-core/src && \
+    echo "pub fn dummy() {}" > crates/acci-core/src/lib.rs && \
+    mkdir -p crates/acci-api/src && \
+    echo "fn main() {}" > crates/acci-api/src/main.rs && \
+    mkdir -p crates/acci-auth/src && \
+    echo "pub fn dummy() {}" > crates/acci-auth/src/lib.rs && \
+    mkdir -p crates/acci-db/src && \
+    echo "pub fn dummy() {}" > crates/acci-db/src/lib.rs && \
+    mkdir -p crates/acci-frontend/src && \
+    echo "pub fn dummy() {}" > crates/acci-frontend/src/lib.rs
 
 # Build dependencies
 RUN cargo build --release
 
-# Copy source code
-COPY . .
+# Remove the dummy source files
+RUN rm -rf ./crates/*/src
+
+# Copy actual source code
+COPY crates/acci-core/src ./crates/acci-core/src
+COPY crates/acci-api/src ./crates/acci-api/src
+COPY crates/acci-auth/src ./crates/acci-auth/src
+COPY crates/acci-db/src ./crates/acci-db/src
+COPY crates/acci-frontend/src ./crates/acci-frontend/src
 
 # Build application
 RUN cargo build --release
