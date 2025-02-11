@@ -220,6 +220,14 @@ Create a git tag for the version (e.g., v0.2.0)
   - Resolved unmaintained `instant` dependency issue (RUSTSEC-2024-0384)
   - Resolved unmaintained `proc-macro-error` dependency issue (RUSTSEC-2024-0370)
 
+### Fixed
+
+- Fixed database setup in integration tests:
+  - Added pgcrypto extension for cryptographic functions
+  - Added uuid-ossp extension for UUID generation
+  - Ensured extensions are created before schema creation
+  - Improved test database initialization reliability
+
 ## [0.1.6] - 2024-03-26
 
 ### Technical

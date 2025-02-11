@@ -28,7 +28,8 @@ hyper = { workspace = true, features = ["full"] }
 bytes = { workspace = true }
 serde_json = { workspace = true }
 pretty_assertions = { workspace = true }
-testcontainers = "4.0"
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
 
 [workspace]
 members = [
@@ -96,6 +97,8 @@ anyhow = "1.0.95"
 # Testing
 tokio-test = "0.4.4"
 pretty_assertions = "1.4.1"
+testcontainers = "0.23.2"
+testcontainers-modules = { version = "0.11.6", features = ["postgres"] }
 
 # Frontend
 leptos = { version = "0.7", features = ["ssr"] }

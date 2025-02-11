@@ -7,4 +7,6 @@ edition = "2021"
 sqlx = { workspace = true }
 acci-db = { path = "../crates/acci-db" }
 anyhow = { workspace = true }
-tokio = { workspace = true } 
+tokio = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }

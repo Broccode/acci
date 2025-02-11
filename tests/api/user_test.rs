@@ -1,12 +1,10 @@
-use acci_db::{create_pool, repositories::UserRepository, run_migrations, DbConfig};
+use acci_db::{create_pool, repositories::UserRepository, run_migrations, sqlx, DbConfig};
 use anyhow::Result;
-use testcontainers::{clients, Container, PostgresImage};
+use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
 
-async fn setup() -> Result<(Container<'static, PostgresImage>, UserRepository)> {
-    let docker = clients::Cli::default();
-    let postgres = PostgresImage::default();
-    let container = docker.run(postgres);
-    let port = container.get_host_port_ipv4(5432);
+async fn setup() -> Result<(Box<dyn std::any::Any>, UserRepository)> {
+    let container = postgres::Postgres::default().start().await?;
+    let port = container.get_host_port_ipv4(5432).await?;
 
     let config = DbConfig {
         url: format!("postgres://postgres:postgres@localhost:{}/postgres", port),
@@ -14,9 +12,25 @@ async fn setup() -> Result<(Container<'static, PostgresImage>, UserRepository)> 
     };
 
     let pool = create_pool(config).await?;
+
+    // Enable crypto extension in postgres database
+    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"")
+        .execute(&pool)
+        .await?;
+
+    // Enable UUID extension in postgres database
+    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+        .execute(&pool)
+        .await?;
+
+    // Create schema and ensure extension is available
+    sqlx::query("CREATE SCHEMA IF NOT EXISTS acci")
+        .execute(&pool)
+        .await?;
+
     run_migrations(&pool).await?;
     let repo = UserRepository::new(pool);
-    Ok((container, repo))
+    Ok((Box::new(container), repo))
 }
 
 #[tokio::test]

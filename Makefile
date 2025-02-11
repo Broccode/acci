@@ -37,7 +37,7 @@ db-migrate:
 	(cd crates/acci-db && DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run --bin acci-db -- migrate)
 
 sqlx-prepare:
-	cargo sqlx prepare --workspace
+	cargo sqlx prepare --workspace --all
 
 clippy:
 	cargo clippy --lib --bins --all-features -- -D warnings
