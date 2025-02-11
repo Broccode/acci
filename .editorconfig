@@ -55,4 +55,4 @@ trim_trailing_whitespace = false
 
 # Git commit messages
 [COMMIT_EDITMSG]
-max_line_length = 72 
+max_line_length = 72
