@@ -120,6 +120,8 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.11] - 2024-03-27
+
 ### Added
 
 - Added `.editorconfig` file for consistent code formatting across different editors and IDEs:
