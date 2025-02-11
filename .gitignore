@@ -1,5 +1,6 @@
 /target
 .DS_Store
+.idea/
 
 .vscode
 
@@ -18,3 +19,6 @@ config.prod.toml
 lcov.info
 coverage/
 target/llvm-cov/
+
+bom.json
+acci.cdx.xml
