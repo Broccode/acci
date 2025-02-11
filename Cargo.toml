@@ -1,6 +1,6 @@
 [package]
 name = "acci"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 rust-version = "1.84.1"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]
@@ -41,7 +41,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.1.9"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]

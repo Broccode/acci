@@ -120,6 +120,13 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.9] - 2024-03-27
+
+### Technical
+
+- Updated workspace version to match package version
+- Synchronized version numbers across workspace crates
+
 ## [0.1.8] - 2024-03-27
 
 ### Fixed
