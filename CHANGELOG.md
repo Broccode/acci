@@ -178,6 +178,12 @@ Create a git tag for the version (e.g., v0.2.0)
   - Fixed body handling in API error tests
   - Simplified test database configuration
   - Improved test isolation and maintainability
+- Refactored database integration tests:
+  - Migrated to testcontainers for improved test isolation
+  - Added proper database initialization with extensions
+  - Improved connection pool testing with better timeout handling
+  - Enhanced error condition testing for invalid configurations
+  - Added proper cleanup of test resources
 
 ### Technical
 
