@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "acci"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "acci-api",
  "acci-db",
@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "acci-api"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "acci-auth",
  "acci-core",
@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "acci-auth"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "acci-core",
  "acci-db",
@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "acci-core"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "anyhow",
  "pretty_assertions",
@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "acci-db"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "acci-core",
  "anyhow",
@@ -97,7 +97,7 @@ dependencies = [
 
 [[package]]
 name = "acci-frontend"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "acci-core",
  "anyhow",
