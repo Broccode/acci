@@ -26,10 +26,12 @@ Progresi aktual dhe arritjet:
   - Trajtim gjithëpërfshirës i gabimeve me tipe të personalizuara
   - Middleware për CORS dhe gjurmim me konfigurim të përshtatshëm
   - Konfigurimi i strukturuar i regjistrimeve
-- [ ] Integrimi i bazës së të dhënave
+- [x] Integrimi i bazës së të dhënave
   - Konfigurimi i PostgreSQL me migrime
-  - Dizajni i skemës së përdoruesve
-  - Implementimi i pattern-it Repository
+  - Dizajni i skemës së përdoruesve me UUID dhe timestamps
+  - Implementimi i pattern-it Repository me operacione CRUD
+  - Mbulim gjithëpërfshirës i testeve me testcontainers
+  - Mjete CLI për menaxhimin e bazës së të dhënave
 - [ ] Autentifikimi i thjeshtë
   - Endpoint-i bazë i hyrjes me validim të përshtatshëm
   - Konfigurimi i përdoruesit test

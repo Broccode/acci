@@ -26,10 +26,12 @@ Aktueller Fortschritt und Errungenschaften:
   - Umfassende Fehlerbehandlung mit benutzerdefinierten Fehlertypen
   - CORS- und Tracing-Middleware mit entsprechender Konfiguration
   - Strukturiertes Logging-Setup
-- [ ] Datenbankintegration
+- [x] Datenbankintegration
   - PostgreSQL-Setup mit Migrationen
-  - Benutzer-Schema-Design
-  - Implementierung des Repository-Patterns
+  - Benutzer-Schema-Design mit UUID und Zeitstempeln
+  - Implementierung des Repository-Patterns mit CRUD-Operationen
+  - Umfassende Testabdeckung mit Testcontainers
+  - CLI-Tools für Datenbank-Management
 - [ ] Einfache Authentifizierung
   - Basis-Login-Endpoint mit ordnungsgemäßer Validierung
   - Testkonfiguration für Benutzer

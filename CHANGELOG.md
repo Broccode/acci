@@ -129,6 +129,16 @@ Create a git tag for the version (e.g., v0.2.0)
   - Configured documentation-specific rules
   - Added Makefile-specific tab configuration
 
+### Changed
+
+- Completed database integration milestone (M1.2):
+  - Finalized PostgreSQL setup with migrations system
+  - Completed user schema design with UUID and timestamp support
+  - Implemented full Repository pattern with CRUD operations
+  - Added comprehensive test coverage using testcontainers
+  - Integrated CLI tools for database management
+  - Updated milestone documentation to reflect completion
+
 ## [0.1.10] - 2024-03-27
 
 ### Changed
