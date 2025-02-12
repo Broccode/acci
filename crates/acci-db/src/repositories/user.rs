@@ -284,6 +284,7 @@ impl UserRepository for PgUserRepository {
 }
 
 #[cfg(test)]
+/// Mock implementations of the UserRepository trait for testing purposes.
 pub mod mock {
     use super::*;
     use std::collections::HashMap;
