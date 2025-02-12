@@ -30,9 +30,13 @@ This document defines the key milestones for developing our enterprise-grade Rus
   - Repository pattern implementation with CRUD operations
   - Comprehensive test coverage with testcontainers
   - CLI tools for database management
-- [ ] Simple authentication
-  - Basic login endpoint
-  - Hardcoded test user
+- [-] Simple authentication
+  - [x] Basic auth provider infrastructure
+  - [x] Password hashing with Argon2
+  - [x] JWT token handling
+  - [x] User authentication traits
+  - [ ] Login endpoint implementation
+  - [ ] Hardcoded test user
 - [ ] Basic license validation
   - Simple license key check
   - Basic feature flag system

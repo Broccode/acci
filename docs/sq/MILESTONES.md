@@ -33,9 +33,13 @@ Progresi aktual dhe arritjet:
   - Mbulim gjithëpërfshirës i testeve me testcontainers
   - Mjete CLI për menaxhimin e bazës së të dhënave
 - [ ] Autentifikimi i thjeshtë
-  - Endpoint-i bazë i hyrjes me validim të përshtatshëm
-  - Konfigurimi i përdoruesit test
-  - Menaxhimi i sesioneve
+  - [x] Infrastruktura bazë e ofruesit të autentifikimit me dizajn të bazuar në trait
+  - [x] Siguria e fjalëkalimit me implementimin Argon2
+  - [x] Menaxhimi dhe validimi i token-it JWT
+  - [x] Traits e autentifikimit të përdoruesit dhe integrimi i repository-t
+  - [ ] Implementimi i endpoint-it të hyrjes
+  - [ ] Konfigurimi i përdoruesit test
+  - [ ] Menaxhimi i sesioneve
 - [ ] Validimi bazë i licencës
   - Logjika e validimit të çelësit të licencës
   - Implementimi i sistemit të feature flag
