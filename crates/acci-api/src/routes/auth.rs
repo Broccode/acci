@@ -62,9 +62,34 @@ async fn login(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use acci_core::auth::AuthProvider;
+    use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
+    use rand_core::OsRng;
 
     #[derive(Debug)]
-    struct MockUserRepo;
+    struct MockUserRepo {
+        default_user: User,
+    }
+
+    impl MockUserRepo {
+        fn new() -> Self {
+            // Create password hash for "whiskey"
+            let salt = SaltString::generate(&mut OsRng);
+            let argon2 = Argon2::default();
+            let password_hash = argon2.hash_password(b"whiskey", &salt).unwrap().to_string();
+
+            let default_user = User {
+                id: Uuid::new_v4(),
+                email: "admin".to_string(),
+                password_hash,
+                full_name: "Default Admin".to_string(),
+                created_at: time::OffsetDateTime::now_utc(),
+                updated_at: time::OffsetDateTime::now_utc(),
+            };
+
+            Self { default_user }
+        }
+    }
 
     #[async_trait::async_trait]
     impl UserRepository for MockUserRepo {
@@ -76,8 +101,12 @@ mod tests {
             Ok(None)
         }
 
-        async fn get_by_email(&self, _email: &str) -> anyhow::Result<Option<User>> {
-            Ok(None)
+        async fn get_by_email(&self, email: &str) -> anyhow::Result<Option<User>> {
+            if email == "admin" {
+                Ok(Some(self.default_user.clone()))
+            } else {
+                Ok(None)
+            }
         }
 
         async fn update(&self, _id: Uuid, _user: UpdateUser) -> anyhow::Result<Option<User>> {
@@ -90,8 +119,22 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_login_default_admin() {
+        let user_repo = Arc::new(MockUserRepo::new());
+        let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
+
+        let credentials = Credentials {
+            username: "admin".to_string(),
+            password: "whiskey".to_string(),
+        };
+
+        let result = auth_provider.authenticate(credentials).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn test_login_invalid_credentials() {
-        let user_repo = Arc::new(MockUserRepo);
+        let user_repo = Arc::new(MockUserRepo::new());
         let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
 
         let credentials = Credentials {

@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-acci-core = { workspace = true }
-acci-db = { workspace = true }
-acci-auth = { workspace = true }
+acci-core = { path = "../crates/acci-core" }
+acci-db = { path = "../crates/acci-db" }
+acci-auth = { path = "../crates/acci-auth" }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 time = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true }
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }

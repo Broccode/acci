@@ -120,8 +120,29 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed database migration for default admin user:
+  - Corrected schema handling for pgcrypto extension
+  - Fixed function calls to use public schema
+  - Changed to blowfish password hashing method
+  - Improved schema initialization order
+  - Added proper function qualification
+
 ### Added
 
+- Added database migration for default admin user:
+  - Secure password hashing using pgcrypto's blowfish
+  - Default credentials: admin/whiskey
+  - Idempotent migration with conflict handling
+  - Integration tests for migration and authentication
+  - Test infrastructure with Docker containers
+- Implemented default test user for development:
+  - Username: admin
+  - Password: whiskey
+  - Secure password hashing with Argon2
+  - Comprehensive test coverage for authentication flow
+  - Mock repository implementation for testing
 - Basic Authentication Provider Infrastructure:
   - Modular provider system for extensible authentication methods
   - Trait-based approach for provider implementations
