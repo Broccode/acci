@@ -120,6 +120,15 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Documentation for Simple Authentication implementation plan (M1.2) in all supported languages (EN, DE, SQ)
+  - Detailed implementation steps
+  - Technical specifications
+  - Security considerations
+  - Authentication flow diagrams
+  - Dependency requirements
+
 ## [0.1.11] - 2024-03-27
 
 ### Added
