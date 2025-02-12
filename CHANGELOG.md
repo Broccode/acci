@@ -129,6 +129,15 @@ Create a git tag for the version (e.g., v0.2.0)
   - Authentication flow diagrams
   - Dependency requirements
 
+### Changed
+
+- Improved dependency management:
+  - Moved all dependency definitions to workspace level
+  - Implemented strict workspace inheritance for shared dependencies
+  - Added dependency management guidelines to .cursorrules
+  - Removed redundant version specifications in individual crates
+  - Centralized feature configuration in workspace
+
 ## [0.1.11] - 2024-03-27
 
 ### Added

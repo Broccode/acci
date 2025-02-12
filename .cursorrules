@@ -207,4 +207,19 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 - Track rate limiting events
 - Implement error reporting (e.g., Sentry)
 
+### DEPENDENCY MANAGEMENT
+
+- All dependencies MUST be defined in the root Cargo.toml's [workspace.dependencies] section
+- Individual crate Cargo.toml files should only use workspace = true references
+- When adding new dependencies:
+  1. First add them to [workspace.dependencies] with version and features
+  2. Then reference them in individual crates using { workspace = true }
+  3. Never specify versions or features in individual crate Cargo.toml files
+- Features should be configured at the workspace level only
+- Version requirements should be specified only once in the workspace
+- Dependencies shared across multiple crates must use workspace inheritance
+- Check for existing workspace dependencies before adding new ones
+- Maintain consistent versioning across the workspace
+- Document breaking dependency changes in CHANGELOG.md
+
 ## ALWAYS END THE CHAT WITH A RANDOM EMOJI
