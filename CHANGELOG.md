@@ -131,6 +131,14 @@ Create a git tag for the version (e.g., v0.2.0)
   - User authentication traits and repository integration
   - Comprehensive test coverage for auth components
   - Security-first implementation following best practices
+- Login endpoint implementation:
+  - REST API endpoint for user authentication
+  - Request validation and error handling
+  - Proper error mapping between core and API layers
+  - Integration with BasicAuthProvider
+  - Comprehensive test coverage
+  - CORS support for authentication endpoints
+  - Structured logging with sensitive data masking
 - Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
 
 ### Changed

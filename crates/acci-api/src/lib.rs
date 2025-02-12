@@ -28,6 +28,7 @@ pub struct ApiConfig {
 pub async fn serve(config: ApiConfig) -> anyhow::Result<()> {
     let app = Router::new()
         .merge(routes::health::router())
+        .merge(routes::auth::router())
         .layer(TraceLayer::new_for_http())
         .layer(middleware::cors());
 
