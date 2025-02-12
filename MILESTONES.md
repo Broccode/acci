@@ -31,15 +31,13 @@ This document defines the key milestones for developing our enterprise-grade Rus
   - Comprehensive test coverage with testcontainers
   - CLI tools for database management
 - [-] Simple authentication
-  - [x] Basic auth provider infrastructure
-  - [x] Password hashing with Argon2
-  - [x] JWT token handling
-  - [x] User authentication traits
+  - [x] Basic auth provider infrastructure with trait-based design
+  - [x] Password security with Argon2 implementation
+  - [x] JWT token management and validation
+  - [x] User authentication traits and repository integration
   - [x] Login endpoint implementation
-  - [ ] Hardcoded test user
-- [ ] Basic license validation
-  - Simple license key check
-  - Basic feature flag system
+  - [ ] Test user configuration
+  - [ ] Session management
 
 ### M1.3: MVP Frontend (Week 2-3)
 
@@ -85,6 +83,12 @@ This document defines the key milestones for developing our enterprise-grade Rus
 - [ ] Grafana dashboards
 - [ ] Distributed tracing
 - [ ] Enhanced logging
+
+### M2.5: Basic License Management (Week 8)
+
+- [ ] Basic license validation
+  - [ ] Simple license key check
+  - [ ] Basic feature flag system
 
 ## Phase 3: Enterprise Features (M3)
 

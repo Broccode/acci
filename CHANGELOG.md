@@ -150,15 +150,15 @@ Create a git tag for the version (e.g., v0.2.0)
   - Comprehensive test coverage for auth components
   - Security-first implementation following best practices
 - Login endpoint implementation:
-  - REST API endpoint for user authentication
-  - Request validation and error handling
-  - Proper error mapping between core and API layers
-  - Integration with BasicAuthProvider
-  - Comprehensive test coverage with mock repositories
-  - CORS support for authentication endpoints
-  - Structured logging with sensitive data masking
-  - Proper dependency injection for database access
-  - Unit tests for invalid credentials scenario
+  - REST API endpoint for user authentication ✅
+  - Request validation and error handling ✅
+  - Proper error mapping between core and API layers ✅
+  - Integration with BasicAuthProvider ✅
+  - Comprehensive test coverage with mock repositories ✅
+  - CORS support for authentication endpoints ✅
+  - Structured logging with sensitive data masking ✅
+  - Proper dependency injection for database access ✅
+  - Unit tests for invalid credentials scenario ✅
 - Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
 
 ### Changed
@@ -185,6 +185,12 @@ Create a git tag for the version (e.g., v0.2.0)
   - Implemented proper error handling
   - Added structured logging
   - Improved type safety with proper imports
+- Fixed dependency configuration in acci-api:
+  - Moved rand_core from dev-dependencies to dependencies
+  - Ensured proper workspace inheritance for cryptographic dependencies
+  - Fixed import resolution for OsRng in auth tests
+  - Resolved version conflicts in rand and rand_core dependencies
+  - Updated getrandom to version 0.3.1 for better compatibility
 
 ## [0.1.11] - 2024-03-27
 
