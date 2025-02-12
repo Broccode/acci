@@ -34,15 +34,16 @@ acci-db = { path = "../acci-db" }
 
 # Added dependencies
 uuid = { workspace = true }
-chrono = { version = "0.4", features = ["serde"] }
+validator = { workspace = true }
+argon2 = { workspace = true, features = ["rand"] }
+rand = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
 pretty_assertions = { workspace = true }
 tower = { workspace = true }
 async-trait = { workspace = true }
-argon2 = { workspace = true }
-rand_core = "0.6.4"
+getrandom = { workspace = true }
 time = { workspace = true }
 
 [lints]

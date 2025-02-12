@@ -91,8 +91,10 @@ clap = { version = "4.5", features = ["derive"] }
 # Authentication & Security
 jsonwebtoken = "9.3.1"
 argon2 = "0.5.3"
-rand = "0.9.0"
+rand = "0.8.0"
+getrandom = "0.3.1"
 async-trait = "0.1"
+validator = { version = "0.20.0", features = ["derive"] }
 
 # Serialization
 serde = { version = "1.0.217", features = ["derive"] }
@@ -115,9 +117,9 @@ testcontainers = "0.23.2"
 testcontainers-modules = { version = "0.11.6", features = ["postgres"] }
 
 # Frontend
-leptos = { version = "0.7", features = ["ssr"] }
-leptos_meta = { version = "0.7", features = ["ssr"] }
-leptos_router = { version = "0.7", features = ["ssr"] }
+leptos = { version = "0.7.7", features = ["ssr"] }
+leptos_meta = { version = "0.7.7", features = ["ssr"] }
+leptos_router = { version = "0.7.7", features = ["ssr"] }
 wasm-bindgen-test = "0.3.42"
 
 [workspace.lints.rust]

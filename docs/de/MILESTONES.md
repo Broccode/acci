@@ -40,10 +40,6 @@ Aktueller Fortschritt und Errungenschaften:
   - [ ] Login-Endpoint-Implementierung
   - [ ] Testbenutzer-Konfiguration
   - [ ] Session-Management
-- [ ] Basis-Lizenzvalidierung
-  - Lizenzschlüssel-Validierungslogik
-  - Feature-Flag-System-Implementierung
-  - Grundlegendes Quota-Management
 
 ### M1.3: MVP Frontend (Geplant für Woche 2-3)
 
@@ -63,7 +59,14 @@ Wir arbeiten aktiv an M1.2 (MVP Backend), insbesondere an:
 
 - Implementierung der Datenbankintegration mit entsprechenden Migrationen
 - Einrichtung des Benutzer-Authentifizierungssystems
-- Entwicklung des grundlegenden Lizenzvalidierungssystems
+
+## Phase 2: Kernfunktionen (M2)
+
+### M2.5: Basis-Lizenzverwaltung (Woche 8)
+
+- [ ] Basis-Lizenzvalidierung
+  - [ ] Einfache Lizenzschlüsselprüfung
+  - [ ] Grundlegendes Feature-Flag-System
 
 ## Technische Dokumentation
 

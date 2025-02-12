@@ -40,10 +40,6 @@ Progresi aktual dhe arritjet:
   - [ ] Implementimi i endpoint-it të hyrjes
   - [ ] Konfigurimi i përdoruesit test
   - [ ] Menaxhimi i sesioneve
-- [ ] Validimi bazë i licencës
-  - Logjika e validimit të çelësit të licencës
-  - Implementimi i sistemit të feature flag
-  - Menaxhimi bazë i kuotave
 
 ### M1.3: MVP Frontend (Planifikuar për Javën 2-3)
 
@@ -63,7 +59,14 @@ Ne po punojmë aktivisht në M1.2 (MVP Backend), specifikisht në:
 
 - Implementimin e integrimit të bazës së të dhënave me migrime të përshtatshme
 - Konfigurimin e sistemit të autentifikimit të përdoruesve
-- Zhvillimin e sistemit bazë të validimit të licencës
+
+## Faza 2: Funksionet Bazë (M2)
+
+### M2.5: Menaxhimi Bazë i Licencave (Java 8)
+
+- [ ] Validimi bazë i licencës
+  - [ ] Kontrolli i thjeshtë i çelësit të licencës
+  - [ ] Sistemi bazë i feature flag
 
 ## Dokumentacioni Teknik
 
