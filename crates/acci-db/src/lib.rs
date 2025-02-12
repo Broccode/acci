@@ -1,4 +1,3 @@
-#![deny(missing_docs)]
 //! Database functionality for the ACCI system.
 //!
 //! This crate provides database access and management functionality,
@@ -12,7 +11,9 @@ mod error;
 pub mod repositories;
 
 pub use error::DbError;
-pub use repositories::*;
+#[cfg(test)]
+pub use repositories::user::mock;
+pub use repositories::user::{CreateUser, PgUserRepository, UpdateUser, User, UserRepository};
 pub use sqlx;
 
 /// Configuration for database connections.

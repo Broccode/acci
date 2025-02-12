@@ -13,21 +13,28 @@ name = "acci_auth"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace Dependencies
+# Internal Dependencies
+acci-core = { workspace = true }
+acci-db = { workspace = true }
+
+# External Dependencies
+anyhow = { workspace = true }
+argon2 = { workspace = true }
+async-trait = { workspace = true }
+jsonwebtoken = { workspace = true }
+serde = { workspace = true }
+time = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
-
-# Internal Dependencies
-acci-core = { path = "../acci-core" }
-acci-db = { path = "../acci-db" }
+uuid = { workspace = true }
 
 [dev-dependencies]
-tokio-test = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+time = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+uuid = { workspace = true }
 pretty_assertions = { workspace = true }
 
 [lints]
-workspace = true # Enable workspace-wide lints 
+workspace = true # Enable workspace-wide lints

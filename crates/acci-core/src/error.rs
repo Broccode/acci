@@ -29,6 +29,26 @@ pub enum Error {
         /// A message describing the internal error.
         message: String,
     },
+
+    /// An authentication error occurred with the specified message.
+    #[error("Authentication failed: {0}")]
+    AuthenticationFailed(String),
+
+    /// The provided credentials are invalid.
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+
+    /// Token validation failed with the specified error message.
+    #[error("Token validation failed: {0}")]
+    TokenValidationFailed(String),
+
+    /// The user session has expired.
+    #[error("Session expired")]
+    SessionExpired,
+
+    /// The requested session could not be found.
+    #[error("Session not found")]
+    SessionNotFound,
 }
 
 impl Error {

@@ -7,6 +7,11 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 
+/// Authentication and authorization related types and traits.
+///
+/// This module provides the core abstractions for authentication and authorization
+/// in the ACCI system, including traits for authentication providers and user sessions.
+pub mod auth;
 pub mod error;
 // pub mod models;
 // pub mod traits;

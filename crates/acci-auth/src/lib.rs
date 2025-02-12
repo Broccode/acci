@@ -1,7 +1,13 @@
-//! Authentication module for the ACCI application.
+//! Authentication functionality for the ACCI system.
+//!
+//! This crate provides authentication and authorization functionality,
+//! including user authentication, session management, and token validation.
 
-/// Temporary placeholder for the authentication module.
-#[allow(clippy::missing_const_for_fn)]
-pub fn placeholder() {
-    // TODO: Implement authentication functionality
-}
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
+
+pub use acci_core::auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials};
+
+pub mod providers;
+pub use providers::BasicAuthProvider;

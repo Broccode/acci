@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            FROM acci.users\n            WHERE id = $1\n            ",
+  "query": "\n            INSERT INTO acci.users (email, password_hash, full_name)\n            VALUES ($1, $2, $3)\n            RETURNING\n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -36,7 +36,9 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Varchar",
+        "Varchar",
+        "Varchar"
       ]
     },
     "nullable": [
@@ -48,5 +50,5 @@
       false
     ]
   },
-  "hash": "3cebfcb07382e8686c6579a9a3f244349c61592e2ee237e36f09233130d4b434"
+  "hash": "8b5b7243507ff344bcab8cbb0e300d699d890ea551c6a1d7a14d2590d5b1f97c"
 }

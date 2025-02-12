@@ -33,10 +33,11 @@ acci-core = { path = "../acci-core" }
 # External Dependencies
 uuid = { workspace = true }
 time = { workspace = true }
+async-trait = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
 pretty_assertions = { workspace = true }
 
 [lints]
-workspace = true # Enable workspace-wide lints 
+workspace = true # Enable workspace-wide lints

@@ -1,6 +1,7 @@
 //! User repository implementation for database operations.
 
 use anyhow::Result;
+use async_trait::async_trait;
 use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -45,23 +46,41 @@ pub struct UpdateUser {
     pub full_name: Option<String>,
 }
 
-/// Repository for user-related database operations.
+/// Repository trait for user-related database operations.
+#[async_trait]
+pub trait UserRepository: Send + Sync + std::fmt::Debug {
+    /// Creates a new user in the database.
+    async fn create(&self, user: CreateUser) -> Result<User>;
+
+    /// Retrieves a user by their ID.
+    async fn get_by_id(&self, id: Uuid) -> Result<Option<User>>;
+
+    /// Retrieves a user by their email address.
+    async fn get_by_email(&self, email: &str) -> Result<Option<User>>;
+
+    /// Updates a user's information.
+    async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>>;
+
+    /// Deletes a user from the database.
+    async fn delete(&self, id: Uuid) -> Result<bool>;
+}
+
+/// PostgreSQL implementation of the `UserRepository` trait.
 #[derive(Debug, Clone)]
-pub struct UserRepository {
+pub struct PgUserRepository {
     pool: PgPool,
 }
 
-impl UserRepository {
-    /// Creates a new `UserRepository` instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `pool` - The database connection pool to use.
+impl PgUserRepository {
+    /// Creates a new `PgUserRepository` instance.
     #[must_use]
     pub const fn new(pool: PgPool) -> Self {
         Self { pool }
     }
+}
 
+#[async_trait]
+impl UserRepository for PgUserRepository {
     /// Creates a new user in the database.
     ///
     /// # Arguments
@@ -81,13 +100,13 @@ impl UserRepository {
     /// # Panics
     ///
     /// This function will panic if the user data contains invalid UTF-8 characters.
-    pub async fn create(&self, user: CreateUser) -> Result<User> {
+    async fn create(&self, user: CreateUser) -> Result<User> {
         let user = sqlx::query_as!(
             User,
             r#"
             INSERT INTO acci.users (email, password_hash, full_name)
             VALUES ($1, $2, $3)
-            RETURNING 
+            RETURNING
                 id as "id: Uuid",
                 email,
                 password_hash,
@@ -122,11 +141,11 @@ impl UserRepository {
     /// # Panics
     ///
     /// This function will panic if the database returns invalid UTF-8 characters.
-    pub async fn get_by_id(&self, id: Uuid) -> Result<Option<User>> {
+    async fn get_by_id(&self, id: Uuid) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT 
+            SELECT
                 id as "id: Uuid",
                 email,
                 password_hash,
@@ -161,11 +180,11 @@ impl UserRepository {
     /// # Panics
     ///
     /// This function will panic if the database returns invalid UTF-8 characters.
-    pub async fn get_by_email(&self, email: &str) -> Result<Option<User>> {
+    async fn get_by_email(&self, email: &str) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT 
+            SELECT
                 id as "id: Uuid",
                 email,
                 password_hash,
@@ -203,17 +222,17 @@ impl UserRepository {
     /// # Panics
     ///
     /// This function will panic if the user data contains invalid UTF-8 characters.
-    pub async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>> {
+    async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
             UPDATE acci.users
-            SET 
+            SET
                 email = COALESCE($1, email),
                 password_hash = COALESCE($2, password_hash),
                 full_name = COALESCE($3, full_name)
             WHERE id = $4
-            RETURNING 
+            RETURNING
                 id as "id: Uuid",
                 email,
                 password_hash,
@@ -249,7 +268,7 @@ impl UserRepository {
     /// # Panics
     ///
     /// This function will panic if the database returns invalid UTF-8 characters.
-    pub async fn delete(&self, id: Uuid) -> Result<bool> {
+    async fn delete(&self, id: Uuid) -> Result<bool> {
         let result = sqlx::query!(
             r#"
             DELETE FROM acci.users
@@ -261,5 +280,92 @@ impl UserRepository {
         .await?;
 
         Ok(result.rows_affected() > 0)
+    }
+}
+
+#[cfg(test)]
+pub mod mock {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    /// Mock implementation of the UserRepository trait for testing.
+    #[derive(Debug, Default)]
+    pub struct MockUserRepository {
+        users: Mutex<HashMap<Uuid, User>>,
+        email_index: Mutex<HashMap<String, Uuid>>,
+    }
+
+    impl MockUserRepository {
+        /// Creates a new empty MockUserRepository.
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+
+    #[async_trait]
+    impl UserRepository for MockUserRepository {
+        async fn create(&self, user: CreateUser) -> Result<User> {
+            let id = Uuid::new_v4();
+            let now = OffsetDateTime::now_utc();
+            let user = User {
+                id,
+                email: user.email.clone(),
+                password_hash: user.password_hash,
+                full_name: user.full_name,
+                created_at: now,
+                updated_at: now,
+            };
+
+            self.email_index
+                .lock()
+                .unwrap()
+                .insert(user.email.clone(), id);
+            self.users.lock().unwrap().insert(id, user.clone());
+
+            Ok(user)
+        }
+
+        async fn get_by_id(&self, id: Uuid) -> Result<Option<User>> {
+            Ok(self.users.lock().unwrap().get(&id).cloned())
+        }
+
+        async fn get_by_email(&self, email: &str) -> Result<Option<User>> {
+            let id = self.email_index.lock().unwrap().get(email).copied();
+            Ok(id.and_then(|id| self.users.lock().unwrap().get(&id).cloned()))
+        }
+
+        async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>> {
+            let mut users = self.users.lock().unwrap();
+            let mut email_index = self.email_index.lock().unwrap();
+
+            if let Some(existing_user) = users.get_mut(&id) {
+                if let Some(email) = user.email {
+                    email_index.remove(&existing_user.email);
+                    email_index.insert(email.clone(), id);
+                    existing_user.email = email;
+                }
+                if let Some(password_hash) = user.password_hash {
+                    existing_user.password_hash = password_hash;
+                }
+                if let Some(full_name) = user.full_name {
+                    existing_user.full_name = full_name;
+                }
+                existing_user.updated_at = OffsetDateTime::now_utc();
+                Ok(Some(existing_user.clone()))
+            } else {
+                Ok(None)
+            }
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool> {
+            let mut users = self.users.lock().unwrap();
+            if let Some(user) = users.remove(&id) {
+                self.email_index.lock().unwrap().remove(&user.email);
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        }
     }
 }

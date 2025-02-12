@@ -1,6 +1,6 @@
 use acci_db::{
     create_pool,
-    repositories::UserRepository,
+    repositories::user::{PgUserRepository, UserRepository},
     run_migrations,
     sqlx::{self, types::uuid::Uuid},
     DbConfig,
@@ -8,7 +8,7 @@ use acci_db::{
 use anyhow::Result;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
 
-async fn setup() -> Result<(Box<dyn std::any::Any>, UserRepository)> {
+async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
     let container = postgres::Postgres::default().start().await?;
     let port = container.get_host_port_ipv4(5432).await?;
 
@@ -35,7 +35,7 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, UserRepository)> {
         .await?;
 
     run_migrations(&pool).await?;
-    let repo = UserRepository::new(pool);
+    let repo = PgUserRepository::new(pool);
     Ok((Box::new(container), repo))
 }
 

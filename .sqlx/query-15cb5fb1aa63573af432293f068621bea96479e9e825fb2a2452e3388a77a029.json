@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE acci.users\n            SET \n                email = COALESCE($1, email),\n                password_hash = COALESCE($2, password_hash),\n                full_name = COALESCE($3, full_name)\n            WHERE id = $4\n            RETURNING \n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            ",
+  "query": "\n            UPDATE acci.users\n            SET\n                email = COALESCE($1, email),\n                password_hash = COALESCE($2, password_hash),\n                full_name = COALESCE($3, full_name)\n            WHERE id = $4\n            RETURNING\n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -51,5 +51,5 @@
       false
     ]
   },
-  "hash": "b5fbe76c57fcfd743c166cb797ceeded13353f430bc917cae3b7476a0c77c58c"
+  "hash": "15cb5fb1aa63573af432293f068621bea96479e9e825fb2a2452e3388a77a029"
 }
