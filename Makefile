@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html help
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html fmt help
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -17,6 +17,7 @@ help:
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make coverage     - Generate LCOV coverage report"
 	@echo "  make coverage-html - Generate HTML coverage report"
+	@echo "  make fmt          - Format all code with rustfmt"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -59,3 +60,7 @@ coverage:
 coverage-html:
 	cargo llvm-cov --all-features --workspace --html
 	@echo "HTML coverage report generated in target/llvm-cov/html/index.html"
+
+fmt:
+	cargo fmt --all --verbose
+	@echo "Code formatting complete."
