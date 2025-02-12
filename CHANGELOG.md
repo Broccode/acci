@@ -120,17 +120,14 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
-### Fixed
-
-- Fixed database migration for default admin user:
-  - Corrected schema handling for pgcrypto extension
-  - Fixed function calls to use public schema
-  - Changed to blowfish password hashing method
-  - Improved schema initialization order
-  - Added proper function qualification
-
 ### Added
 
+- Added comprehensive README.md in three languages (EN, DE, SQ):
+  - Project description and key features
+  - Quick start guide with make commands
+  - Links to language-specific documentation
+  - License and security information
+  - Contributing guidelines
 - Added database migration for default admin user:
   - Secure password hashing using pgcrypto's blowfish
   - Default credentials: admin/whiskey
