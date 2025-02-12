@@ -32,9 +32,14 @@ acci-core = { path = "../acci-core" }
 acci-auth = { path = "../acci-auth" }
 acci-db = { path = "../acci-db" }
 
+# Added dependencies
+uuid = { workspace = true }
+
 [dev-dependencies]
 tokio-test = { workspace = true }
 pretty_assertions = { workspace = true }
+tower = { workspace = true }
+async-trait = { workspace = true }
 
 [lints]
-workspace = true # Enable workspace-wide lints 
+workspace = true # Enable workspace-wide lints

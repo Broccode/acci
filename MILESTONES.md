@@ -35,7 +35,7 @@ This document defines the key milestones for developing our enterprise-grade Rus
   - [x] Password hashing with Argon2
   - [x] JWT token handling
   - [x] User authentication traits
-  - [ ] Login endpoint implementation
+  - [x] Login endpoint implementation
   - [ ] Hardcoded test user
 - [ ] Basic license validation
   - Simple license key check

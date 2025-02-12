@@ -136,9 +136,11 @@ Create a git tag for the version (e.g., v0.2.0)
   - Request validation and error handling
   - Proper error mapping between core and API layers
   - Integration with BasicAuthProvider
-  - Comprehensive test coverage
+  - Comprehensive test coverage with mock repositories
   - CORS support for authentication endpoints
   - Structured logging with sensitive data masking
+  - Proper dependency injection for database access
+  - Unit tests for invalid credentials scenario
 - Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
 
 ### Changed
@@ -150,6 +152,21 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added dependency management guidelines to .cursorrules
   - Removed redundant version specifications in individual crates
   - Centralized feature configuration in workspace
+
+### Technical
+
+- Enhanced test infrastructure:
+  - Added mock repositories for unit testing
+  - Implemented proper dependency injection in tests
+  - Added test coverage for error scenarios
+  - Improved test isolation and maintainability
+  - Added structured test organization
+- Improved code quality:
+  - Fixed clippy warnings
+  - Added proper documentation
+  - Implemented proper error handling
+  - Added structured logging
+  - Improved type safety with proper imports
 
 ## [0.1.11] - 2024-03-27
 

@@ -33,6 +33,7 @@ dependencies = [
  "acci-core",
  "acci-db",
  "anyhow",
+ "async-trait",
  "axum",
  "bytes",
  "http-body-util",
@@ -46,6 +47,7 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

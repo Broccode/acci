@@ -6,6 +6,7 @@ pub mod error;
 pub mod middleware;
 pub mod routes;
 
+use acci_db::sqlx::PgPool;
 use axum::Router;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
@@ -16,6 +17,8 @@ use tower_http::trace::TraceLayer;
 pub struct ApiConfig {
     /// The address to bind the server to
     pub bind_address: SocketAddr,
+    /// Database connection pool
+    pub db_pool: PgPool,
 }
 
 /// Starts the API server with the given configuration
@@ -28,7 +31,7 @@ pub struct ApiConfig {
 pub async fn serve(config: ApiConfig) -> anyhow::Result<()> {
     let app = Router::new()
         .merge(routes::health::router())
-        .merge(routes::auth::router())
+        .merge(routes::auth::router(config.db_pool))
         .layer(TraceLayer::new_for_http())
         .layer(middleware::cors());
 
@@ -47,10 +50,15 @@ mod tests {
     use super::*;
     use std::net::IpAddr;
 
-    #[test]
-    fn test_api_config() {
+    #[tokio::test]
+    async fn test_api_config() {
         let addr = SocketAddr::new(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST), 8080);
-        let config = ApiConfig { bind_address: addr };
+        let pool = PgPool::connect_lazy("postgres://postgres:postgres@localhost:5432/test")
+            .expect("Failed to create database pool");
+        let config = ApiConfig {
+            bind_address: addr,
+            db_pool: pool,
+        };
 
         assert_eq!(config.bind_address.port(), 8080);
         assert_eq!(
@@ -62,7 +70,12 @@ mod tests {
     #[tokio::test]
     async fn test_router_setup() {
         let addr = SocketAddr::new(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST), 0);
-        let config = ApiConfig { bind_address: addr };
+        let pool = PgPool::connect_lazy("postgres://postgres:postgres@localhost:5432/test")
+            .expect("Failed to create database pool");
+        let config = ApiConfig {
+            bind_address: addr,
+            db_pool: pool,
+        };
 
         // Start server in background
         let server = tokio::spawn(serve(config));
