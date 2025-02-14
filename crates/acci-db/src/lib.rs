@@ -23,16 +23,45 @@ pub struct DbConfig {
     pub url: String,
     /// The maximum number of connections in the pool.
     pub max_connections: u32,
+    /// The minimum number of connections in the pool.
+    pub min_connections: u32,
     /// Connection timeout in seconds
-    pub connect_timeout: u64,
+    pub connect_timeout_seconds: u64,
+    /// Idle timeout in seconds
+    pub idle_timeout_seconds: u64,
+    /// Maximum lifetime in seconds
+    pub max_lifetime_seconds: u64,
+    /// The environment setting
+    pub environment: Environment,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Environment {
+    Development,
+    Test,
+    Production,
+}
+
+impl Default for Environment {
+    fn default() -> Self {
+        if cfg!(debug_assertions) {
+            Environment::Development
+        } else {
+            Environment::Production
+        }
+    }
 }
 
 impl Default for DbConfig {
     fn default() -> Self {
         Self {
-            url: "postgres://acci:development_only@localhost:5432/acci".to_string(),
+            url: "postgres://postgres:postgres@localhost:5432/postgres".to_string(),
             max_connections: 5,
-            connect_timeout: 30,
+            min_connections: 1,
+            connect_timeout_seconds: 10,
+            idle_timeout_seconds: 600,
+            max_lifetime_seconds: 1800,
+            environment: Environment::default(),
         }
     }
 }
@@ -55,12 +84,27 @@ impl Default for DbConfig {
 /// * The pool creation fails
 #[allow(clippy::missing_const_for_fn)]
 pub async fn create_pool(config: DbConfig) -> Result<PgPool> {
-    PgPoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(config.max_connections)
-        .acquire_timeout(Duration::from_secs(config.connect_timeout))
+        .min_connections(config.min_connections)
+        .acquire_timeout(Duration::from_secs(config.connect_timeout_seconds))
+        .idle_timeout(Duration::from_secs(config.idle_timeout_seconds))
+        .max_lifetime(Duration::from_secs(config.max_lifetime_seconds))
         .connect(&config.url)
-        .await
-        .map_err(Into::into)
+        .await?;
+
+    // Set environment in database session
+    let env_str = match config.environment {
+        Environment::Development => "development",
+        Environment::Test => "test",
+        Environment::Production => "production",
+    };
+    sqlx::query("SELECT set_config('app.environment', $1, false)")
+        .bind(env_str)
+        .execute(&pool)
+        .await?;
+
+    Ok(pool)
 }
 
 /// Runs all pending database migrations.
@@ -114,7 +158,11 @@ mod tests {
     fn test_db_config_default() {
         let config = DbConfig::default();
         assert_eq!(config.max_connections, 5);
-        assert_eq!(config.connect_timeout, 30);
+        assert_eq!(config.min_connections, 1);
+        assert_eq!(config.connect_timeout_seconds, 10);
+        assert_eq!(config.idle_timeout_seconds, 600);
+        assert_eq!(config.max_lifetime_seconds, 1800);
+        assert_eq!(config.environment, Environment::Development);
         assert!(config.url.contains("postgres://"));
     }
 
@@ -123,10 +171,18 @@ mod tests {
         let config = DbConfig {
             url: "postgres://custom:pass@localhost/db".to_string(),
             max_connections: 10,
-            connect_timeout: 60,
+            min_connections: 2,
+            connect_timeout_seconds: 60,
+            idle_timeout_seconds: 1200,
+            max_lifetime_seconds: 3600,
+            environment: Environment::Test,
         };
         assert_eq!(config.max_connections, 10);
-        assert_eq!(config.connect_timeout, 60);
+        assert_eq!(config.min_connections, 2);
+        assert_eq!(config.connect_timeout_seconds, 60);
+        assert_eq!(config.idle_timeout_seconds, 1200);
+        assert_eq!(config.max_lifetime_seconds, 3600);
+        assert_eq!(config.environment, Environment::Test);
         assert_eq!(config.url, "postgres://custom:pass@localhost/db");
     }
 }

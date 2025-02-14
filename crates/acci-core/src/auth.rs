@@ -1,3 +1,8 @@
+use anyhow::Result;
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -71,4 +76,66 @@ impl Default for AuthConfig {
             token_issuer: String::from("acci"),
         }
     }
+}
+
+/// Configuration for test users in development and testing environments
+#[derive(Debug, Clone)]
+pub struct TestUserConfig {
+    /// Whether test users are enabled
+    pub enabled: bool,
+    /// List of predefined test users
+    pub users: Vec<TestUser>,
+}
+
+/// Represents a predefined test user
+#[derive(Debug, Clone)]
+pub struct TestUser {
+    /// Email address of the test user
+    pub email: String,
+    /// Clear text password of the test user
+    pub password: String,
+    /// Full name of the test user
+    pub full_name: String,
+    /// Role of the test user (e.g., "admin", "user")
+    pub role: String,
+}
+
+impl Default for TestUserConfig {
+    fn default() -> Self {
+        Self {
+            enabled: cfg!(debug_assertions),
+            users: vec![
+                TestUser {
+                    email: "test.admin@example.com".to_string(),
+                    password: "test123!admin".to_string(),
+                    full_name: "Test Administrator".to_string(),
+                    role: "admin".to_string(),
+                },
+                TestUser {
+                    email: "test.user@example.com".to_string(),
+                    password: "test123!user".to_string(),
+                    full_name: "Test User".to_string(),
+                    role: "user".to_string(),
+                },
+            ],
+        }
+    }
+}
+
+/// Hash a password using Argon2
+///
+/// # Arguments
+///
+/// * `password` - The password to hash
+///
+/// # Returns
+///
+/// * `Result<String>` - The hashed password or an error
+pub fn hash_password(password: &str) -> Result<String> {
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    argon2
+        .hash_password(password.as_bytes(), &salt)
+        .map(|hash| hash.to_string())
+        .map_err(|e| anyhow::anyhow!("Password hashing failed: {}", e))
 }

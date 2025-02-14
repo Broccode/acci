@@ -78,11 +78,13 @@ name = "acci-core"
 version = "0.1.10"
 dependencies = [
  "anyhow",
+ "argon2",
  "async-trait",
  "pretty_assertions",
  "serde",
  "serde_json",
  "thiserror 2.0.11",
+ "time",
  "tokio",
  "tokio-test",
  "tracing",
@@ -126,6 +128,27 @@ dependencies = [
  "tokio-test",
  "tracing",
  "wasm-bindgen-test",
+]
+
+[[package]]
+name = "acci-tests"
+version = "0.1.0"
+dependencies = [
+ "acci-api",
+ "acci-auth",
+ "acci-core",
+ "acci-db",
+ "anyhow",
+ "async-trait",
+ "axum",
+ "serde_json",
+ "testcontainers",
+ "testcontainers-modules",
+ "time",
+ "tokio",
+ "tower",
+ "tower-http",
+ "uuid",
 ]
 
 [[package]]

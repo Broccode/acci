@@ -23,6 +23,10 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 uuid = { workspace = true }
 
+# External Dependencies
+time = { workspace = true }
+argon2 = { workspace = true }
+
 [dev-dependencies]
 tokio-test = { workspace = true }
 pretty_assertions = { workspace = true }

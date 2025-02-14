@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html fmt help
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html fmt help test-users-list test-users-reset test-users-clean
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -18,6 +18,9 @@ help:
 	@echo "  make coverage     - Generate LCOV coverage report"
 	@echo "  make coverage-html - Generate HTML coverage report"
 	@echo "  make fmt          - Format all code with rustfmt"
+	@echo "  make test-users-list  - List all test users"
+	@echo "  make test-users-reset - Reset test users to default configuration"
+	@echo "  make test-users-clean - Delete all test users"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -64,3 +67,12 @@ coverage-html:
 fmt:
 	cargo fmt --all --verbose
 	@echo "Code formatting complete."
+
+test-users-list:
+	(cd crates/acci-db && cargo run --bin test_users -- list)
+
+test-users-reset:
+	(cd crates/acci-db && cargo run --bin test_users -- reset)
+
+test-users-clean:
+	(cd crates/acci-db && cargo run --bin test_users -- clean)

@@ -43,6 +43,7 @@ members = [
     "crates/acci-db",
     "crates/acci-auth",
     "crates/acci-frontend",
+    "tests",
 ]
 
 [workspace.package]

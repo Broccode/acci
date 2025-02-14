@@ -16,6 +16,14 @@ path = "src/lib.rs"
 name = "acci-db"
 path = "src/bin/acci-db.rs"
 
+[[bin]]
+name = "migrate"
+path = "src/bin/migrate.rs"
+
+[[bin]]
+name = "test_users"
+path = "src/bin/test_users.rs"
+
 [dependencies]
 # Workspace Dependencies
 tokio = { workspace = true }

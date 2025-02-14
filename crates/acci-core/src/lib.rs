@@ -1,7 +1,7 @@
-//! Core functionality for the ACCI system.
+//! Core functionality for the ACCI system
 //!
-//! This crate provides the core types and traits that are used throughout the ACCI system.
-//! It defines the fundamental abstractions and interfaces that other crates build upon.
+//! This crate provides the core types, traits, and utilities used across the ACCI system.
+//! It includes authentication, error handling, and other fundamental components.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
