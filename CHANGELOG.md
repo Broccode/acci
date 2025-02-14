@@ -160,9 +160,21 @@ Create a git tag for the version (e.g., v0.2.0)
   - Proper dependency injection for database access ✅
   - Unit tests for invalid credentials scenario ✅
 - Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
+- Added test-users make targets for managing test users in development:
+  - test-users-list: List all test users and their status
+  - test-users-reset: Reset test users to default configuration
+  - test-users-clean: Delete all test users
 
 ### Changed
 
+- Updated project description to correctly reflect ACCI as an enterprise application framework rather than just a license management system:
+  - Updated README.md in all languages (EN, DE, SQ)
+  - Adjusted feature descriptions to show license management as one of many features
+  - Maintained consistent terminology across all documentation
+- Restructured milestone M3.4 to better reflect the role of license management as a feature:
+  - Renamed from "License Management System" to "Enterprise Features and License Management"
+  - Adjusted subtasks to align with the framework's broader scope
+  - Updated task descriptions to maintain consistency with overall architecture
 - Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
 - Improved dependency management:
   - Moved all dependency definitions to workspace level
@@ -191,6 +203,13 @@ Create a git tag for the version (e.g., v0.2.0)
   - Fixed import resolution for OsRng in auth tests
   - Resolved version conflicts in rand and rand_core dependencies
   - Updated getrandom to version 0.3.1 for better compatibility
+- Fixed cyclic dependency between acci-auth and acci-db:
+  - Removed direct dependency from acci-db to acci-auth
+  - Moved password hashing functionality to acci-core
+  - Improved crate architecture by centralizing core functionality
+- Fixed dependency configuration in acci-db:
+  - Added acci-auth dependency for test-users binary
+  - Resolved import resolution for password hashing functionality
 
 ## [0.1.11] - 2024-03-27
 

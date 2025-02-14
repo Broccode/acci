@@ -1,16 +1,17 @@
-# ACCI - Enterprise License Management System
+# ACCI - Enterprise Application Framework
 
 [English](#english) | [Deutsch](#deutsch) | [Shqip](#shqip)
 
 ## English
 
-ACCI is a robust, enterprise-grade license management system built with Rust, designed to handle complex licensing scenarios across multiple tenants. It provides secure, scalable, and efficient license management capabilities for modern software applications.
+ACCI is a robust, enterprise-grade application framework built with Rust, designed to handle complex business scenarios across multiple tenants. It provides secure, scalable, and efficient capabilities for modern software applications, including license management, authentication, and other enterprise features.
 
 ### Key Features
 
-- Multi-tenant license management
+- Multi-tenant architecture
 - Role-based access control (RBAC)
 - Enterprise-grade security
+- License management system
 - Comprehensive API (REST & GraphQL)
 - Advanced monitoring and observability
 - Containerized deployment ready
@@ -39,13 +40,14 @@ For detailed setup instructions and documentation, visit our [documentation](doc
 
 ## Deutsch
 
-ACCI ist ein robustes, Enterprise-taugliches Lizenzverwaltungssystem, das mit Rust entwickelt wurde und komplexe Lizenzierungsszenarien über mehrere Mandanten hinweg verwalten kann. Es bietet sichere, skalierbare und effiziente Lizenzverwaltungsfunktionen für moderne Softwareanwendungen.
+ACCI ist ein robustes, Enterprise-taugliches Anwendungsframework, das mit Rust entwickelt wurde und komplexe Geschäftsszenarien über mehrere Mandanten hinweg verwalten kann. Es bietet sichere, skalierbare und effiziente Funktionen für moderne Softwareanwendungen, einschließlich Lizenzverwaltung, Authentifizierung und andere Enterprise-Funktionen.
 
 ### Hauptfunktionen
 
-- Mandantenfähige Lizenzverwaltung
+- Mandantenfähige Architektur
 - Rollenbasierte Zugriffskontrolle (RBAC)
 - Enterprise-Grade Sicherheit
+- Lizenzverwaltungssystem
 - Umfassende API (REST & GraphQL)
 - Fortschrittliches Monitoring
 - Container-basierte Bereitstellung
@@ -74,13 +76,14 @@ Detaillierte Einrichtungsanweisungen und Dokumentation finden Sie in unserer [Do
 
 ## Shqip
 
-ACCI është një sistem i fuqishëm i menaxhimit të licencave të ndërmarrjeve, i ndërtuar me Rust, i projektuar për të trajtuar skenarë kompleksë të licencimit në shumë qiramarrës. Ai ofron mundësi të sigurta, të shkallëzueshme dhe efikase të menaxhimit të licencave për aplikacionet moderne të softuerit.
+ACCI është një framework i fuqishëm aplikacionesh në nivel ndërmarrjeje, i ndërtuar me Rust, i projektuar për të trajtuar skenarë kompleksë biznesi në shumë qiramarrës. Ai ofron mundësi të sigurta, të shkallëzueshme dhe efikase për aplikacionet moderne të softuerit, duke përfshirë menaxhimin e licencave, vërtetimin dhe karakteristika të tjera të ndërmarrjes.
 
 ### Veçoritë Kryesore
 
-- Menaxhimi i licencave me shumë qiramarrës
+- Arkitekturë me shumë qiramarrës
 - Kontrolli i qasjes bazuar në role (RBAC)
 - Siguri e nivelit të ndërmarrjes
+- Sistem i menaxhimit të licencave
 - API gjithëpërfshirëse (REST & GraphQL)
 - Monitorim dhe vëzhgim i avancuar
 - Gati për vendosje të kontejnerizuar
