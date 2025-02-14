@@ -167,6 +167,7 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Changed
 
+- Removed unused migrate binary from acci-db crate to simplify the codebase
 - Updated project description to correctly reflect ACCI as an enterprise application framework rather than just a license management system:
   - Updated README.md in all languages (EN, DE, SQ)
   - Adjusted feature descriptions to show license management as one of many features
