@@ -120,6 +120,39 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.12] - 2024-03-28
+
+### Changed
+
+- Updated database migrations to use Argon2 instead of Blowfish for password hashing:
+  - Changed default admin user migration to use pre-computed Argon2 hash
+  - Updated test users migration to use pre-computed Argon2 hashes
+  - Ensured consistent password hashing across codebase
+- Removed unused migrate binary from acci-db crate to simplify the codebase
+- Updated project description to correctly reflect ACCI as an enterprise application framework rather than just a license management system:
+  - Updated README.md in all languages (EN, DE, SQ)
+  - Adjusted feature descriptions to show license management as one of many features
+  - Maintained consistent terminology across all documentation
+- Restructured milestone M3.4 to better reflect the role of license management as a feature:
+  - Renamed from "License Management System" to "Enterprise Features and License Management"
+  - Adjusted subtasks to align with the framework's broader scope
+  - Updated task descriptions to maintain consistency with overall architecture
+- Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
+- Improved dependency management:
+  - Moved all dependency definitions to workspace level
+  - Implemented strict workspace inheritance for shared dependencies
+  - Added dependency management guidelines to .cursorrules
+  - Removed redundant version specifications in individual crates
+  - Centralized feature configuration in workspace
+- Updated acci-db binary to use DATABASE_URL environment variable:
+  - Added proper environment variable handling
+  - Improved error messages and logging
+  - Added fallback to default configuration
+- Added missing documentation for Environment enum and variants
+- Moved auth integration tests from `acci-auth/tests` to central integration test suite
+- Fixed password hashing in auth integration tests
+- Cleaned up test module exports in integration tests
+
 ### Added
 
 - Added comprehensive README.md in three languages (EN, DE, SQ):
@@ -164,37 +197,6 @@ Create a git tag for the version (e.g., v0.2.0)
   - test-users-list: List all test users and their status
   - test-users-reset: Reset test users to default configuration
   - test-users-clean: Delete all test users
-
-### Changed
-
-- Updated database migrations to use Argon2 instead of Blowfish for password hashing:
-  - Changed default admin user migration to use pre-computed Argon2 hash
-  - Updated test users migration to use pre-computed Argon2 hashes
-  - Ensured consistent password hashing across codebase
-- Removed unused migrate binary from acci-db crate to simplify the codebase
-- Updated project description to correctly reflect ACCI as an enterprise application framework rather than just a license management system:
-  - Updated README.md in all languages (EN, DE, SQ)
-  - Adjusted feature descriptions to show license management as one of many features
-  - Maintained consistent terminology across all documentation
-- Restructured milestone M3.4 to better reflect the role of license management as a feature:
-  - Renamed from "License Management System" to "Enterprise Features and License Management"
-  - Adjusted subtasks to align with the framework's broader scope
-  - Updated task descriptions to maintain consistency with overall architecture
-- Updated milestone documentation to reflect authentication progress in all supported languages (EN, DE, SQ)
-- Improved dependency management:
-  - Moved all dependency definitions to workspace level
-  - Implemented strict workspace inheritance for shared dependencies
-  - Added dependency management guidelines to .cursorrules
-  - Removed redundant version specifications in individual crates
-  - Centralized feature configuration in workspace
-- Updated acci-db binary to use DATABASE_URL environment variable:
-  - Added proper environment variable handling
-  - Improved error messages and logging
-  - Added fallback to default configuration
-- Added missing documentation for Environment enum and variants
-- Moved auth integration tests from `acci-auth/tests` to central integration test suite
-- Fixed password hashing in auth integration tests
-- Cleaned up test module exports in integration tests
 
 ### Technical
 
