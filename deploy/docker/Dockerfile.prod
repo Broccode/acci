@@ -21,6 +21,9 @@ COPY crates/acci-auth/Cargo.toml ./crates/acci-auth/
 COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 
+# Remove tests from workspace members
+RUN sed -i 's/"tests",//' Cargo.toml
+
 # Create dummy source files for dependency build
 RUN mkdir -p crates/acci-core/src && \
     echo "pub fn dummy() {}" > crates/acci-core/src/lib.rs && \
