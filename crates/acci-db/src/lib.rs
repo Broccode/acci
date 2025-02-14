@@ -35,10 +35,15 @@ pub struct DbConfig {
     pub environment: Environment,
 }
 
+/// Represents the environment in which the application is running.
+/// This affects various behaviors like logging, error handling, and feature availability.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Environment {
+    /// Development environment with additional debugging and development features.
     Development,
+    /// Test environment for running automated tests.
     Test,
+    /// Production environment with optimized settings and security restrictions.
     Production,
 }
 

@@ -187,6 +187,11 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added dependency management guidelines to .cursorrules
   - Removed redundant version specifications in individual crates
   - Centralized feature configuration in workspace
+- Updated acci-db binary to use DATABASE_URL environment variable:
+  - Added proper environment variable handling
+  - Improved error messages and logging
+  - Added fallback to default configuration
+- Added missing documentation for Environment enum and variants
 
 ### Technical
 
