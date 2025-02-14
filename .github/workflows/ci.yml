@@ -46,10 +46,10 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run unit tests
-        run: cargo test --lib --bins --all-features
+        run: cargo test --lib --bins --all-features --workspace --exclude acci-tests
 
       - name: Run integration tests
-        run: cargo test --test '*' --all-features
+        run: cargo test -p acci-tests --lib --all-features
 
   security-audit:
     name: Security Audit
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -100,4 +100,4 @@ jobs:
         run: cargo install cargo-deny
 
       - name: Check licenses
-        run: cargo deny check licenses 
+        run: cargo deny check licenses
