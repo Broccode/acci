@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.18] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by adding missing root main.rs and proper documentation for all crates and functions
+
 ## [0.1.17] - 2024-03-28
 
 ### Fixed
