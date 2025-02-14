@@ -38,6 +38,7 @@ RUN mkdir -p crates/acci-core/src && \
     mkdir -p crates/acci-db/src/bin && \
     echo "fn main() {}" > crates/acci-db/src/bin/acci-db.rs && \
     echo "fn main() {}" > crates/acci-db/src/bin/hash_passwords.rs && \
+    echo "fn main() {}" > crates/acci-db/src/bin/test_users.rs && \
     mkdir -p crates/acci-frontend/src && \
     echo "pub fn dummy() {}" > crates/acci-frontend/src/lib.rs
 

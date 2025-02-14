@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.17] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by adding missing test_users.rs binary file for acci-db crate
+
 ## [0.1.16] - 2024-03-28
 
 ### Fixed
