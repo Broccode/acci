@@ -120,19 +120,19 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
-## [0.1.18] - 2024-03-28
+## [0.1.19] - 2024-03-28
 
 ### Fixed
 
-- Fixed Docker production build by adding missing root main.rs and proper documentation for all crates and functions
+- Fixed Docker production build by adding missing root main.rs file
 
-## [0.1.17] - 2024-03-28
+## [0.1.18] - 2024-03-28
 
 ### Fixed
 
 - Fixed Docker production build by adding missing test_users.rs binary file for acci-db crate
 
-## [0.1.16] - 2024-03-28
+## [0.1.17] - 2024-03-28
 
 ### Fixed
 
@@ -140,17 +140,23 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added main.rs and bin files for acci-db
   - Ensured all required source files are present for dependency resolution
 
-## [0.1.15] - 2024-03-28
+## [0.1.16] - 2024-03-28
 
 ### Fixed
 
 - Fixed Docker production build by adding missing lib.rs dummy file for acci-api crate
 
-## [0.1.14] - 2024-03-28
+## [0.1.15] - 2024-03-28
 
 ### Fixed
 
 - Fixed Docker production build by removing tests from workspace members in Dockerfile.prod
+
+## [0.1.14] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by excluding test workspace from release builds to prevent missing Cargo.toml errors
 
 ## [0.1.13] - 2024-03-28
 

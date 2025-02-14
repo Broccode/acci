@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "acci"
-version = "0.1.17"
+version = "0.1.19"
 dependencies = [
  "acci-api",
  "acci-auth",

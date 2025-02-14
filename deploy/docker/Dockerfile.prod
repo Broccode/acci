@@ -25,79 +25,25 @@ COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 RUN sed -i 's/"tests",//' Cargo.toml
 
 # Create dummy source files for dependency build
-RUN mkdir -p src && \
-    echo "//! ACCI - Enterprise Application Framework
-//!
-//! Main binary for the ACCI application.
+RUN mkdir -p src && echo "//! ACCI - Enterprise Application Framework\n//!\n//! Main binary for the ACCI application.\n\n/// Main entry point for the ACCI application\nfn main() {}" > src/main.rs
 
-/// Main entry point for the ACCI application
-fn main() {}" > src/main.rs && \
-    mkdir -p crates/acci-core/src && \
-    echo "//! ACCI Core - Core functionality for the ACCI framework
-//!
-//! This crate provides core functionality used across the ACCI framework.
-
-/// Dummy function for dependency resolution
-pub fn dummy() {}" > crates/acci-core/src/lib.rs && \
+# Create dummy source files for crates
+RUN mkdir -p crates/acci-core/src && \
+    echo "pub fn dummy() {}" > crates/acci-core/src/lib.rs && \
     mkdir -p crates/acci-api/src && \
-    echo "//! ACCI API - REST API implementation for the ACCI framework
-//!
-//! This crate provides the REST API implementation.
-
-/// Dummy function for dependency resolution
-pub fn dummy() {}" > crates/acci-api/src/lib.rs && \
-    echo "//! ACCI API Binary
-//!
-//! Main entry point for the API server.
-
-/// Main entry point
-fn main() {}" > crates/acci-api/src/main.rs && \
+    echo "pub fn dummy() {}" > crates/acci-api/src/lib.rs && \
+    echo "fn main() {}" > crates/acci-api/src/main.rs && \
     mkdir -p crates/acci-auth/src && \
-    echo "//! ACCI Auth - Authentication and Authorization
-//!
-//! This crate provides authentication and authorization functionality.
-
-/// Dummy function for dependency resolution
-pub fn dummy() {}" > crates/acci-auth/src/lib.rs && \
+    echo "pub fn dummy() {}" > crates/acci-auth/src/lib.rs && \
     mkdir -p crates/acci-db/src && \
-    echo "//! ACCI Database - Database access layer
-//!
-//! This crate provides database access functionality.
-
-/// Dummy function for dependency resolution
-pub fn dummy() {}" > crates/acci-db/src/lib.rs && \
-    echo "//! ACCI Database Binary
-//!
-//! Main entry point for database operations.
-
-/// Main entry point
-fn main() {}" > crates/acci-db/src/main.rs && \
+    echo "pub fn dummy() {}" > crates/acci-db/src/lib.rs && \
+    echo "fn main() {}" > crates/acci-db/src/main.rs && \
     mkdir -p crates/acci-db/src/bin && \
-    echo "//! ACCI Database CLI
-//!
-//! Command line interface for database management.
-
-/// Main entry point
-fn main() {}" > crates/acci-db/src/bin/acci-db.rs && \
-    echo "//! ACCI Password Hash Tool
-//!
-//! Tool for generating password hashes.
-
-/// Main entry point
-fn main() {}" > crates/acci-db/src/bin/hash_passwords.rs && \
-    echo "//! ACCI Test Users Tool
-//!
-//! Tool for managing test users.
-
-/// Main entry point
-fn main() {}" > crates/acci-db/src/bin/test_users.rs && \
+    echo "fn main() {}" > crates/acci-db/src/bin/acci-db.rs && \
+    echo "fn main() {}" > crates/acci-db/src/bin/hash_passwords.rs && \
+    echo "fn main() {}" > crates/acci-db/src/bin/test_users.rs && \
     mkdir -p crates/acci-frontend/src && \
-    echo "//! ACCI Frontend - Web frontend implementation
-//!
-//! This crate provides the web frontend implementation.
-
-/// Dummy function for dependency resolution
-pub fn dummy() {}" > crates/acci-frontend/src/lib.rs
+    echo "pub fn dummy() {}" > crates/acci-frontend/src/lib.rs
 
 # Build dependencies
 RUN cargo build --release --workspace --exclude tests
