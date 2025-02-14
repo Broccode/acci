@@ -120,6 +120,14 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.16] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by adding missing dummy files for all crates:
+  - Added main.rs and bin files for acci-db
+  - Ensured all required source files are present for dependency resolution
+
 ## [0.1.15] - 2024-03-28
 
 ### Fixed
