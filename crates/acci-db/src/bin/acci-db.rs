@@ -1,7 +1,7 @@
 //! CLI tool for managing the ACCI database.
 //! Provides commands for database migrations and maintenance.
 
-use acci_db::{create_pool, run_migrations, DbConfig, Environment};
+use acci_db::{create_pool, run_migrations, DbConfig};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::env;

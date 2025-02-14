@@ -124,13 +124,23 @@ impl Default for TestUserConfig {
 
 /// Hash a password using Argon2
 ///
+/// This function uses the Argon2 password hashing algorithm with default parameters
+/// to securely hash the provided password.
+///
 /// # Arguments
 ///
 /// * `password` - The password to hash
 ///
 /// # Returns
 ///
-/// * `Result<String>` - The hashed password or an error
+/// * `Result<String>` - The hashed password if successful
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * Password hashing fails due to invalid input
+/// * Memory allocation fails during hashing
+/// * The system fails to generate secure random salt
 pub fn hash_password(password: &str) -> Result<String> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();

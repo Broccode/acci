@@ -65,8 +65,8 @@ async fn test_default_admin_authentication() -> Result<()> {
     let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
 
     let credentials = Credentials {
-        username: "admin".to_string(),
-        password: "whiskey".to_string(),
+        username: "test.admin@example.com".to_string(),
+        password: "test123!admin".to_string(),
     };
 
     let result = auth_provider.authenticate(credentials).await;

@@ -1,3 +1,5 @@
+#![allow(clippy::large_stack_arrays)]
+
 //! Database functionality for the ACCI system.
 //!
 //! This crate provides database access and management functionality,
@@ -37,7 +39,7 @@ pub struct DbConfig {
 
 /// Represents the environment in which the application is running.
 /// This affects various behaviors like logging, error handling, and feature availability.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Environment {
     /// Development environment with additional debugging and development features.
     Development,
@@ -50,9 +52,9 @@ pub enum Environment {
 impl Default for Environment {
     fn default() -> Self {
         if cfg!(debug_assertions) {
-            Environment::Development
+            Self::Development
         } else {
-            Environment::Production
+            Self::Production
         }
     }
 }

@@ -221,6 +221,20 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added acci-auth dependency for test-users binary
   - Resolved import resolution for password hashing functionality
 
+### Fixed
+
+- Fixed test user password hashes in database migration to match the actual test user passwords
+- Added helper program to generate correct Argon2 password hashes
+- Fixed test targets in Makefile to properly separate unit and integration tests:
+  - test-unit now excludes acci-tests crate
+  - test-integration now correctly runs tests in acci-tests crate
+  - Fixed incorrect test pattern in integration test target
+- Fixed Clippy warnings:
+  - Added missing error documentation for hash_password function
+  - Added #[allow(clippy::large_stack_arrays)] at crate level for acci-db
+  - Added Eq implementation for Environment enum
+  - Used Self instead of type name in Environment::default implementation
+
 ## [0.1.11] - 2024-03-27
 
 ### Added

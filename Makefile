@@ -51,10 +51,10 @@ clippy:
 test: test-unit test-integration
 
 test-unit:
-	cargo test --lib --bins --all-features --workspace
+	cargo test --lib --bins --all-features --workspace --exclude acci-tests
 
 test-integration:
-	cargo test --test '*' --all-features
+	cargo test -p acci-tests --lib --all-features
 
 coverage:
 	cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
