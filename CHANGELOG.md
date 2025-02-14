@@ -120,6 +120,12 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.15] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by adding missing lib.rs dummy file for acci-api crate
+
 ## [0.1.14] - 2024-03-28
 
 ### Fixed

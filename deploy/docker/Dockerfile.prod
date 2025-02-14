@@ -28,6 +28,7 @@ RUN sed -i 's/"tests",//' Cargo.toml
 RUN mkdir -p crates/acci-core/src && \
     echo "pub fn dummy() {}" > crates/acci-core/src/lib.rs && \
     mkdir -p crates/acci-api/src && \
+    echo "pub fn dummy() {}" > crates/acci-api/src/lib.rs && \
     echo "fn main() {}" > crates/acci-api/src/main.rs && \
     mkdir -p crates/acci-auth/src && \
     echo "pub fn dummy() {}" > crates/acci-auth/src/lib.rs && \
