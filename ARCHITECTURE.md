@@ -67,14 +67,14 @@ ACCI is a multi-tenant **enterprise SaaS platform**. It provides:
 
 ```mermaid
 graph TD
-    User -->|Logs in| Frontend
-    Frontend -->|Requests| ACCI API
-    ACCI API -->|Processes| Business Logic
-    Business Logic -->|Stores Data| PostgreSQL
-    Business Logic -->|Caches Data| Redis
-    Business Logic -->|Sends Messages| RabbitMQ
-    Business Logic -->|Authenticates| Keycloak
-    Monitoring -->|Observes| OpenTelemetry
+    User[User] -->|Authenticates| Frontend[Frontend]
+    Frontend -->|API Requests| API[ACCI API]
+    API -->|Process| Logic[Business Logic]
+    Logic -->|Store| DB[(PostgreSQL)]
+    Logic -->|Cache| Cache[(Redis)]
+    Logic -->|Queue| MQ[RabbitMQ]
+    Logic -->|Auth| Auth[Keycloak]
+    Monitor[Monitoring] -->|Observe| Telemetry[OpenTelemetry]
 ```
 
 ---
