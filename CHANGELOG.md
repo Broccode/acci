@@ -120,6 +120,13 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed Docker production build by improving documentation and code structure:
+  - Added proper documentation comments for main.rs
+  - Improved dummy file creation with proper documentation
+  - Enhanced code organization in Dockerfile.prod
+
 ## [0.1.19] - 2024-03-28
 
 ### Fixed
