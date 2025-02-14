@@ -7,6 +7,11 @@ use anyhow::Result;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
 
 /// Sets up a test database with all migrations applied
+///
+/// # Returns
+/// * `Result<(Box<dyn std::any::Any>, PgPool)>` - A tuple containing:
+///   - The container handle (must be kept alive for the duration of the test)
+///   - The database connection pool
 pub async fn setup_database() -> Result<(Box<dyn std::any::Any>, PgPool)> {
     let container = postgres::Postgres::default().start().await?;
     let port = container.get_host_port_ipv4(5432).await?;
@@ -36,4 +41,23 @@ pub async fn setup_database() -> Result<(Box<dyn std::any::Any>, PgPool)> {
     run_migrations(&pool).await?;
 
     Ok((Box::new(container), pool))
+}
+
+/// Creates a test database configuration for a given port
+///
+/// # Arguments
+/// * `port` - The port number to use for the database connection
+///
+/// # Returns
+/// * `DbConfig` - The database configuration
+pub fn create_test_config(port: u16) -> DbConfig {
+    DbConfig {
+        url: format!("postgres://postgres:postgres@localhost:{}/postgres", port),
+        max_connections: 2,
+        connect_timeout_seconds: 5,
+        min_connections: 1,
+        idle_timeout_seconds: 300,
+        max_lifetime_seconds: 3600,
+        environment: acci_db::Environment::Test,
+    }
 }

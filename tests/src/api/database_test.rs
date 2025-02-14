@@ -9,7 +9,11 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, DbConfig, sqlx::PgPool)> {
     let config = DbConfig {
         url: format!("postgres://postgres:postgres@localhost:{}/postgres", port),
         max_connections: 2,
-        connect_timeout: 5,
+        connect_timeout_seconds: 5,
+        min_connections: 1,
+        idle_timeout_seconds: 300,
+        max_lifetime_seconds: 3600,
+        environment: acci_db::Environment::Test,
     };
 
     let pool = create_pool(config.clone()).await?;
@@ -55,7 +59,11 @@ async fn test_invalid_connection_config() {
     let invalid_config = DbConfig {
         url: "postgres://invalid:invalid@localhost:1234/nonexistent".to_string(),
         max_connections: 1,
-        connect_timeout: 1,
+        connect_timeout_seconds: 1,
+        min_connections: 1,
+        idle_timeout_seconds: 300,
+        max_lifetime_seconds: 3600,
+        environment: acci_db::Environment::Test,
     };
 
     let result = create_pool(invalid_config).await;
@@ -69,7 +77,7 @@ async fn test_connection_pool_limits() {
     // Create a new pool with limited connections
     let limited_config = DbConfig {
         max_connections: 1,
-        connect_timeout: 1,
+        connect_timeout_seconds: 1,
         ..config
     };
 

@@ -1,3 +1,4 @@
+use acci_api::{middleware, routes::health::HealthResponse};
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -5,8 +6,6 @@ use axum::{
 };
 use tower::ServiceExt;
 use tower_http::trace::TraceLayer;
-
-use acci_api::{middleware, routes::health::HealthResponse};
 
 #[allow(clippy::disallowed_methods)]
 #[tokio::test]

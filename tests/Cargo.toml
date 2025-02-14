@@ -3,14 +3,23 @@ name = "acci-tests"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "acci_tests"
+path = "src/lib.rs"
+
 [dependencies]
 acci-core = { path = "../crates/acci-core" }
 acci-db = { path = "../crates/acci-db" }
 acci-auth = { path = "../crates/acci-auth" }
+acci-api = { path = "../crates/acci-api" }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+axum = { workspace = true }
+serde_json = { workspace = true }
 time = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+tower = { workspace = true }
+tower-http = { workspace = true }
 uuid = { workspace = true }
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }
