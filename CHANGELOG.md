@@ -192,6 +192,9 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved error messages and logging
   - Added fallback to default configuration
 - Added missing documentation for Environment enum and variants
+- Moved auth integration tests from `acci-auth/tests` to central integration test suite
+- Fixed password hashing in auth integration tests
+- Cleaned up test module exports in integration tests
 
 ### Technical
 

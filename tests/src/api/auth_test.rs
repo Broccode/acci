@@ -1,23 +1,21 @@
 use acci_auth::providers::basic::BasicAuthProvider;
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, Credentials},
+    auth::{hash_password, AuthConfig, AuthProvider, Credentials},
     error::Error,
 };
-use acci_db::repositories::user::{CreateUser, User, UserRepository};
+use acci_db::repositories::user::{CreateUser, PgUserRepository, User, UserRepository};
 use std::sync::Arc;
-use uuid::Uuid;
 
-mod common;
-use common::mock::MockUserRepository;
+use crate::helpers::db::setup_database;
 
 async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), Error> {
     let password = "test_password";
-    let hash = "hashed_password".to_string(); // Simplified for testing
+    let hash = hash_password(password).map_err(|e| Error::internal(e.to_string()))?;
 
     let user = repo
         .create(CreateUser {
             email: "test@example.com".to_string(),
-            password_hash: hash.clone(),
+            password_hash: hash,
             full_name: "Test User".to_string(),
         })
         .await
@@ -28,7 +26,10 @@ async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), E
 
 #[tokio::test]
 async fn test_authenticate_valid_credentials() -> Result<(), Error> {
-    let repo = MockUserRepository::new();
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
     let config = AuthConfig::default();
     let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
 
@@ -47,7 +48,10 @@ async fn test_authenticate_valid_credentials() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_authenticate_invalid_password() -> Result<(), Error> {
-    let repo = MockUserRepository::new();
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
     let config = AuthConfig::default();
     let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
 
@@ -65,9 +69,12 @@ async fn test_authenticate_invalid_password() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
-    let repo = MockUserRepository::new();
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo), config);
+    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
 
     let credentials = Credentials {
         username: "nonexistent@example.com".to_string(),
