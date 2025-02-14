@@ -120,6 +120,8 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.13] - 2024-03-28
+
 ### Fixed
 
 - Fixed Docker production build by excluding test workspace from release builds to prevent missing Cargo.toml errors
