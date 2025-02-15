@@ -1,5 +1,7 @@
 # ACCI - Enterprise Application Framework
 
+[![Coverage Status](https://coveralls.io/repos/github/Broccode/acci/badge.svg?branch=master)](https://coveralls.io/github/Broccode/acci?branch=master)
+
 [English](#english) | [Deutsch](#deutsch) | [Shqip](#shqip)
 
 ## English
