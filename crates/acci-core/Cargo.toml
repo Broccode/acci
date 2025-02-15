@@ -14,8 +14,6 @@ path = "src/lib.rs"
 
 [dependencies]
 # Workspace Dependencies
-tokio = { workspace = true }
-tracing = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -24,12 +22,7 @@ async-trait = { workspace = true }
 uuid = { workspace = true }
 
 # External Dependencies
-time = { workspace = true }
 argon2 = { workspace = true }
-
-[dev-dependencies]
-tokio-test = { workspace = true }
-pretty_assertions = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints

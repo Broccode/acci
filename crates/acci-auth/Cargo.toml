@@ -18,23 +18,18 @@ acci-core = { workspace = true }
 acci-db = { workspace = true }
 
 # External Dependencies
-anyhow = { workspace = true }
 argon2 = { workspace = true }
 async-trait = { workspace = true }
 jsonwebtoken = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true }
-tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 async-trait = { workspace = true }
 time = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 uuid = { workspace = true }
-pretty_assertions = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints

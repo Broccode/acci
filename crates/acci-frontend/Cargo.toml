@@ -12,25 +12,5 @@ rust-version.workspace = true
 name = "acci_frontend"
 path = "src/lib.rs"
 
-[dependencies]
-# Workspace Dependencies
-tokio = { workspace = true }
-tracing = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
-leptos = { workspace = true }
-leptos_meta = { workspace = true }
-leptos_router = { workspace = true }
-
-# Internal Dependencies
-acci-core = { path = "../acci-core" }
-
-[dev-dependencies]
-tokio-test = { workspace = true }
-pretty_assertions = { workspace = true }
-wasm-bindgen-test = { workspace = true }
-
 [lints]
 workspace = true # Enable workspace-wide lints
