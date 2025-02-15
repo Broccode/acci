@@ -127,6 +127,10 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved dummy file creation with proper documentation
   - Enhanced code organization in Dockerfile.prod
 
+### Changed
+
+- Switched code coverage reporting from Codecov to Coveralls.io in CI pipeline for improved coverage tracking
+
 ## [0.1.19] - 2024-03-28
 
 ### Fixed
