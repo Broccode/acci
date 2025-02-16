@@ -177,10 +177,9 @@ impl BasicAuthProvider {
                         expires_at,
                     };
                     return Ok(session);
-                } else {
-                    error!("Invalid password for test user '{}'", test_user.email);
-                    return Err(Error::InvalidCredentials);
                 }
+                error!("Invalid password for test user '{}'", test_user.email);
+                return Err(Error::InvalidCredentials);
             }
         }
 
@@ -278,7 +277,7 @@ impl BasicAuthProvider {
     ///
     /// # Errors
     /// Returns an error if session invalidation fails.
-    async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
+    fn internal_logout(&self, session_id: Uuid) -> Result<(), Error> {
         self.invalidated_sessions
             .lock()
             .map_err(|e| Error::internal(format!("Failed to acquire lock: {e}")))?
@@ -302,7 +301,7 @@ impl AuthProvider for BasicAuthProvider {
     }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.logout(session_id).await
+        self.internal_logout(session_id)
     }
 }
 

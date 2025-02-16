@@ -3,16 +3,19 @@
 //! This tool provides commands to list, reset, and clean up test users in the database.
 //! It supports development and test environments.
 
+#![allow(clippy::large_stack_arrays)]
+
 use acci_core::auth::TestUserConfig;
 use acci_db::{create_pool, repositories::user::UserRepository, DbConfig, Environment};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::env;
 
+/// Command line arguments for the test users binary.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Database URL (overrides DATABASE_URL environment variable)
+    /// Database URL (overrides `DATABASE_URL` environment variable)
     #[arg(short, long)]
     database_url: Option<String>,
 
@@ -34,12 +37,14 @@ enum Commands {
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut config = DbConfig::default();
-    config.url = args
-        .database_url
-        .or_else(|| env::var("DATABASE_URL").ok())
-        .unwrap_or_else(|| "postgres://acci:development_only@localhost:5432/acci".to_string());
-    config.environment = Environment::Development;
+    let config = DbConfig {
+        url: args
+            .database_url
+            .or_else(|| env::var("DATABASE_URL").ok())
+            .unwrap_or_else(|| "postgres://acci:development_only@localhost:5432/acci".to_string()),
+        environment: Environment::Development,
+        ..Default::default()
+    };
 
     let pool = create_pool(config).await?;
     let repo = acci_db::repositories::user::PgUserRepository::new(pool);
@@ -50,11 +55,12 @@ async fn main() -> Result<()> {
             println!("Configured test users:");
             for user in test_config.users {
                 let exists = repo.get_by_email(&user.email).await?.is_some();
+                let status = if exists { "exists" } else { "missing" };
                 println!(
-                    "- {} ({}) [{}]",
-                    user.email,
-                    user.role,
-                    if exists { "exists" } else { "missing" }
+                    "- {email} ({role}) [{status}]",
+                    email = user.email,
+                    role = user.role,
+                    status = status
                 );
             }
         },
@@ -74,7 +80,7 @@ async fn main() -> Result<()> {
                     full_name: user.full_name,
                 })
                 .await?;
-                println!("Created test user: {}", user.email);
+                println!("Created test user: {email}", email = user.email);
             }
             println!("Test users reset successfully!");
         },
@@ -83,7 +89,7 @@ async fn main() -> Result<()> {
             for user in test_config.users {
                 if let Some(existing) = repo.get_by_email(&user.email).await? {
                     repo.delete(existing.id).await?;
-                    println!("Deleted test user: {}", user.email);
+                    println!("Deleted test user: {email}", email = user.email);
                 }
             }
             println!("Test users cleaned up successfully!");

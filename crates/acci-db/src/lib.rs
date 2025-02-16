@@ -1,9 +1,9 @@
 #![allow(clippy::large_stack_arrays)]
 
-//! Database functionality for the ACCI system.
+//! Database module for the ACCI system.
 //!
-//! This crate provides database access and management functionality,
-//! including connection pooling, migrations, and repository implementations.
+//! This module provides database access and management functionality,
+//! including models, repositories, and database configuration.
 
 use anyhow::Result;
 use sqlx::postgres::{PgPool, PgPoolOptions};
@@ -11,7 +11,9 @@ use std::time::Duration;
 use thiserror::Error;
 
 mod error;
+/// Data models representing the core entities in the system.
 pub mod models;
+/// Repository implementations for database operations.
 pub mod repositories;
 
 pub use error::DbError;
@@ -157,8 +159,10 @@ pub async fn test_connection(pool: &PgPool) -> Result<bool> {
     Ok(result.one == Some(1))
 }
 
-#[derive(Debug, Error)]
+/// Represents errors that can occur during database operations.
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Represents database-specific errors from `SQLx`.
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 }

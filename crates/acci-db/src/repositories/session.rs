@@ -1,27 +1,82 @@
 use async_trait::async_trait;
 use sqlx::PgPool;
-use time::OffsetDateTime;
 use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::models::session::Session;
 use crate::Error;
 
+/// Defines the interface for managing user sessions in the database.
+///
+/// This trait provides methods for creating, retrieving, and managing user sessions,
+/// including cleanup of expired sessions.
 #[async_trait]
 pub trait SessionRepository: Send + Sync {
+    /// Creates a new session in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `session` - The session to create
+    ///
+    /// # Returns
+    ///
+    /// The created session with its database-assigned ID
     async fn create_session(&self, session: &Session) -> Result<Session, Error>;
+
+    /// Retrieves a session by its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The unique identifier of the session to retrieve
+    ///
+    /// # Returns
+    ///
+    /// The session if found, None otherwise
     async fn get_session(&self, session_id: Uuid) -> Result<Option<Session>, Error>;
+
+    /// Retrieves all sessions for a specific user.
+    ///
+    /// # Arguments
+    ///
+    /// * `user_id` - The ID of the user whose sessions to retrieve
+    ///
+    /// # Returns
+    ///
+    /// A vector of all sessions belonging to the user
     async fn get_user_sessions(&self, user_id: Uuid) -> Result<Vec<Session>, Error>;
+
+    /// Deletes a specific session.
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The ID of the session to delete
     async fn delete_session(&self, session_id: Uuid) -> Result<(), Error>;
+
+    /// Removes all expired sessions from the database.
+    ///
+    /// # Returns
+    ///
+    /// The number of sessions that were deleted
     async fn delete_expired_sessions(&self) -> Result<u64, Error>;
 }
 
+/// PostgreSQL implementation of the `SessionRepository` trait.
+///
+/// This implementation uses `SQLx` to interact with a PostgreSQL database
+/// for session management.
+#[derive(Debug)]
 pub struct PgSessionRepository {
     pool: PgPool,
 }
 
 impl PgSessionRepository {
-    pub fn new(pool: PgPool) -> Self {
+    /// Creates a new PostgreSQL session repository instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `pool` - The database connection pool to use
+    #[must_use]
+    pub const fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

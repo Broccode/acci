@@ -284,14 +284,14 @@ impl UserRepository for PgUserRepository {
     }
 }
 
-/// Mock implementation of the `UserRepository` trait for testing.
-#[derive(Debug)]
+/// A mock implementation of the `UserRepository` trait for testing purposes.
+#[derive(Debug, Default)]
 pub struct MockUserRepository {}
 
 impl MockUserRepository {
-    /// Creates a new `MockUserRepository` instance.
+    /// Creates a new instance of the mock repository.
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 }

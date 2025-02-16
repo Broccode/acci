@@ -2,16 +2,36 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+/// Represents a user in the system.
+///
+/// A user is an entity that can authenticate and interact with the system.
+/// It stores basic user information and authentication details.
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
+    /// Unique identifier for the user
     pub user_id: Uuid,
+    /// Username used for authentication
     pub username: String,
+    /// Hashed password for secure authentication
     pub password_hash: String,
+    /// Timestamp when the user account was created
     pub created_at: DateTime<Utc>,
+    /// Timestamp when the user account was last updated
     pub updated_at: DateTime<Utc>,
 }
 
 impl User {
+    /// Creates a new user with the specified username and password hash.
+    ///
+    /// # Arguments
+    ///
+    /// * `username` - The username for the new user
+    /// * `password_hash` - The pre-hashed password for the user
+    ///
+    /// # Returns
+    ///
+    /// A new user instance with a randomly generated user ID and current timestamps
+    #[must_use]
     pub fn new(username: String, password_hash: String) -> Self {
         let now = Utc::now();
         Self {

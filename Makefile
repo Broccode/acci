@@ -53,7 +53,7 @@ sqlx-prepare:
 	done
 
 clippy:
-	cargo clippy --lib --bins --all-features -- -D warnings
+	cargo clippy --workspace --lib --bins --fix --allow-dirty --allow-staged --all-features -- -D warnings
 
 test: test-unit test-integration
 
@@ -73,7 +73,18 @@ coverage-html:
 
 fmt:
 	cargo fmt --all --verbose
+	find . -name "*.rs" -not -path "./target/*" -not -path "*/target/*" -exec rustfmt --edition 2021 {} +
 	@echo "Code formatting complete."
+
+fix:
+	cargo fix --broken-code --allow-dirty --allow-staged --workspace --all-targets --all-features
+	@echo "Code fixing complete."
+
+prepare-commit:
+	$(MAKE) fmt
+	$(MAKE) fix
+	$(MAKE) clippy
+	$(MAKE) test-unit
 
 test-users-list:
 	DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run -p acci-db --bin test_users -- list
