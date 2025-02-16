@@ -68,7 +68,8 @@ pub trait UserRepository: Send + Sync + std::fmt::Debug {
 /// PostgreSQL implementation of the `UserRepository` trait.
 #[derive(Debug, Clone)]
 pub struct PgUserRepository {
-    pool: PgPool,
+    /// The database connection pool.
+    pub pool: PgPool,
 }
 
 impl PgUserRepository {
@@ -280,6 +281,48 @@ impl UserRepository for PgUserRepository {
         .await?;
 
         Ok(result.rows_affected() > 0)
+    }
+}
+
+/// Mock implementation of the `UserRepository` trait for testing.
+#[derive(Debug)]
+pub struct MockUserRepository {}
+
+impl MockUserRepository {
+    /// Creates a new `MockUserRepository` instance.
+    #[must_use]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait]
+impl UserRepository for MockUserRepository {
+    async fn get_by_email(&self, _email: &str) -> Result<Option<User>> {
+        Ok(None)
+    }
+
+    async fn create(&self, _user: CreateUser) -> Result<User> {
+        Ok(User {
+            id: Uuid::new_v4(),
+            email: "mock@example.com".to_string(),
+            password_hash: "mock_hash".to_string(),
+            full_name: "Mock User".to_string(),
+            created_at: OffsetDateTime::now_utc(),
+            updated_at: OffsetDateTime::now_utc(),
+        })
+    }
+
+    async fn update(&self, _id: Uuid, _user: UpdateUser) -> Result<Option<User>> {
+        Ok(None)
+    }
+
+    async fn delete(&self, _id: Uuid) -> Result<bool> {
+        Ok(true)
+    }
+
+    async fn get_by_id(&self, _id: Uuid) -> Result<Option<User>> {
+        Ok(None)
     }
 }
 

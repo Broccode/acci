@@ -2,25 +2,26 @@
 //! It is used to ensure that the passwords are hashed correctly before they are stored in the database.
 //! It is also used to verify that the passwords are hashed correctly after they are retrieved from the database.
 
-use acci_core::auth::{hash_password, TestUserConfig};
+use acci_core::auth::TestUserConfig;
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2,
+};
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() {
     let test_config = TestUserConfig::default();
+    let argon2 = Argon2::default();
 
-    // Generate hash for admin user
-    let admin = &test_config.users[0];
-    let admin_hash = hash_password(&admin.password)?;
-    println!("Admin user ({}):", admin.email);
-    println!("Password: {}", admin.password);
-    println!("Hash: {}\n", admin_hash);
+    for user in test_config.users {
+        let salt = SaltString::generate(&mut OsRng);
+        let hash = argon2
+            .hash_password(user.password.as_bytes(), &salt)
+            .unwrap()
+            .to_string();
 
-    // Generate hash for regular user
-    let user = &test_config.users[1];
-    let user_hash = hash_password(&user.password)?;
-    println!("Regular user ({}):", user.email);
-    println!("Password: {}", user.password);
-    println!("Hash: {}", user_hash);
-
-    Ok(())
+        println!("-- User: {}", user.email);
+        println!("-- Password: {}", user.password);
+        println!("-- Hash: {}", hash);
+        println!();
+    }
 }

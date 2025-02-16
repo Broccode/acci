@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "acci"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "anyhow",
  "tokio",
@@ -75,12 +75,14 @@ version = "0.1.10"
 dependencies = [
  "acci-core",
  "anyhow",
+ "argon2",
  "async-trait",
  "clap",
  "sqlx",
  "thiserror",
  "time",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

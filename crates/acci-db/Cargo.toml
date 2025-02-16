@@ -2,11 +2,8 @@
 name = "acci-db"
 version.workspace = true
 edition.workspace = true
-authors.workspace = true
 description.workspace = true
 license.workspace = true
-repository.workspace = true
-rust-version.workspace = true
 
 [lib]
 name = "acci_db"
@@ -20,6 +17,10 @@ path = "src/bin/acci-db.rs"
 name = "test_users"
 path = "src/bin/test_users.rs"
 
+[[bin]]
+name = "hash_passwords"
+path = "src/bin/hash_passwords.rs"
+
 [dependencies]
 # Workspace Dependencies
 tokio = { workspace = true }
@@ -29,12 +30,14 @@ sqlx = { workspace = true, features = ["time", "chrono"] }
 clap = { workspace = true }
 
 # Internal Dependencies
-acci-core = { path = "../acci-core" }
+acci-core = { workspace = true }
 
 # External Dependencies
 uuid = { workspace = true }
 time = { workspace = true }
 async-trait = { workspace = true }
+argon2 = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints

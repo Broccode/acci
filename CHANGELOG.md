@@ -118,44 +118,39 @@ Commit all changes with message "release: Version X.Y.Z"
 
 Create a git tag for the version (e.g., v0.2.0)
 
-## [Unreleased]
+## [0.1.21] - 2024-03-28
+
+### Added
+
+- Test user configuration in acci-core
+- Database migration for predefined test users
+- Password hash generation tool in acci-db
+- Mock repository implementation for integration testing
+- Comprehensive test coverage for test user authentication
+
+### Fixed
+
+- Session invalidation and concurrent sessions
+- Case-sensitive email search in user repository
+
+### Changed
+
+- Improved documentation and code structure
+- Switched code coverage reporting from Codecov to Coveralls.io
 
 ## [0.1.20] - 2024-03-28
 
 ### Fixed
 
-- Fixed Docker production build by improving documentation and code structure:
-  - Added proper documentation comments for main.rs
-  - Improved dummy file creation with proper documentation
-  - Enhanced code organization in Dockerfile.prod
-- Fixed password hashing in acci-core by adding rand_core dependency with getrandom feature
-- Fixed case-sensitive email search in user repository by using ILIKE instead of = in SQL query
-- Fixed session invalidation in auth provider:
-  - Added proper token blacklist using HashSet in Arc<Mutex>
-  - Improved session ID extraction and validation
-  - Added comprehensive test coverage for logout and concurrent sessions
-
-### Changed
-
-- Switched code coverage reporting from Codecov to Coveralls.io in CI pipeline for improved coverage tracking
-- Improved test coverage in auth provider:
-  - Added test for non-existent user authentication using mock repository
-  - Removed unused imports and dead code
-  - Enhanced mock repository implementation
+- Fixed Docker production build by adding missing root main.rs file
 
 ## [0.1.19] - 2024-03-28
 
 ### Fixed
 
-- Fixed Docker production build by adding missing root main.rs file
-
-## [0.1.18] - 2024-03-28
-
-### Fixed
-
 - Fixed Docker production build by adding missing test_users.rs binary file for acci-db crate
 
-## [0.1.17] - 2024-03-28
+## [0.1.18] - 2024-03-28
 
 ### Fixed
 
@@ -163,17 +158,23 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added main.rs and bin files for acci-db
   - Ensured all required source files are present for dependency resolution
 
-## [0.1.16] - 2024-03-28
+## [0.1.17] - 2024-03-28
 
 ### Fixed
 
 - Fixed Docker production build by adding missing lib.rs dummy file for acci-api crate
 
-## [0.1.15] - 2024-03-28
+## [0.1.16] - 2024-03-28
 
 ### Fixed
 
 - Fixed Docker production build by removing tests from workspace members in Dockerfile.prod
+
+## [0.1.15] - 2024-03-28
+
+### Fixed
+
+- Fixed Docker production build by excluding test workspace from release builds to prevent missing Cargo.toml errors
 
 ## [0.1.14] - 2024-03-28
 

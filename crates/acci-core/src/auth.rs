@@ -79,7 +79,7 @@ impl Default for AuthConfig {
     }
 }
 
-/// Configuration for test users in development and testing environments
+/// Configuration for test users in development and test environments
 #[derive(Debug, Clone)]
 pub struct TestUserConfig {
     /// Whether test users are enabled
@@ -88,7 +88,7 @@ pub struct TestUserConfig {
     pub users: Vec<TestUser>,
 }
 
-/// Represents a predefined test user
+/// Represents a test user for development and testing
 #[derive(Debug, Clone)]
 pub struct TestUser {
     /// Email address of the test user
@@ -104,7 +104,10 @@ pub struct TestUser {
 impl Default for TestUserConfig {
     fn default() -> Self {
         Self {
-            enabled: cfg!(debug_assertions),
+            #[cfg(debug_assertions)]
+            enabled: true,
+            #[cfg(not(debug_assertions))]
+            enabled: false,
             users: vec![
                 TestUser {
                     email: "test.admin@example.com".to_string(),

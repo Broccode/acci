@@ -1,7 +1,7 @@
 #![allow(clippy::large_stack_arrays)]
 
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials},
+    auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials, TestUserConfig},
     error::Error,
 };
 use acci_db::repositories::user::UserRepository;
@@ -155,6 +155,34 @@ impl BasicAuthProvider {
     #[instrument(skip(self, credentials), fields(username = %credentials.username))]
     async fn authenticate(&self, credentials: Credentials) -> Result<AuthSession, Error> {
         debug!("Attempting authentication for user");
+
+        let test_config = TestUserConfig::default();
+        if test_config.enabled {
+            if let Some(test_user) = test_config
+                .users
+                .iter()
+                .find(|u| u.email == credentials.username)
+            {
+                if test_user.password == credentials.password {
+                    info!("Test User '{}' successfully authenticated", test_user.email);
+                    let user_id = Uuid::new_v4();
+                    let (token, created_at, expires_at) =
+                        Self::create_token(user_id, &self.config)?;
+
+                    let session = AuthSession {
+                        session_id: self.extract_session_id(&token)?,
+                        user_id,
+                        token,
+                        created_at,
+                        expires_at,
+                    };
+                    return Ok(session);
+                } else {
+                    error!("Invalid password for test user '{}'", test_user.email);
+                    return Err(Error::InvalidCredentials);
+                }
+            }
+        }
 
         let user = match self.user_repo.get_by_email(&credentials.username).await {
             Ok(Some(user)) => user,
