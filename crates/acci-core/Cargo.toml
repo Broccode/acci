@@ -20,6 +20,7 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 uuid = { workspace = true }
+rand_core = { workspace = true }
 
 # External Dependencies
 argon2 = { workspace = true }
