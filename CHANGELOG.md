@@ -598,3 +598,20 @@ Create a git tag for the version (e.g., v0.2.0)
 
 - Fixed SBOM generation in CI pipeline by correcting cargo-cyclonedx command syntax
 - Fixed Clippy lint group priorities for pedantic and nursery groups
+
+## [Unreleased]
+
+### Fixed
+
+- Improved database initialization and migrations:
+  - Schema and extensions are now created in the first migration
+  - Ensured correct migration order
+  - Sessions table is created in the correct schema
+  - UUID generation explicitly uses public schema
+  - Enhanced error handling during database initialization
+  - Applied DRY principle in Makefile by using existing targets
+
+### Changed
+
+- Switched from `chrono::DateTime<Utc>` to `time::OffsetDateTime` for better SQLx compatibility
+- Unified database commands in Makefile

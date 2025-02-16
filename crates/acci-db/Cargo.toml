@@ -28,6 +28,8 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 sqlx = { workspace = true, features = ["time", "chrono"] }
 clap = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
 
 # Internal Dependencies
 acci-core = { workspace = true }
@@ -41,3 +43,7 @@ tracing = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+futures = { workspace = true }

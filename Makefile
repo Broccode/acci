@@ -37,15 +37,19 @@ db-reset:
 	docker compose -f deploy/docker/docker-compose.dev.yml down -v
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d db
 	sleep 3
-	(cd crates/acci-db && SQLX_OFFLINE=true cargo run --bin acci-db -- reset)
+	(cd crates/acci-db && cargo sqlx database reset -y -f --database-url postgres://acci:development_only@localhost:5432/acci)
+	$(MAKE) sqlx-prepare
+	$(MAKE) test-users-reset
 
 db-migrate:
-	(cd crates/acci-db && SQLX_OFFLINE=true DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run --bin acci-db -- migrate)
+	(cd crates/acci-db && cargo sqlx migrate run --database-url postgres://acci:development_only@localhost:5432/acci)
+	$(MAKE) sqlx-prepare
+	$(MAKE) test-users-reset
 
 sqlx-prepare:
 	@for pkg in acci-api acci-auth acci-core acci-db; do \
 		echo "Preparing SQLx queries for package $$pkg"; \
-		cargo sqlx prepare --workspace -- --manifest-path crates/$$pkg/Cargo.toml --all-targets || exit $$?; \
+		cargo sqlx prepare --workspace --database-url postgres://acci:development_only@localhost:5432/acci -- --manifest-path crates/$$pkg/Cargo.toml --all-targets || exit $$?; \
 	done
 
 clippy:
@@ -72,10 +76,10 @@ fmt:
 	@echo "Code formatting complete."
 
 test-users-list:
-	(cd crates/acci-db && cargo run --bin test_users -- list)
+	DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run -p acci-db --bin test_users -- list
 
 test-users-reset:
-	(cd crates/acci-db && cargo run --bin test_users -- reset)
+	DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run -p acci-db --bin test_users -- reset
 
 test-users-clean:
-	(cd crates/acci-db && cargo run --bin test_users -- clean)
+	DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run -p acci-db --bin test_users -- clean

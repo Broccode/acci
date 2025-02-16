@@ -7,11 +7,12 @@ use acci_core::auth::TestUserConfig;
 use acci_db::{create_pool, repositories::user::UserRepository, DbConfig, Environment};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::env;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Database URL
+    /// Database URL (overrides DATABASE_URL environment variable)
     #[arg(short, long)]
     database_url: Option<String>,
 
@@ -34,9 +35,10 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     let mut config = DbConfig::default();
-    if let Some(url) = args.database_url {
-        config.url = url;
-    }
+    config.url = args
+        .database_url
+        .or_else(|| env::var("DATABASE_URL").ok())
+        .unwrap_or_else(|| "postgres://acci:development_only@localhost:5432/acci".to_string());
     config.environment = Environment::Development;
 
     let pool = create_pool(config).await?;

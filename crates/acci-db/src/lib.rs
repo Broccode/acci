@@ -8,8 +8,10 @@
 use anyhow::Result;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
+use thiserror::Error;
 
 mod error;
+pub mod models;
 pub mod repositories;
 
 pub use error::DbError;
@@ -154,6 +156,15 @@ pub async fn test_connection(pool: &PgPool) -> Result<bool> {
 
     Ok(result.one == Some(1))
 }
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+}
+
+pub use models::Session;
+pub use repositories::SessionRepository;
 
 #[cfg(test)]
 mod tests {

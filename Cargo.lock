@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "acci-api"
-version = "0.1.10"
+version = "0.1.21"
 dependencies = [
  "acci-auth",
  "acci-core",
@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "acci-auth"
-version = "0.1.10"
+version = "0.1.21"
 dependencies = [
  "acci-core",
  "acci-db",
@@ -57,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "acci-core"
-version = "0.1.10"
+version = "0.1.21"
 dependencies = [
  "anyhow",
  "argon2",
@@ -71,13 +71,16 @@ dependencies = [
 
 [[package]]
 name = "acci-db"
-version = "0.1.10"
+version = "0.1.21"
 dependencies = [
  "acci-core",
  "anyhow",
  "argon2",
  "async-trait",
+ "chrono",
  "clap",
+ "futures",
+ "serde",
  "sqlx",
  "thiserror",
  "time",
@@ -88,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "acci-frontend"
-version = "0.1.10"
+version = "0.1.21"
 
 [[package]]
 name = "acci-tests"
@@ -459,8 +462,10 @@ checksum = "7e36cc9d416881d2e24f9a963be5fb1cd90966419ac844274161d10488b3e825"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 

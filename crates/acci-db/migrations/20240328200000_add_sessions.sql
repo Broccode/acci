@@ -1,15 +1,26 @@
--- Add sessions table
-CREATE TABLE sessions (
-    session_id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
+-- Set search path
+SET search_path TO public, acci;
+
+-- Create sessions table
+CREATE TABLE acci.sessions (
+    session_id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES acci.users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMPTZ NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    expires_at TIMESTAMPTZ NOT NULL
 );
 
--- Add index for user_id lookups
-CREATE INDEX sessions_user_id_idx ON sessions (user_id);
+-- Create indexes
+CREATE INDEX sessions_user_id_idx ON acci.sessions (user_id);
+CREATE INDEX sessions_expires_at_idx ON acci.sessions (expires_at);
 
----- create above / drop below ----
-
-DROP TABLE sessions;
+-- Create cleanup function
+CREATE OR REPLACE FUNCTION acci.cleanup_expired_sessions()
+RETURNS INTEGER AS $$
+DECLARE
+    deleted INTEGER;
+BEGIN
+    DELETE FROM acci.sessions WHERE expires_at < NOW();
+    GET DIAGNOSTICS deleted = ROW_COUNT;
+    RETURN deleted;
+END;
+$$ LANGUAGE plpgsql;

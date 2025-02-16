@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use sqlx::PgPool;
+use time::OffsetDateTime;
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -31,7 +31,7 @@ impl SessionRepository for PgSessionRepository {
     async fn create_session(&self, session: &Session) -> Result<Session, Error> {
         sqlx::query!(
             r#"
-            INSERT INTO sessions (session_id, user_id, created_at, expires_at)
+            INSERT INTO acci.sessions (session_id, user_id, created_at, expires_at)
             VALUES ($1, $2, $3, $4)
             "#,
             session.session_id,
@@ -55,7 +55,7 @@ impl SessionRepository for PgSessionRepository {
             Session,
             r#"
             SELECT session_id, user_id, created_at, expires_at
-            FROM sessions
+            FROM acci.sessions
             WHERE session_id = $1
             "#,
             session_id
@@ -78,7 +78,7 @@ impl SessionRepository for PgSessionRepository {
             Session,
             r#"
             SELECT session_id, user_id, created_at, expires_at
-            FROM sessions
+            FROM acci.sessions
             WHERE user_id = $1
             "#,
             user_id
@@ -97,7 +97,7 @@ impl SessionRepository for PgSessionRepository {
     async fn delete_session(&self, session_id: Uuid) -> Result<(), Error> {
         let result = sqlx::query!(
             r#"
-            DELETE FROM sessions
+            DELETE FROM acci.sessions
             WHERE session_id = $1
             "#,
             session_id
@@ -118,7 +118,7 @@ impl SessionRepository for PgSessionRepository {
     async fn delete_expired_sessions(&self) -> Result<u64, Error> {
         let result = sqlx::query!(
             r#"
-            DELETE FROM sessions
+            DELETE FROM acci.sessions
             WHERE expires_at < NOW()
             "#
         )

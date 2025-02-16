@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.84.1"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]
 description = "Enterprise-grade Rust-based system with multi-tenancy support"
-license = "MIT"
+license = "Apache-2.0"
 
 [[bin]]
 name = "acci"
@@ -32,13 +32,13 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.10"
+version = "0.1.21"
 edition = "2021"
-rust-version = "1.75"
+description = "Access Control and Continuous Integration"
+license = "Apache-2.0"
+rust-version = "1.75.0"
 authors = ["Michael Walloschke <michael.walloschke@axians.de>"]
-description = "Enterprise-grade Rust-based system with multi-tenancy support"
-license = "MIT"
-repository = "https://github.com/axians/acci"
+repository = "https://github.com/broccode/acci"
 
 [workspace.dependencies]
 # Internal Dependencies
@@ -55,6 +55,9 @@ tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 bytes = "1.5.0"
 http-body-util = "0.1.1"
+futures = "0.3.30"
+chrono = { version = "0.4.35", features = ["serde"] }
+serde_json = "1.0.114"
 
 # Database
 sqlx = { version = "0.8.1", features = [
@@ -83,7 +86,6 @@ validator = { version = "0.20.0", features = ["derive"] }
 
 # Serialization
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.138"
 
 # Logging & Metrics
 tracing = "0.1.41"
@@ -111,3 +113,14 @@ unwrap_used = "warn"
 
 [workspace.metadata]
 msrv = "1.75.0"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+strip = true
+lto = true
+codegen-units = 1
