@@ -22,3 +22,7 @@ target/llvm-cov/
 
 bom.json
 acci.cdx.xml
+
+node_modules/
+
+.repomix-output.txt
