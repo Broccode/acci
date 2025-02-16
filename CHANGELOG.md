@@ -126,6 +126,7 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added proper documentation comments for main.rs
   - Improved dummy file creation with proper documentation
   - Enhanced code organization in Dockerfile.prod
+- Fixed password hashing in acci-core by enabling the getrandom feature for argon2
 
 ### Changed
 
