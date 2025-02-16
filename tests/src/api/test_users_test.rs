@@ -1,10 +1,9 @@
-use acci_auth::{AuthConfig, AuthProvider, BasicAuthProvider, Credentials};
-use acci_core::auth::TestUserConfig;
-use acci_db::repositories::user::{PgUserRepository, UserRepository};
+use crate::helpers::db::setup_database;
+use acci_auth::{providers::basic::BasicAuthProvider, AuthConfig, AuthProvider, Credentials};
+use acci_core::{auth::TestUserConfig, error::Error};
+use acci_db::repositories::user::{MockUserRepository, PgUserRepository, UserRepository};
 use anyhow::Result;
 use std::sync::Arc;
-
-use crate::helpers::db::setup_database;
 
 async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
     let (container, pool) = setup_database().await?;
@@ -54,6 +53,88 @@ async fn test_test_users_exist() -> Result<()> {
     // Check regular user exists
     let user = repo.get_by_email(&test_config.users[1].email).await?;
     assert!(user.is_some(), "Test user should exist");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_authenticate_test_admin_user() -> Result<(), Error> {
+    let repo = Arc::new(MockUserRepository::new());
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(repo, config);
+    let test_config = TestUserConfig::default();
+    let admin_user = &test_config.users[0]; // Admin is first user
+
+    let credentials = Credentials {
+        username: admin_user.email.clone(),
+        password: admin_user.password.clone(),
+    };
+
+    let result = provider.authenticate(credentials).await?;
+    assert!(result.session.token.starts_with("ey")); // JWT tokens start with "ey"
+    assert!(result.session.expires_at > result.session.created_at);
+    assert_eq!(result.token_type, "Bearer");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_authenticate_test_regular_user() -> Result<(), Error> {
+    let repo = Arc::new(MockUserRepository::new());
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(repo, config);
+    let test_config = TestUserConfig::default();
+    let regular_user = &test_config.users[1]; // Regular user is second user
+
+    let credentials = Credentials {
+        username: regular_user.email.clone(),
+        password: regular_user.password.clone(),
+    };
+
+    let result = provider.authenticate(credentials).await?;
+    assert!(result.session.token.starts_with("ey")); // JWT tokens start with "ey"
+    assert!(result.session.expires_at > result.session.created_at);
+    assert_eq!(result.token_type, "Bearer");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
+    let repo = Arc::new(MockUserRepository::new());
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(repo, config);
+    let test_config = TestUserConfig::default();
+    let admin_user = &test_config.users[0];
+
+    let credentials = Credentials {
+        username: admin_user.email.clone(),
+        password: "wrong_password".to_string(),
+    };
+
+    let result = provider.authenticate(credentials).await;
+    assert!(matches!(result, Err(Error::InvalidCredentials)));
+
+    Ok(())
+}
+
+#[cfg(not(debug_assertions))]
+#[tokio::test]
+async fn test_test_users_disabled_in_release() -> Result<(), Error> {
+    let repo = Arc::new(MockUserRepository::new());
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(repo, config);
+    let test_config = TestUserConfig::default();
+    let admin_user = &test_config.users[0];
+
+    let credentials = Credentials {
+        username: admin_user.email.clone(),
+        password: admin_user.password.clone(),
+    };
+
+    // In release mode, test users should be disabled and authentication should fall back to database
+    let result = provider.authenticate(credentials).await;
+    assert!(matches!(result, Err(Error::InvalidCredentials)));
 
     Ok(())
 }
