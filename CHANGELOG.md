@@ -118,6 +118,32 @@ Commit all changes with message "release: Version X.Y.Z"
 
 Create a git tag for the version (e.g., v0.2.0)
 
+## [Unreleased]
+
+## [0.1.22] - 2024-03-28
+
+### Fixed
+
+- Improved database initialization and migrations:
+  - Schema and extensions are now created in the first migration
+  - Ensured correct migration order
+  - Sessions table is created in the correct schema
+  - UUID generation explicitly uses public schema
+  - Enhanced error handling during database initialization
+  - Applied DRY principle in Makefile by using existing targets
+
+### Changed
+
+- Switched from `chrono::DateTime<Utc>` to `time::OffsetDateTime` for better SQLx compatibility
+- Unified database commands in Makefile
+- Enhanced integration tests:
+  - Improved connection pool configuration for better stability
+  - Increased connection pool limits and timeouts
+  - Added proper error handling in email case sensitivity tests
+  - Added small delay after user creation to ensure transaction completion
+  - Improved test assertions with better error messages
+  - Reduced test execution time from 16s to 9s
+
 ## [0.1.21] - 2024-03-28
 
 ### Added
@@ -598,27 +624,3 @@ Create a git tag for the version (e.g., v0.2.0)
 
 - Fixed SBOM generation in CI pipeline by correcting cargo-cyclonedx command syntax
 - Fixed Clippy lint group priorities for pedantic and nursery groups
-
-## [Unreleased]
-
-### Fixed
-
-- Improved database initialization and migrations:
-  - Schema and extensions are now created in the first migration
-  - Ensured correct migration order
-  - Sessions table is created in the correct schema
-  - UUID generation explicitly uses public schema
-  - Enhanced error handling during database initialization
-  - Applied DRY principle in Makefile by using existing targets
-
-### Changed
-
-- Switched from `chrono::DateTime<Utc>` to `time::OffsetDateTime` for better SQLx compatibility
-- Unified database commands in Makefile
-- Enhanced integration tests:
-  - Improved connection pool configuration for better stability
-  - Increased connection pool limits and timeouts
-  - Added proper error handling in email case sensitivity tests
-  - Added small delay after user creation to ensure transaction completion
-  - Improved test assertions with better error messages
-  - Reduced test execution time from 16s to 9s
