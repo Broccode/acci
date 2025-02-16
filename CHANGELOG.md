@@ -120,6 +120,11 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `BasicAuthProvider::authenticate` to return `AuthResponse` instead of `AuthSession`
+- Fixed constructor arguments in `BasicAuthProvider::new` to include `session_repo`
+
 ## [0.1.23] - 2024-03-28
 
 ### Technical
