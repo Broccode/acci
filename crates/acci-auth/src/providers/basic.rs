@@ -206,7 +206,7 @@ impl BasicAuthProvider {
     ///
     /// # Errors
     /// Returns an error if session invalidation fails.
-    fn logout(&self, session_id: Uuid) -> Result<(), Error> {
+    fn logout(&self, _session_id: Uuid) -> Result<(), Error> {
         // For basic auth provider, we don't need to store session state
         // as we use stateless JWT tokens. The client should simply discard the token.
         // In a real-world scenario, you might want to maintain a blacklist of

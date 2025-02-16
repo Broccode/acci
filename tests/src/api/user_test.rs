@@ -185,7 +185,7 @@ async fn test_duplicate_email() {
     };
 
     // First user should be created successfully
-    repo.create(user1).await.unwrap();
+    let _user1 = repo.create(user1).await.unwrap();
 
     // Second user with same email should fail
     let result = repo.create(user2).await;
@@ -202,7 +202,7 @@ async fn test_update_to_existing_email() {
         password_hash: "hash123".to_string(),
         full_name: "First User".to_string(),
     };
-    let user1 = repo.create(user1).await.unwrap();
+    let _user1 = repo.create(user1).await.unwrap();
 
     // Create second user
     let user2 = acci_db::repositories::user::CreateUser {
