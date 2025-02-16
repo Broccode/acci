@@ -44,11 +44,13 @@ version = "0.1.10"
 dependencies = [
  "acci-core",
  "acci-db",
+ "anyhow",
  "argon2",
  "async-trait",
  "jsonwebtoken",
  "serde",
  "time",
+ "tokio",
  "tracing",
  "uuid",
 ]
@@ -60,6 +62,7 @@ dependencies = [
  "anyhow",
  "argon2",
  "async-trait",
+ "rand_core",
  "serde",
  "serde_json",
  "thiserror",

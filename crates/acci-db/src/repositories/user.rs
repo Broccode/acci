@@ -284,89 +284,53 @@ impl UserRepository for PgUserRepository {
 }
 
 #[cfg(test)]
-/// Mock implementations of the UserRepository trait for testing purposes.
-pub mod mock {
+mod tests {
     use super::*;
-    use std::collections::HashMap;
-    use std::sync::Mutex;
+    use time::macros::datetime;
 
-    /// Mock implementation of the UserRepository trait for testing.
-    #[derive(Debug, Default)]
-    pub struct MockUserRepository {
-        users: Mutex<HashMap<Uuid, User>>,
-        email_index: Mutex<HashMap<String, Uuid>>,
+    #[test]
+    fn test_create_user_validation() {
+        let user = CreateUser {
+            email: "test@example.com".to_string(),
+            password_hash: "hash123".to_string(),
+            full_name: "Test User".to_string(),
+        };
+
+        assert_eq!(user.email, "test@example.com");
+        assert_eq!(user.password_hash, "hash123");
+        assert_eq!(user.full_name, "Test User");
     }
 
-    impl MockUserRepository {
-        /// Creates a new empty MockUserRepository.
-        pub fn new() -> Self {
-            Self::default()
-        }
+    #[test]
+    fn test_update_user_partial() {
+        let update = UpdateUser {
+            email: Some("new@example.com".to_string()),
+            password_hash: None,
+            full_name: Some("New Name".to_string()),
+        };
+
+        assert_eq!(update.email.as_deref(), Some("new@example.com"));
+        assert_eq!(update.password_hash, None);
+        assert_eq!(update.full_name.as_deref(), Some("New Name"));
     }
 
-    #[async_trait]
-    impl UserRepository for MockUserRepository {
-        async fn create(&self, user: CreateUser) -> Result<User> {
-            let id = Uuid::new_v4();
-            let now = OffsetDateTime::now_utc();
-            let user = User {
-                id,
-                email: user.email.clone(),
-                password_hash: user.password_hash,
-                full_name: user.full_name,
-                created_at: now,
-                updated_at: now,
-            };
+    #[test]
+    fn test_user_fields() {
+        let now = datetime!(2024-02-15 0:00 UTC);
+        let user = User {
+            id: Uuid::nil(),
+            email: "test@example.com".to_string(),
+            password_hash: "hash123".to_string(),
+            full_name: "Test User".to_string(),
+            created_at: now,
+            updated_at: now,
+        };
 
-            self.email_index
-                .lock()
-                .unwrap()
-                .insert(user.email.clone(), id);
-            self.users.lock().unwrap().insert(id, user.clone());
-
-            Ok(user)
-        }
-
-        async fn get_by_id(&self, id: Uuid) -> Result<Option<User>> {
-            Ok(self.users.lock().unwrap().get(&id).cloned())
-        }
-
-        async fn get_by_email(&self, email: &str) -> Result<Option<User>> {
-            let id = self.email_index.lock().unwrap().get(email).copied();
-            Ok(id.and_then(|id| self.users.lock().unwrap().get(&id).cloned()))
-        }
-
-        async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>> {
-            let mut users = self.users.lock().unwrap();
-            let mut email_index = self.email_index.lock().unwrap();
-
-            if let Some(existing_user) = users.get_mut(&id) {
-                if let Some(email) = user.email {
-                    email_index.remove(&existing_user.email);
-                    email_index.insert(email.clone(), id);
-                    existing_user.email = email;
-                }
-                if let Some(password_hash) = user.password_hash {
-                    existing_user.password_hash = password_hash;
-                }
-                if let Some(full_name) = user.full_name {
-                    existing_user.full_name = full_name;
-                }
-                existing_user.updated_at = OffsetDateTime::now_utc();
-                Ok(Some(existing_user.clone()))
-            } else {
-                Ok(None)
-            }
-        }
-
-        async fn delete(&self, id: Uuid) -> Result<bool> {
-            let mut users = self.users.lock().unwrap();
-            if let Some(user) = users.remove(&id) {
-                self.email_index.lock().unwrap().remove(&user.email);
-                Ok(true)
-            } else {
-                Ok(false)
-            }
-        }
+        assert_eq!(user.id, Uuid::nil());
+        assert_eq!(user.email, "test@example.com");
+        assert_eq!(user.password_hash, "hash123");
+        assert_eq!(user.full_name, "Test User");
+        assert_eq!(user.created_at, now);
+        assert_eq!(user.updated_at, now);
     }
 }

@@ -37,13 +37,16 @@ db-reset:
 	docker compose -f deploy/docker/docker-compose.dev.yml down -v
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d db
 	sleep 3
-	(cd crates/acci-db && cargo run --bin acci-db -- reset)
+	(cd crates/acci-db && SQLX_OFFLINE=true cargo run --bin acci-db -- reset)
 
 db-migrate:
-	(cd crates/acci-db && DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run --bin acci-db -- migrate)
+	(cd crates/acci-db && SQLX_OFFLINE=true DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run --bin acci-db -- migrate)
 
 sqlx-prepare:
-	cargo sqlx prepare --workspace --all
+	@for pkg in acci-api acci-auth acci-core acci-db; do \
+		echo "Preparing SQLx queries for package $$pkg"; \
+		cargo sqlx prepare --workspace -- --manifest-path crates/$$pkg/Cargo.toml --all-targets || exit $$?; \
+	done
 
 clippy:
 	cargo clippy --lib --bins --all-features -- -D warnings

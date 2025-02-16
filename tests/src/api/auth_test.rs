@@ -85,3 +85,146 @@ async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
     assert!(matches!(result, Err(Error::InvalidCredentials)));
     Ok(())
 }
+
+#[tokio::test]
+async fn test_token_validation() -> Result<(), Error> {
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+
+    let (user, password) = setup_test_user(&repo).await?;
+
+    // Get a valid token through authentication
+    let credentials = Credentials {
+        username: user.email,
+        password,
+    };
+
+    let auth_response = provider.authenticate(credentials).await?;
+    let token = auth_response.session.token;
+
+    // Validate the token
+    let session = provider.validate_token(&token).await?;
+    assert_eq!(session.user_id, user.id);
+
+    // Test with invalid token
+    let result = provider.validate_token("invalid_token").await;
+    assert!(result.is_err());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_logout() -> Result<(), Error> {
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+
+    let (user, password) = setup_test_user(&repo).await?;
+
+    // Get a valid session through authentication
+    let credentials = Credentials {
+        username: user.email,
+        password,
+    };
+
+    let auth_response = provider.authenticate(credentials).await?;
+    let session_id = auth_response.session.session_id;
+
+    // Test logout
+    provider.logout(session_id).await?;
+
+    // Verify token is no longer valid
+    let result = provider.validate_token(&auth_response.session.token).await;
+    assert!(result.is_err());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_token_expiration() -> Result<(), Error> {
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
+
+    // Create config with very short token duration
+    let config = AuthConfig {
+        token_duration: 1, // 1 second
+        ..AuthConfig::default()
+    };
+
+    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+
+    let (user, password) = setup_test_user(&repo).await?;
+
+    // Get a valid token through authentication
+    let credentials = Credentials {
+        username: user.email,
+        password,
+    };
+
+    let auth_response = provider.authenticate(credentials).await?;
+    let token = auth_response.session.token;
+
+    // Wait for token to expire
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    // Verify token is no longer valid
+    let result = provider.validate_token(&token).await;
+    assert!(result.is_err());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_concurrent_sessions() -> Result<(), Error> {
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let repo = PgUserRepository::new(pool);
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+
+    let (user, password) = setup_test_user(&repo).await?;
+
+    // Create multiple sessions for the same user
+    let credentials = Credentials {
+        username: user.email.clone(),
+        password: password.clone(),
+    };
+
+    let session1 = provider.authenticate(credentials.clone()).await?;
+    let session2 = provider.authenticate(credentials).await?;
+
+    // Verify both sessions are valid
+    assert!(provider
+        .validate_token(&session1.session.token)
+        .await
+        .is_ok());
+    assert!(provider
+        .validate_token(&session2.session.token)
+        .await
+        .is_ok());
+
+    // Logout from one session
+    provider.logout(session1.session.session_id).await?;
+
+    // Verify first session is invalid but second remains valid
+    assert!(provider
+        .validate_token(&session1.session.token)
+        .await
+        .is_err());
+    assert!(provider
+        .validate_token(&session2.session.token)
+        .await
+        .is_ok());
+
+    Ok(())
+}

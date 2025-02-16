@@ -13,8 +13,6 @@ mod error;
 pub mod repositories;
 
 pub use error::DbError;
-#[cfg(test)]
-pub use repositories::user::mock;
 pub use repositories::user::{CreateUser, PgUserRepository, UpdateUser, User, UserRepository};
 pub use sqlx;
 
