@@ -4,7 +4,10 @@ use acci_core::{
     auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials, TestUserConfig},
     error::Error,
 };
-use acci_db::repositories::user::UserRepository;
+use acci_db::{
+    models::Session,
+    repositories::{session::SessionRepository, user::UserRepository},
+};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -39,11 +42,11 @@ struct Claims {
 #[derive(Debug)]
 pub struct BasicAuthProvider {
     /// User repository for database operations
-    user_repo: Arc<dyn UserRepository>,
+    user_repo: Arc<dyn UserRepository + Send + Sync>,
+    /// Session repository for session management
+    session_repo: Arc<dyn SessionRepository + Send + Sync>,
     /// Authentication configuration
     config: AuthConfig,
-    /// Set of invalidated session IDs
-    invalidated_sessions: Arc<Mutex<HashSet<Uuid>>>,
 }
 
 impl BasicAuthProvider {
@@ -51,13 +54,18 @@ impl BasicAuthProvider {
     ///
     /// # Arguments
     /// * `user_repo` - Repository for user operations
+    /// * `session_repo` - Repository for session operations
     /// * `config` - Authentication configuration
     #[must_use]
-    pub fn new(user_repo: Arc<dyn UserRepository>, config: AuthConfig) -> Self {
+    pub fn new(
+        user_repo: Arc<dyn UserRepository + Send + Sync>,
+        session_repo: Arc<dyn SessionRepository + Send + Sync>,
+        config: AuthConfig,
+    ) -> Self {
         Self {
             user_repo,
+            session_repo,
             config,
-            invalidated_sessions: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -153,7 +161,7 @@ impl BasicAuthProvider {
     /// - Password is invalid
     /// - Token creation fails
     #[instrument(skip(self, credentials), fields(username = %credentials.username))]
-    async fn authenticate(&self, credentials: Credentials) -> Result<AuthSession, Error> {
+    async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
         debug!("Attempting authentication for user");
 
         let test_config = TestUserConfig::default();
@@ -169,14 +177,28 @@ impl BasicAuthProvider {
                     let (token, created_at, expires_at) =
                         Self::create_token(user_id, &self.config)?;
 
-                    let session = AuthSession {
-                        session_id: self.extract_session_id(&token)?,
+                    let session_id = self.extract_session_id(&token)?;
+                    let session =
+                        Session::new(user_id, OffsetDateTime::from_unix_timestamp(expires_at)?);
+                    self.session_repo
+                        .create_session(&session)
+                        .await
+                        .map_err(|e| {
+                            error!("Failed to create session: {}", e);
+                            Error::internal(format!("Failed to create session: {}", e))
+                        })?;
+
+                    let auth_session = AuthSession {
+                        session_id,
                         user_id,
                         token,
                         created_at,
                         expires_at,
                     };
-                    return Ok(session);
+                    return Ok(AuthResponse {
+                        session: auth_session,
+                        token_type: "Bearer".to_string(),
+                    });
                 }
                 error!("Invalid password for test user '{}'", test_user.email);
                 return Err(Error::InvalidCredentials);
@@ -203,9 +225,18 @@ impl BasicAuthProvider {
         }
 
         let (token, created_at, expires_at) = Self::create_token(user.id, &self.config)?;
+        let session_id = self.extract_session_id(&token)?;
+        let session = Session::new(user.id, OffsetDateTime::from_unix_timestamp(expires_at)?);
+        self.session_repo
+            .create_session(&session)
+            .await
+            .map_err(|e| {
+                error!("Failed to create session: {}", e);
+                Error::internal(format!("Failed to create session: {}", e))
+            })?;
 
-        let session = AuthSession {
-            session_id: self.extract_session_id(&token)?,
+        let auth_session = AuthSession {
+            session_id,
             user_id: user.id,
             token,
             created_at,
@@ -213,7 +244,10 @@ impl BasicAuthProvider {
         };
 
         info!("Successfully authenticated user");
-        Ok(session)
+        Ok(AuthResponse {
+            session: auth_session,
+            token_type: "Bearer".to_string(),
+        })
     }
 
     /// Validates a JWT token and returns the associated session.
@@ -224,16 +258,24 @@ impl BasicAuthProvider {
     async fn validate_token(&self, token: &str) -> Result<AuthSession, Error> {
         let session_id = self.extract_session_id(token)?;
 
-        // Check if session has been invalidated
-        if self
-            .invalidated_sessions
-            .lock()
-            .map_err(|e| Error::internal(format!("Failed to acquire lock: {e}")))?
-            .contains(&session_id)
-        {
+        // Check if session exists in database
+        let db_session = self
+            .session_repo
+            .get_session(session_id)
+            .await
+            .map_err(|e| {
+                error!("Failed to get session from database: {}", e);
+                Error::internal(format!("Failed to get session: {}", e))
+            })?;
+
+        let Some(db_session) = db_session else {
             return Err(Error::TokenValidationFailed(
-                "Session has been invalidated".to_string(),
+                "Session not found".to_string(),
             ));
+        };
+
+        if db_session.is_expired() {
+            return Err(Error::SessionExpired);
         }
 
         let decoded = decode::<Claims>(
@@ -244,12 +286,6 @@ impl BasicAuthProvider {
         .map_err(|e| Error::TokenValidationFailed(format!("Failed to decode token: {e}")))?;
 
         let claims = decoded.claims;
-        let now = OffsetDateTime::now_utc().unix_timestamp();
-
-        if now >= claims.exp {
-            return Err(Error::SessionExpired);
-        }
-
         let user_id = Uuid::from_str(&claims.sub)
             .map_err(|_| Error::TokenValidationFailed("Invalid user ID in token".to_string()))?;
 
@@ -277,23 +313,21 @@ impl BasicAuthProvider {
     ///
     /// # Errors
     /// Returns an error if session invalidation fails.
-    fn internal_logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.invalidated_sessions
-            .lock()
-            .map_err(|e| Error::internal(format!("Failed to acquire lock: {e}")))?
-            .insert(session_id);
-        Ok(())
+    async fn internal_logout(&self, session_id: Uuid) -> Result<(), Error> {
+        self.session_repo
+            .delete_session(session_id)
+            .await
+            .map_err(|e| {
+                error!("Failed to delete session: {}", e);
+                Error::internal(format!("Failed to delete session: {}", e))
+            })
     }
 }
 
 #[async_trait::async_trait]
 impl AuthProvider for BasicAuthProvider {
     async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
-        let session = self.authenticate(credentials).await?;
-        Ok(AuthResponse {
-            session,
-            token_type: "Bearer".to_string(),
-        })
+        self.authenticate(credentials).await
     }
 
     async fn validate_token(&self, token: &str) -> Result<AuthSession, Error> {
@@ -301,7 +335,7 @@ impl AuthProvider for BasicAuthProvider {
     }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.internal_logout(session_id)
+        self.internal_logout(session_id).await
     }
 }
 
@@ -309,7 +343,10 @@ impl AuthProvider for BasicAuthProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use acci_db::repositories::user::{CreateUser, UpdateUser, User};
+    use acci_db::repositories::{
+        session::{MockSessionRepository, SessionRepository},
+        user::{CreateUser, UpdateUser, User},
+    };
 
     #[test]
     fn test_password_hash_and_verify() -> Result<(), Error> {
@@ -398,8 +435,9 @@ mod tests {
     #[tokio::test]
     async fn test_auth_with_nonexistent_user() -> Result<(), Error> {
         let repo = MockUserRepo {};
+        let session_repo = MockSessionRepository::new();
         let config = AuthConfig::default();
-        let provider = BasicAuthProvider::new(Arc::new(repo), config);
+        let provider = BasicAuthProvider::new(Arc::new(repo), Arc::new(session_repo), config);
 
         let credentials = Credentials {
             username: "nonexistent@example.com".to_string(),

@@ -47,7 +47,7 @@ db-migrate:
 	$(MAKE) test-users-reset
 
 sqlx-prepare:
-	@for pkg in acci-api acci-auth acci-core acci-db; do \
+	@for pkg in acci-api acci-auth acci-db; do \
 		echo "Preparing SQLx queries for package $$pkg"; \
 		cargo sqlx prepare --workspace --database-url postgres://acci:development_only@localhost:5432/acci -- --manifest-path crates/$$pkg/Cargo.toml --all-targets || exit $$?; \
 	done

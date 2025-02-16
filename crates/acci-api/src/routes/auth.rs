@@ -96,8 +96,9 @@ async fn login(
         return Err(ApiError::BadRequest(validation_errors.to_string()));
     }
 
-    let user_repo = Arc::new(PgUserRepository::new(pool));
-    let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
 
     let credentials = Credentials {
         username: credentials.username.trim().to_string(),
@@ -128,6 +129,7 @@ async fn login(
 mod tests {
     use super::*;
     use acci_core::auth::AuthProvider;
+    use acci_db::repositories::session::MockSessionRepository;
     use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
     use rand::rngs::OsRng;
 
@@ -186,7 +188,8 @@ mod tests {
     #[tokio::test]
     async fn test_login_default_admin() {
         let user_repo = Arc::new(MockUserRepo::new());
-        let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
+        let session_repo = Arc::new(MockSessionRepository::new());
+        let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
 
         let credentials = Credentials {
             username: "admin".to_string(),
@@ -200,7 +203,8 @@ mod tests {
     #[tokio::test]
     async fn test_login_invalid_credentials() {
         let user_repo = Arc::new(MockUserRepo::new());
-        let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
+        let session_repo = Arc::new(MockSessionRepository::new());
+        let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
 
         let credentials = Credentials {
             username: "invalid@example.com".to_string(),

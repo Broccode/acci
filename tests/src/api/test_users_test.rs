@@ -1,22 +1,30 @@
-use crate::helpers::db::setup_database;
+use crate::{
+    helpers::db::setup_database,
+    mocks::{MockSessionRepository, MockUserRepository},
+};
 use acci_auth::{providers::basic::BasicAuthProvider, AuthConfig, AuthProvider, Credentials};
 use acci_core::{auth::TestUserConfig, error::Error};
-use acci_db::repositories::user::{MockUserRepository, PgUserRepository, UserRepository};
+use acci_db::repositories::{session::PgSessionRepository, user::PgUserRepository};
 use anyhow::Result;
 use std::sync::Arc;
 
-async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
+async fn setup() -> Result<(
+    Box<dyn std::any::Any>,
+    PgUserRepository,
+    PgSessionRepository,
+)> {
     let (container, pool) = setup_database().await?;
-    let repo = PgUserRepository::new(pool);
-    Ok((container, repo))
+    let user_repo = PgUserRepository::new(pool.clone());
+    let session_repo = PgSessionRepository::new(pool);
+    Ok((container, user_repo, session_repo))
 }
 
 #[tokio::test]
 async fn test_test_users_authentication() -> Result<()> {
-    let (_container, repo) = setup().await?;
+    let (_container, user_repo, session_repo) = setup().await?;
     let test_config = TestUserConfig::default();
     let auth_config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo), auth_config);
+    let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), auth_config);
 
     // Test admin authentication
     let admin = &test_config.users[0];
@@ -43,15 +51,15 @@ async fn test_test_users_authentication() -> Result<()> {
 
 #[tokio::test]
 async fn test_test_users_exist() -> Result<()> {
-    let (_container, repo) = setup().await?;
+    let (_container, user_repo, _) = setup().await?;
     let test_config = TestUserConfig::default();
 
     // Check admin exists
-    let admin = repo.get_by_email(&test_config.users[0].email).await?;
+    let admin = user_repo.get_by_email(&test_config.users[0].email).await?;
     assert!(admin.is_some(), "Test admin user should exist");
 
     // Check regular user exists
-    let user = repo.get_by_email(&test_config.users[1].email).await?;
+    let user = user_repo.get_by_email(&test_config.users[1].email).await?;
     assert!(user.is_some(), "Test user should exist");
 
     Ok(())
@@ -59,9 +67,10 @@ async fn test_test_users_exist() -> Result<()> {
 
 #[tokio::test]
 async fn test_authenticate_test_admin_user() -> Result<(), Error> {
-    let repo = Arc::new(MockUserRepository::new());
+    let user_repo = Arc::new(MockUserRepository::new());
+    let session_repo = Arc::new(MockSessionRepository::new());
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(repo, config);
+    let provider = BasicAuthProvider::new(user_repo, session_repo, config);
     let test_config = TestUserConfig::default();
     let admin_user = &test_config.users[0]; // Admin is first user
 
@@ -80,9 +89,10 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_authenticate_test_regular_user() -> Result<(), Error> {
-    let repo = Arc::new(MockUserRepository::new());
+    let user_repo = Arc::new(MockUserRepository::new());
+    let session_repo = Arc::new(MockSessionRepository::new());
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(repo, config);
+    let provider = BasicAuthProvider::new(user_repo, session_repo, config);
     let test_config = TestUserConfig::default();
     let regular_user = &test_config.users[1]; // Regular user is second user
 
@@ -101,9 +111,10 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
-    let repo = Arc::new(MockUserRepository::new());
+    let user_repo = Arc::new(MockUserRepository::new());
+    let session_repo = Arc::new(MockSessionRepository::new());
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(repo, config);
+    let provider = BasicAuthProvider::new(user_repo, session_repo, config);
     let test_config = TestUserConfig::default();
     let admin_user = &test_config.users[0];
 
@@ -121,9 +132,10 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
 #[cfg(not(debug_assertions))]
 #[tokio::test]
 async fn test_test_users_disabled_in_release() -> Result<(), Error> {
-    let repo = Arc::new(MockUserRepository::new());
+    let user_repo = Arc::new(MockUserRepository::new());
+    let session_repo = Arc::new(MockSessionRepository::new());
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(repo, config);
+    let provider = BasicAuthProvider::new(user_repo, session_repo, config);
     let test_config = TestUserConfig::default();
     let admin_user = &test_config.users[0];
 

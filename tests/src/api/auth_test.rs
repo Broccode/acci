@@ -3,8 +3,16 @@ use acci_core::{
     auth::{hash_password, AuthConfig, AuthProvider, Credentials},
     error::Error,
 };
-use acci_db::repositories::user::{CreateUser, PgUserRepository, User, UserRepository};
+use acci_db::{
+    models::Session,
+    repositories::{
+        session::{PgSessionRepository, SessionRepository},
+        user::{CreateUser, PgUserRepository, User, UserRepository},
+    },
+};
 use std::sync::Arc;
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 use crate::helpers::db::setup_database;
 
@@ -29,11 +37,12 @@ async fn test_authenticate_valid_credentials() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, password) = setup_test_user(&repo).await?;
+    let (user, password) = setup_test_user(&*user_repo).await?;
 
     let credentials = Credentials {
         username: user.email,
@@ -51,11 +60,12 @@ async fn test_authenticate_invalid_password() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, _) = setup_test_user(&repo).await?;
+    let (user, _) = setup_test_user(&*user_repo).await?;
 
     let credentials = Credentials {
         username: user.email,
@@ -72,9 +82,10 @@ async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
     let credentials = Credentials {
         username: "nonexistent@example.com".to_string(),
@@ -91,11 +102,12 @@ async fn test_token_validation() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, password) = setup_test_user(&repo).await?;
+    let (user, password) = setup_test_user(&*user_repo).await?;
 
     // Get a valid token through authentication
     let credentials = Credentials {
@@ -122,11 +134,12 @@ async fn test_logout() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, password) = setup_test_user(&repo).await?;
+    let (user, password) = setup_test_user(&*user_repo).await?;
 
     // Get a valid session through authentication
     let credentials = Credentials {
@@ -152,7 +165,8 @@ async fn test_token_expiration() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
 
     // Create config with very short token duration
     let config = AuthConfig {
@@ -160,9 +174,9 @@ async fn test_token_expiration() -> Result<(), Error> {
         ..AuthConfig::default()
     };
 
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, password) = setup_test_user(&repo).await?;
+    let (user, password) = setup_test_user(&*user_repo).await?;
 
     // Get a valid token through authentication
     let credentials = Credentials {
@@ -188,11 +202,12 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
     let (_container, pool) = setup_database()
         .await
         .map_err(|e| Error::internal(e.to_string()))?;
-    let repo = PgUserRepository::new(pool);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(repo.clone()), config);
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
 
-    let (user, password) = setup_test_user(&repo).await?;
+    let (user, password) = setup_test_user(&*user_repo).await?;
 
     // Create multiple sessions for the same user
     let credentials = Credentials {
