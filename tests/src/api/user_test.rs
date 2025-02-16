@@ -1,9 +1,9 @@
 use acci_db::{
     create_pool,
-    repositories::user::{PgUserRepository, UserRepository},
+    repositories::user::{CreateUser, PgUserRepository, UserRepository},
     run_migrations,
     sqlx::{self, types::uuid::Uuid},
-    DbConfig,
+    DbConfig, Environment,
 };
 use anyhow::Result;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
@@ -14,6 +14,12 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
 
     let config = DbConfig {
         url: format!("postgres://postgres:postgres@localhost:{}/postgres", port),
+        max_connections: 20,
+        min_connections: 5,
+        connect_timeout_seconds: 30,
+        idle_timeout_seconds: 600,
+        max_lifetime_seconds: 3600,
+        environment: Environment::Test,
         ..Default::default()
     };
 
@@ -224,23 +230,34 @@ async fn test_update_to_existing_email() {
 }
 
 #[tokio::test]
-async fn test_email_case_sensitivity() {
-    let (_container, repo) = setup().await.unwrap();
+async fn test_email_case_sensitivity() -> Result<()> {
+    let (_container, repo) = setup().await?;
 
-    let user = acci_db::repositories::user::CreateUser {
+    let user = CreateUser {
         email: "Test@Example.com".to_string(),
         password_hash: "hash123".to_string(),
         full_name: "Test User".to_string(),
     };
 
-    repo.create(user).await.unwrap();
+    // Erstelle den Benutzer und behandle mögliche Fehler
+    repo.create(user).await?;
 
-    // Should find user regardless of case
-    let found = repo.get_by_email("test@example.com").await.unwrap();
-    assert!(found.is_some());
+    // Warte kurz, um sicherzustellen, dass die Transaktion abgeschlossen ist
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    let found = repo.get_by_email("TEST@EXAMPLE.COM").await.unwrap();
-    assert!(found.is_some());
+    // Suche mit verschiedenen Schreibweisen
+    let test_cases = vec!["test@example.com", "TEST@EXAMPLE.COM", "Test@Example.com"];
+
+    for email in test_cases {
+        let found = repo.get_by_email(email).await?;
+        assert!(
+            found.is_some(),
+            "Benutzer nicht gefunden für E-Mail: {}",
+            email
+        );
+    }
+
+    Ok(())
 }
 
 #[tokio::test]

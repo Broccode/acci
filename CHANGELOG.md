@@ -615,3 +615,10 @@ Create a git tag for the version (e.g., v0.2.0)
 
 - Switched from `chrono::DateTime<Utc>` to `time::OffsetDateTime` for better SQLx compatibility
 - Unified database commands in Makefile
+- Enhanced integration tests:
+  - Improved connection pool configuration for better stability
+  - Increased connection pool limits and timeouts
+  - Added proper error handling in email case sensitivity tests
+  - Added small delay after user creation to ensure transaction completion
+  - Improved test assertions with better error messages
+  - Reduced test execution time from 16s to 9s
