@@ -120,6 +120,20 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.23] - 2024-03-28
+
+### Technical
+
+- Updated dependencies in Cargo.lock to latest compatible versions:
+  - cc v1.2.13 -> v1.2.14
+  - clap v4.5.28 -> v4.5.29
+  - clap_builder v4.5.27 -> v4.5.29
+  - equivalent v1.0.1 -> v1.0.2
+  - miniz_oxide v0.8.3 -> v0.8.4
+  - ring v0.17.8 -> v0.17.9
+  - rustls v0.23.22 -> v0.23.23
+  - smallvec v1.13.2 -> v1.14.0
+
 ## [0.1.22] - 2024-03-28
 
 ### Fixed
