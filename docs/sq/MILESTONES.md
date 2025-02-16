@@ -37,8 +37,8 @@ Progresi aktual dhe arritjet:
   - [x] Siguria e fjalëkalimit me implementimin Argon2
   - [x] Menaxhimi dhe validimi i token-it JWT
   - [x] Traits e autentifikimit të përdoruesit dhe integrimi i repository-t
-  - [ ] Implementimi i endpoint-it të hyrjes
-  - [ ] Konfigurimi i përdoruesit test
+  - [x] Implementimi i endpoint-it të hyrjes
+  - [x] Konfigurimi i përdoruesit test
   - [ ] Menaxhimi i sesioneve
 
 ### M1.3: MVP Frontend (Planifikuar për Javën 2-3)

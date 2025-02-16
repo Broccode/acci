@@ -37,8 +37,8 @@ Current progress and achievements:
   - [x] Password security with Argon2 implementation
   - [x] JWT token management and validation
   - [x] User authentication traits and repository integration
-  - [ ] Login endpoint implementation
-  - [ ] Test user configuration
+  - [x] Login endpoint implementation
+  - [x] Test user configuration
   - [ ] Session management
 
 ### M1.3: MVP Frontend (Planned for Week 2-3)

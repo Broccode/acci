@@ -36,7 +36,7 @@ This document defines the key milestones for developing our enterprise-grade Rus
   - [x] JWT token management and validation
   - [x] User authentication traits and repository integration
   - [x] Login endpoint implementation
-  - [ ] Test user configuration
+  - [x] Test user configuration
   - [ ] Session management
 
 ### M1.3: MVP Frontend (Week 2-3)
