@@ -9,9 +9,13 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use std::{str::FromStr, sync::Arc};
+use std::{
+    collections::HashSet,
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 use time::{Duration, OffsetDateTime};
 use tracing::{debug, error, info, instrument};
 use uuid::Uuid;
@@ -33,12 +37,13 @@ struct Claims {
 
 /// Basic authentication provider that uses JWT tokens for session management.
 #[derive(Debug)]
-#[allow(dead_code)] // Fields will be used when implementing token validation and logout
 pub struct BasicAuthProvider {
     /// User repository for database operations
     user_repo: Arc<dyn UserRepository>,
     /// Authentication configuration
     config: AuthConfig,
+    /// Set of invalidated session IDs
+    invalidated_sessions: Arc<Mutex<HashSet<Uuid>>>,
 }
 
 impl BasicAuthProvider {
@@ -49,7 +54,35 @@ impl BasicAuthProvider {
     /// * `config` - Authentication configuration
     #[must_use]
     pub fn new(user_repo: Arc<dyn UserRepository>, config: AuthConfig) -> Self {
-        Self { user_repo, config }
+        Self {
+            user_repo,
+            config,
+            invalidated_sessions: Arc::new(Mutex::new(HashSet::new())),
+        }
+    }
+
+    /// Extracts the session ID from a JWT token.
+    ///
+    /// # Arguments
+    /// * `token` - The JWT token to extract the session ID from
+    ///
+    /// # Returns
+    /// The session ID if the token is valid
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// * The token is invalid
+    /// * The session ID is invalid
+    fn extract_session_id(&self, token: &str) -> Result<Uuid, Error> {
+        let decoded = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(self.config.jwt_secret.as_bytes()),
+            &Validation::default(),
+        )
+        .map_err(|e| Error::TokenValidationFailed(format!("Failed to decode token: {e}")))?;
+
+        Uuid::from_str(&decoded.claims.jti)
+            .map_err(|_| Error::TokenValidationFailed("Invalid session ID".to_string()))
     }
 
     /// Creates a new JWT token for the given user ID.
@@ -145,7 +178,7 @@ impl BasicAuthProvider {
         let (token, created_at, expires_at) = Self::create_token(user.id, &self.config)?;
 
         let session = AuthSession {
-            session_id: Uuid::new_v4(),
+            session_id: self.extract_session_id(&token)?,
             user_id: user.id,
             token,
             created_at,
@@ -162,7 +195,19 @@ impl BasicAuthProvider {
     /// Returns an error if token validation fails.
     #[instrument(skip(self))]
     async fn validate_token(&self, token: &str) -> Result<AuthSession, Error> {
-        use jsonwebtoken::{decode, DecodingKey, Validation};
+        let session_id = self.extract_session_id(token)?;
+
+        // Check if session has been invalidated
+        if self
+            .invalidated_sessions
+            .lock()
+            .map_err(|e| Error::internal(format!("Failed to acquire lock: {e}")))?
+            .contains(&session_id)
+        {
+            return Err(Error::TokenValidationFailed(
+                "Session has been invalidated".to_string(),
+            ));
+        }
 
         let decoded = decode::<Claims>(
             token,
@@ -193,8 +238,7 @@ impl BasicAuthProvider {
         }
 
         Ok(AuthSession {
-            session_id: Uuid::from_str(&claims.jti)
-                .map_err(|_| Error::TokenValidationFailed("Invalid session ID".to_string()))?,
+            session_id,
             user_id,
             token: token.to_string(),
             created_at: claims.iat,
@@ -206,11 +250,11 @@ impl BasicAuthProvider {
     ///
     /// # Errors
     /// Returns an error if session invalidation fails.
-    fn logout(&self, _session_id: Uuid) -> Result<(), Error> {
-        // For basic auth provider, we don't need to store session state
-        // as we use stateless JWT tokens. The client should simply discard the token.
-        // In a real-world scenario, you might want to maintain a blacklist of
-        // invalidated tokens, but for this implementation we'll keep it simple.
+    async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
+        self.invalidated_sessions
+            .lock()
+            .map_err(|e| Error::internal(format!("Failed to acquire lock: {e}")))?
+            .insert(session_id);
         Ok(())
     }
 }
@@ -230,7 +274,7 @@ impl AuthProvider for BasicAuthProvider {
     }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.logout(session_id)
+        self.logout(session_id).await
     }
 }
 
@@ -239,7 +283,6 @@ impl AuthProvider for BasicAuthProvider {
 mod tests {
     use super::*;
     use acci_db::repositories::user::{CreateUser, UpdateUser, User};
-    use std::str::FromStr;
 
     #[test]
     fn test_password_hash_and_verify() -> Result<(), Error> {
@@ -301,7 +344,7 @@ mod tests {
     #[async_trait::async_trait]
     impl UserRepository for MockUserRepo {
         async fn get_by_email(&self, _email: &str) -> Result<Option<User>, anyhow::Error> {
-            unimplemented!()
+            Ok(None)
         }
 
         async fn create(&self, _user: CreateUser) -> Result<User, anyhow::Error> {
@@ -323,5 +366,21 @@ mod tests {
         async fn get_by_id(&self, _id: Uuid) -> Result<Option<User>, anyhow::Error> {
             unimplemented!()
         }
+    }
+
+    #[tokio::test]
+    async fn test_auth_with_nonexistent_user() -> Result<(), Error> {
+        let repo = MockUserRepo {};
+        let config = AuthConfig::default();
+        let provider = BasicAuthProvider::new(Arc::new(repo), config);
+
+        let credentials = Credentials {
+            username: "nonexistent@example.com".to_string(),
+            password: "any_password".to_string(),
+        };
+
+        let result = provider.authenticate(credentials).await;
+        assert!(matches!(result, Err(Error::InvalidCredentials)));
+        Ok(())
     }
 }

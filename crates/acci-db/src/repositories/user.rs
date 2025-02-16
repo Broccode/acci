@@ -192,7 +192,7 @@ impl UserRepository for PgUserRepository {
                 created_at,
                 updated_at
             FROM acci.users
-            WHERE email = $1
+            WHERE email ILIKE $1
             "#,
             email
         )

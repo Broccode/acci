@@ -127,10 +127,19 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved dummy file creation with proper documentation
   - Enhanced code organization in Dockerfile.prod
 - Fixed password hashing in acci-core by adding rand_core dependency with getrandom feature
+- Fixed case-sensitive email search in user repository by using ILIKE instead of = in SQL query
+- Fixed session invalidation in auth provider:
+  - Added proper token blacklist using HashSet in Arc<Mutex>
+  - Improved session ID extraction and validation
+  - Added comprehensive test coverage for logout and concurrent sessions
 
 ### Changed
 
 - Switched code coverage reporting from Codecov to Coveralls.io in CI pipeline for improved coverage tracking
+- Improved test coverage in auth provider:
+  - Added test for non-existent user authentication using mock repository
+  - Removed unused imports and dead code
+  - Enhanced mock repository implementation
 
 ## [0.1.19] - 2024-03-28
 
