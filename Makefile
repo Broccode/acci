@@ -42,7 +42,7 @@ db-reset:
 	$(MAKE) test-users-reset
 
 db-migrate:
-	(cd crates/acci-db && cargo sqlx migrate run --database-url postgres://acci:development_only@localhost:5432/acci)
+	-(cd crates/acci-db && cargo sqlx migrate run --database-url postgres://acci:development_only@localhost:5432/acci)
 	$(MAKE) sqlx-prepare
 	$(MAKE) test-users-reset
 
