@@ -13,15 +13,15 @@ use acci_core::{
     auth::{AuthProvider, AuthResponse, Credentials},
     error::Error as CoreError,
 };
-use acci_db::{repositories::user::PgUserRepository, sqlx::PgPool};
-
-#[cfg(test)]
-use {
-    acci_db::repositories::user::{CreateUser, UpdateUser, User, UserRepository},
-    uuid::Uuid,
+use acci_db::{
+    repositories::{session::PgSessionRepository, user::PgUserRepository},
+    sqlx::PgPool,
 };
 
 use crate::error::{ApiError, ApiResult};
+use acci_db::repositories::session::SessionRepository;
+use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
+use rand::rngs::OsRng;
 
 /// Login request payload
 #[derive(Debug, Deserialize, Validate)]
@@ -122,96 +122,5 @@ async fn login(
             error!("Internal error during authentication: {}", e);
             Err(ApiError::Internal(e.into()))
         },
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use acci_core::auth::AuthProvider;
-    use acci_db::repositories::session::MockSessionRepository;
-    use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
-    use rand::rngs::OsRng;
-
-    #[derive(Debug)]
-    struct MockUserRepo {
-        default_user: User,
-    }
-
-    impl MockUserRepo {
-        fn new() -> Self {
-            // Create password hash for "whiskey"
-            let salt = SaltString::generate(&mut OsRng);
-            let argon2 = Argon2::default();
-            let password_hash = argon2.hash_password(b"whiskey", &salt).unwrap().to_string();
-
-            let default_user = User {
-                id: Uuid::new_v4(),
-                email: "admin".to_string(),
-                password_hash,
-                full_name: "Default Admin".to_string(),
-                created_at: time::OffsetDateTime::now_utc(),
-                updated_at: time::OffsetDateTime::now_utc(),
-            };
-
-            Self { default_user }
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl UserRepository for MockUserRepo {
-        async fn create(&self, _user: CreateUser) -> anyhow::Result<User> {
-            unimplemented!()
-        }
-
-        async fn get_by_id(&self, _id: Uuid) -> anyhow::Result<Option<User>> {
-            Ok(None)
-        }
-
-        async fn get_by_email(&self, email: &str) -> anyhow::Result<Option<User>> {
-            if email == "admin" {
-                Ok(Some(self.default_user.clone()))
-            } else {
-                Ok(None)
-            }
-        }
-
-        async fn update(&self, _id: Uuid, _user: UpdateUser) -> anyhow::Result<Option<User>> {
-            Ok(None)
-        }
-
-        async fn delete(&self, _id: Uuid) -> anyhow::Result<bool> {
-            Ok(false)
-        }
-    }
-
-    #[tokio::test]
-    async fn test_login_default_admin() {
-        let user_repo = Arc::new(MockUserRepo::new());
-        let session_repo = Arc::new(MockSessionRepository::new());
-        let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
-
-        let credentials = Credentials {
-            username: "admin".to_string(),
-            password: "whiskey".to_string(),
-        };
-
-        let result = auth_provider.authenticate(credentials).await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_login_invalid_credentials() {
-        let user_repo = Arc::new(MockUserRepo::new());
-        let session_repo = Arc::new(MockSessionRepository::new());
-        let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
-
-        let credentials = Credentials {
-            username: "invalid@example.com".to_string(),
-            password: "wrongpassword".to_string(),
-        };
-
-        let result = auth_provider.authenticate(credentials).await;
-        assert!(matches!(result, Err(CoreError::InvalidCredentials)));
     }
 }

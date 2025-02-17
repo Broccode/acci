@@ -21,9 +21,13 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 uuid = { workspace = true }
 rand_core = { workspace = true }
+time = { workspace = true }
 
 # External Dependencies
 argon2 = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints
+
+[dev-dependencies]
+tokio = { workspace = true }

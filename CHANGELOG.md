@@ -120,14 +120,35 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Added new helper module `tests/src/helpers/auth.rs` for authentication test utilities
+- Added new mock implementation `tests/src/mocks/user.rs` for user testing
+
 ### Changed
 
 - Translated testing section in .cursorrules from German to English for consistency with the rest of the documentation
+- Enhanced test infrastructure:
+  - Improved session repository mocking in `tests/src/mocks/session.rs`
+  - Updated authentication test cases in `tests/src/api/auth_test.rs`
+  - Refined test user testing in `tests/src/api/test_users_test.rs`
+  - Updated migration tests in `tests/src/api/migrations_test.rs`
+  - Enhanced test helper organization in `tests/src/helpers/mod.rs`
 
 ### Fixed
 
 - Fixed `BasicAuthProvider::authenticate` to return `AuthResponse` instead of `AuthSession`
 - Fixed constructor arguments in `BasicAuthProvider::new` to include `session_repo`
+- Fixed session repository implementation in `crates/acci-db/src/repositories/session.rs`
+- Fixed error handling in `crates/acci-core/src/error.rs`
+- Fixed authentication route implementation in `crates/acci-api/src/routes/auth.rs`
+
+### Technical
+
+- Updated dependencies in Cargo.toml files:
+  - Root workspace dependencies
+  - acci-core crate dependencies
+  - test crate dependencies
 
 ## [0.1.23] - 2024-03-28
 

@@ -1,5 +1,6 @@
 //! Error types for the ACCI system.
 
+use std::io;
 use thiserror::Error;
 
 /// A specialized Result type for ACCI operations.
@@ -64,6 +65,12 @@ impl Error {
         Self::Internal {
             message: message.into(),
         }
+    }
+}
+
+impl From<time::error::ComponentRange> for Error {
+    fn from(err: time::error::ComponentRange) -> Self {
+        Error::internal(format!("Invalid timestamp: {}", err))
     }
 }
 

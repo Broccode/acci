@@ -189,3 +189,9 @@ impl SessionRepository for PgSessionRepository {
         Ok(affected)
     }
 }
+
+impl std::fmt::Debug for dyn SessionRepository + Send + Sync {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SessionRepository")
+    }
+}

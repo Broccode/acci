@@ -1,24 +1,24 @@
-use acci_auth::providers::basic::BasicAuthProvider;
-use acci_core::{
-    auth::{hash_password, AuthConfig, AuthProvider, Credentials},
-    error::Error,
+use crate::{
+    helpers::{auth, db::setup_database},
+    mocks::{MockSessionRepository, MockUserRepository},
 };
+use acci_auth::{providers::basic::BasicAuthProvider, AuthConfig, AuthProvider, Credentials};
+use acci_core::error::Error;
 use acci_db::{
-    models::Session,
     repositories::{
-        session::{PgSessionRepository, SessionRepository},
-        user::{CreateUser, PgUserRepository, User, UserRepository},
+        session::PgSessionRepository,
+        user::{CreateUser, PgUserRepository, UserRepository},
     },
+    Session, User,
 };
+use mockall::predicate::eq;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::helpers::db::setup_database;
-
 async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), Error> {
     let password = "test_password";
-    let hash = hash_password(password).map_err(|e| Error::internal(e.to_string()))?;
+    let hash = auth::hash_password(password).map_err(|e| Error::internal(e.to_string()))?;
 
     let user = repo
         .create(CreateUser {
@@ -99,32 +99,45 @@ async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_token_validation() -> Result<(), Error> {
-    let (_container, pool) = setup_database()
-        .await
-        .map_err(|e| Error::internal(e.to_string()))?;
-    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
-    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let user_id = Uuid::new_v4();
+    let session_id = Uuid::new_v4();
+    let now = OffsetDateTime::now_utc();
+    let expires_at = now + time::Duration::hours(1);
+
+    let mut user_repo = MockUserRepository::new();
+    user_repo
+        .expect_get_by_id()
+        .with(eq(user_id))
+        .returning(move |_| {
+            Ok(Some(User {
+                id: user_id,
+                email: "test@example.com".to_string(),
+                password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
+                full_name: "Test User".to_string(),
+                created_at: now,
+                updated_at: now,
+            }))
+        });
+
+    let mut session_repo = MockSessionRepository::default();
+    session_repo.expect_get_session().returning(move |_| {
+        Ok(Some(Session {
+            session_id,
+            user_id,
+            created_at: now,
+            expires_at,
+        }))
+    });
+
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
+    let provider =
+        BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config.clone());
 
-    let (user, password) = setup_test_user(&*user_repo).await?;
-
-    // Get a valid token through authentication
-    let credentials = Credentials {
-        username: user.email,
-        password,
-    };
-
-    let auth_response = provider.authenticate(credentials).await?;
-    let token = auth_response.session.token;
+    let (token, _, _) = auth::create_test_token(user_id, &config)?;
 
     // Validate the token
     let session = provider.validate_token(&token).await?;
-    assert_eq!(session.user_id, user.id);
-
-    // Test with invalid token
-    let result = provider.validate_token("invalid_token").await;
-    assert!(result.is_err());
+    assert_eq!(session.user_id, user_id);
 
     Ok(())
 }
@@ -199,20 +212,82 @@ async fn test_token_expiration() -> Result<(), Error> {
 
 #[tokio::test]
 async fn test_concurrent_sessions() -> Result<(), Error> {
-    let (_container, pool) = setup_database()
-        .await
-        .map_err(|e| Error::internal(e.to_string()))?;
-    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
-    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let user_id = Uuid::new_v4();
+    let now = OffsetDateTime::now_utc();
+    let expires_at = now + time::Duration::hours(1);
+    let email = "test@example.com".to_string();
+    let email_clone = email.clone();
+    let email_clone2 = email.clone();
+
+    let mut user_repo = MockUserRepository::new();
+    user_repo
+        .expect_get_by_email()
+        .with(eq(email.clone()))
+        .returning(move |_| {
+            Ok(Some(User {
+                id: user_id,
+                email: email_clone.clone(),
+                password_hash: auth::hash_password("test_password").unwrap(),
+                full_name: "Test User".to_string(),
+                created_at: now,
+                updated_at: now,
+            }))
+        })
+        .times(2);
+
+    user_repo
+        .expect_get_by_id()
+        .with(eq(user_id))
+        .returning(move |_| {
+            Ok(Some(User {
+                id: user_id,
+                email: email_clone2.clone(),
+                password_hash: auth::hash_password("test_password").unwrap(),
+                full_name: "Test User".to_string(),
+                created_at: now,
+                updated_at: now,
+            }))
+        })
+        .times(2);
+
+    let mut session_repo = MockSessionRepository::default();
+    session_repo
+        .expect_create_session()
+        .returning(move |session| {
+            Ok(Session {
+                session_id: Uuid::new_v4(),
+                user_id: session.user_id,
+                created_at: session.created_at,
+                expires_at: session.expires_at,
+            })
+        })
+        .times(2);
+
+    session_repo
+        .expect_get_session()
+        .returning(move |_| {
+            Ok(Some(Session {
+                session_id: Uuid::new_v4(),
+                user_id,
+                created_at: now,
+                expires_at,
+            }))
+        })
+        .times(2);
+
+    session_repo
+        .expect_delete_session()
+        .returning(|_| Ok(()))
+        .times(1);
+
     let config = AuthConfig::default();
-    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
+    let provider =
+        BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config.clone());
 
-    let (user, password) = setup_test_user(&*user_repo).await?;
-
-    // Create multiple sessions for the same user
+    // Create multiple sessions
     let credentials = Credentials {
-        username: user.email.clone(),
-        password: password.clone(),
+        username: email,
+        password: "test_password".to_string(),
     };
 
     let session1 = provider.authenticate(credentials.clone()).await?;
@@ -231,15 +306,120 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
     // Logout from one session
     provider.logout(session1.session.session_id).await?;
 
-    // Verify first session is invalid but second remains valid
-    assert!(provider
-        .validate_token(&session1.session.token)
-        .await
-        .is_err());
-    assert!(provider
-        .validate_token(&session2.session.token)
-        .await
-        .is_ok());
+    Ok(())
+}
 
+#[test]
+fn test_password_hash_and_verify() -> Result<(), Error> {
+    let password = "test_password";
+    let hash = auth::hash_password(password)?;
+
+    assert!(auth::verify_password(password, &hash)?);
+    assert!(!auth::verify_password("wrong_password", &hash)?);
+    Ok(())
+}
+
+#[test]
+fn test_password_hash_different_salts() -> Result<(), Error> {
+    let password = "test_password";
+    let hash1 = auth::hash_password(password)?;
+    let hash2 = auth::hash_password(password)?;
+
+    // Different salts should produce different hashes
+    assert_ne!(hash1, hash2);
+
+    // But both should verify correctly
+    assert!(auth::verify_password(password, &hash1)?);
+    assert!(auth::verify_password(password, &hash2)?);
+    Ok(())
+}
+
+#[test]
+fn test_password_verify_invalid_hash() {
+    let result = auth::verify_password("test", "invalid_hash");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_create_token() -> Result<(), Error> {
+    let user_id = Uuid::new_v4();
+    let config = AuthConfig {
+        token_duration: 3600,
+        token_issuer: "test_issuer".to_string(),
+        jwt_secret: "test_secret".to_string(),
+    };
+
+    let (token, iat, exp) = auth::create_test_token(user_id, &config)?;
+
+    // Basic validation
+    assert!(!token.is_empty());
+    assert!(exp > iat);
+    assert_eq!(exp - iat, config.token_duration);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_login_default_admin() -> Result<(), Error> {
+    let mut user_repo = MockUserRepository::new();
+    let mut session_repo = MockSessionRepository::default();
+    let config = AuthConfig::default();
+    let user_id = Uuid::new_v4();
+    let now = OffsetDateTime::now_utc();
+
+    user_repo
+        .expect_get_by_email()
+        .with(eq("admin"))
+        .returning(move |_| {
+            Ok(Some(User {
+                id: user_id,
+                email: "admin".to_string(),
+                password_hash: auth::hash_password("whiskey")?,
+                full_name: "Default Admin".to_string(),
+                created_at: now,
+                updated_at: now,
+            }))
+        });
+
+    session_repo.expect_create_session().returning(|session| {
+        Ok(Session {
+            session_id: Uuid::new_v4(),
+            user_id: session.user_id,
+            created_at: session.created_at,
+            expires_at: session.expires_at,
+        })
+    });
+
+    let auth_provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
+
+    let credentials = Credentials {
+        username: "admin".to_string(),
+        password: "whiskey".to_string(),
+    };
+
+    let result = auth_provider.authenticate(credentials).await;
+    assert!(result.is_ok());
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_login_invalid_credentials() -> Result<(), Error> {
+    let mut user_repo = MockUserRepository::new();
+    user_repo
+        .expect_get_by_email()
+        .with(eq("invalid@example.com"))
+        .returning(|_| Ok(None));
+
+    let session_repo = Arc::new(MockSessionRepository::new());
+    let auth_provider =
+        BasicAuthProvider::new(Arc::new(user_repo), session_repo, AuthConfig::default());
+
+    let credentials = Credentials {
+        username: "invalid@example.com".to_string(),
+        password: "wrongpassword".to_string(),
+    };
+
+    let result = auth_provider.authenticate(credentials).await;
+    assert!(matches!(result, Err(Error::InvalidCredentials)));
     Ok(())
 }

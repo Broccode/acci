@@ -1,16 +1,17 @@
 use acci_auth::{AuthConfig, AuthProvider, BasicAuthProvider, Credentials};
 use acci_db::{
     create_pool,
+    repositories::session::PgSessionRepository,
     repositories::user::{PgUserRepository, UserRepository},
     run_migrations,
-    sqlx::{self},
+    sqlx::{self, PgPool},
     DbConfig,
 };
 use anyhow::Result;
 use std::sync::Arc;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
 
-async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
+async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository, PgPool)> {
     let container = postgres::Postgres::default().start().await?;
     let port = container.get_host_port_ipv4(5432).await?;
 
@@ -37,13 +38,13 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
         .await?;
 
     run_migrations(&pool).await?;
-    let repo = PgUserRepository::new(pool);
-    Ok((Box::new(container), repo))
+    let repo = PgUserRepository::new(pool.clone());
+    Ok((Box::new(container), repo, pool))
 }
 
 #[tokio::test]
 async fn test_default_admin_user_exists() -> Result<()> {
-    let (_container, repo) = setup().await?;
+    let (_container, repo, _) = setup().await?;
 
     // Get the default admin user
     let user = repo.get_by_email("admin").await?;
@@ -58,21 +59,26 @@ async fn test_default_admin_user_exists() -> Result<()> {
 
 #[tokio::test]
 async fn test_default_admin_authentication() -> Result<()> {
-    let (_container, repo) = setup().await?;
+    let (_container, repo, pool) = setup().await?;
+
+    // Add a small delay to ensure database is ready
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
     // Create auth provider and try to authenticate
     let user_repo = Arc::new(repo);
-    let auth_provider = BasicAuthProvider::new(user_repo, AuthConfig::default());
+    let session_repo = Arc::new(PgSessionRepository::new(pool.clone()));
+    let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
 
     let credentials = Credentials {
-        username: "test.admin@example.com".to_string(),
-        password: "test123!admin".to_string(),
+        username: "admin".to_string(),
+        password: "whiskey".to_string(),
     };
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
         result.is_ok(),
-        "Default admin authentication should succeed"
+        "Default admin authentication should succeed: {:?}",
+        result.err()
     );
 
     Ok(())
