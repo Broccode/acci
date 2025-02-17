@@ -19,9 +19,6 @@ use acci_db::{
 };
 
 use crate::error::{ApiError, ApiResult};
-use acci_db::repositories::session::SessionRepository;
-use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
-use rand::rngs::OsRng;
 
 /// Login request payload
 #[derive(Debug, Deserialize, Validate)]

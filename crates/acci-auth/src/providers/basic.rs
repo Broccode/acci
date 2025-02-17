@@ -170,7 +170,7 @@ impl BasicAuthProvider {
             .await
             .map_err(|e| {
                 error!("Failed to get user: {}", e);
-                Error::internal(format!("Failed to get user: {}", e))
+                Error::internal(format!("Failed to get user: {e}"))
             })?;
 
         if let Some(user) = user {
@@ -185,7 +185,7 @@ impl BasicAuthProvider {
                     .await
                     .map_err(|e| {
                         error!("Failed to create session: {}", e);
-                        Error::internal(format!("Failed to create session: {}", e))
+                        Error::internal(format!("Failed to create session: {e}"))
                     })?;
 
                 let auth_session = AuthSession {
@@ -221,7 +221,7 @@ impl BasicAuthProvider {
                             .await
                             .map_err(|e| {
                                 error!("Failed to create session: {}", e);
-                                Error::internal(format!("Failed to create session: {}", e))
+                                Error::internal(format!("Failed to create session: {e}"))
                             })?;
 
                         let auth_session = AuthSession {
@@ -252,7 +252,7 @@ impl BasicAuthProvider {
                     .await
                     .map_err(|e| {
                         error!("Failed to create session: {}", e);
-                        Error::internal(format!("Failed to create session: {}", e))
+                        Error::internal(format!("Failed to create session: {e}"))
                     })?;
 
                 let auth_session = AuthSession {
@@ -290,7 +290,7 @@ impl BasicAuthProvider {
             .await
             .map_err(|e| {
                 error!("Failed to get session from database: {}", e);
-                Error::internal(format!("Failed to get session: {}", e))
+                Error::internal(format!("Failed to get session: {e}"))
             })?;
 
         let Some(db_session) = db_session else {
@@ -344,7 +344,7 @@ impl BasicAuthProvider {
             .await
             .map_err(|e| {
                 error!("Failed to delete session: {}", e);
-                Error::internal(format!("Failed to delete session: {}", e))
+                Error::internal(format!("Failed to delete session: {e}"))
             })
     }
 }
