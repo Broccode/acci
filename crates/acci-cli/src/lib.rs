@@ -1,7 +1,10 @@
+//! CLI utilities and error handling for the ACCI system.
+//! Provides common functionality for command-line tools including error types and formatting.
 use serde::Serialize;
 use std::fmt::Display;
 
-#[must_use] pub const fn add(left: u64, right: u64) -> u64 {
+#[must_use]
+pub const fn add(left: u64, right: u64) -> u64 {
     left + right
 }
 

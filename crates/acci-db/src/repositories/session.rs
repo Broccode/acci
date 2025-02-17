@@ -9,7 +9,7 @@ use crate::models::session::Session;
 use crate::Error;
 
 /// Metrics for session operations
-static SESSION_METRICS: Lazy<SessionMetrics> = Lazy::new(|| SessionMetrics::new());
+static SESSION_METRICS: Lazy<SessionMetrics> = Lazy::new(SessionMetrics::new);
 
 /// Metrics for session operations
 struct SessionMetrics {
