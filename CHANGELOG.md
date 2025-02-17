@@ -123,10 +123,28 @@ Create a git tag for the version (e.g., v0.2.0)
 ### Added
 
 - Added detailed documentation for pre-commit hook setup in `scripts/SETUP_PRE_COMMIT.md`
+- Comprehensive test strategy integration overview with detailed phase transitions
+- Resource allocation details including FTE requirements and infrastructure costs
+- Expanded risk management section with concrete mitigation strategies
+- Observability integration configuration for test metrics
+- Alert configuration for test quality monitoring
+- Links to related testing documentation
+- Maintenance and update guidelines for testing documentation
+
+### Changed
+
+- Reorganized documentation structure:
+  - Moved all test-related documentation from `docs/infrastructure/` to `docs/tests/`
+  - Moved action plans from `docs/infrastructure/` to root `docs/` directory
+  - Improved documentation organization for better maintainability
+  - Updated document cross-references to reflect new structure
 
 ### Fixed
 
 - Fixed unused_mut linter warnings in test files by adding #[allow(unused_mut)] attributes for MockSessionRepository instances
+- Clarified resource allocation and infrastructure requirements
+- Added missing links between testing documentation files
+- Improved consistency in metrics definitions across phases
 
 ## [0.1.24] - 2024-03-28
 
