@@ -127,6 +127,7 @@ Create a git tag for the version (e.g., v0.2.0)
   - Removed language-specific subdirectories (de/, sq/)
   - Unified infrastructure documentation in single location
   - Simplified documentation structure for better maintainability
+- Updated test execution documentation in Integration_Tests.md to use Make targets instead of direct cargo commands for better consistency and maintainability
 
 ### Added
 
