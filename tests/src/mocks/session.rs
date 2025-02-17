@@ -12,6 +12,7 @@ pub trait SessionRepositoryTrait: Send + Sync {
     async fn delete_session(&self, id: Uuid) -> Result<(), Error>;
     async fn get_user_sessions(&self, user_id: Uuid) -> Result<Vec<Session>, Error>;
     async fn delete_expired_sessions(&self) -> Result<u64, Error>;
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error>;
 }
 
 pub type MockSessionRepository = MockSessionRepositoryTrait;
@@ -36,5 +37,9 @@ impl SessionRepository for MockSessionRepositoryTrait {
 
     async fn delete_expired_sessions(&self) -> Result<u64, Error> {
         SessionRepositoryTrait::delete_expired_sessions(self).await
+    }
+
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error> {
+        SessionRepositoryTrait::invalidate_user_sessions(self, user_id).await
     }
 }
