@@ -67,11 +67,27 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 
 ### TESTING
 
-- Always write unit tests alongside implementation code
-- Use integration tests for external interface validation
-- Implement property-based testing for complex logic
-- Mock external services in tests using traits
-- Use test doubles sparingly and intentionally
+- Unit Tests:
+  - Must be in the same file as the tested code
+  - Must not use mocks or external dependencies
+  - Focus on individual functions and their logic
+  - Fast execution for immediate feedback
+  - Run with `cargo test`
+
+- Integration Tests:
+  - Must be in the `/tests` directory
+  - All mocks must be defined in `/tests/src/mocks`
+  - Test the interaction of multiple components
+  - May use external dependencies and mocks
+  - Run with `cargo test --test '*'`
+  - Use testcontainers-rs for container-based tests
+
+- Test Organization:
+  - Clear separation between unit and integration tests
+  - No mocks allowed in the crates
+  - Only use mocks in integration tests
+  - Common test utilities in `/tests/src/helpers`
+  - Fixtures in `/tests/src/fixtures`
 
 ### PERFORMANCE
 

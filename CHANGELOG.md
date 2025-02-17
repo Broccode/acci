@@ -120,6 +120,10 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+- Translated testing section in .cursorrules from German to English for consistency with the rest of the documentation
+
 ### Fixed
 
 - Fixed `BasicAuthProvider::authenticate` to return `AuthResponse` instead of `AuthSession`
