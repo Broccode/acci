@@ -128,12 +128,16 @@ Create a git tag for the version (e.g., v0.2.0)
   - Unified infrastructure documentation in single location
   - Simplified documentation structure for better maintainability
 - Updated test execution documentation in Integration_Tests.md to use Make targets instead of direct cargo commands for better consistency and maintainability
+- Modified Makefile targets to exclude integration tests:
+  - Added `--exclude acci-tests` to `clippy` target to prevent unwanted changes in test files
+  - Added `--exclude acci-tests` to `fix` target to preserve test-specific imports
 
 ### Added
 
 - Added French and Spanish translations to README.md
 - Added new helper module `tests/src/helpers/auth.rs` for authentication test utilities
 - Added new mock implementation `tests/src/mocks/user.rs` for user testing
+- Added pre-commit hook script in `scripts/pre-commit.sh` that runs code formatting, fixing, linting and unit tests before each commit
 
 ### Changed
 

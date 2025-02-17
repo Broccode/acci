@@ -53,7 +53,7 @@ sqlx-prepare:
 	done
 
 clippy:
-	cargo clippy --workspace --lib --bins --fix --allow-dirty --allow-staged --all-features -- -D warnings
+	cargo clippy --workspace --lib --bins --fix --allow-dirty --allow-staged --all-features --exclude acci-tests -- -D warnings
 
 test: test-unit test-integration
 
@@ -77,7 +77,7 @@ fmt:
 	@echo "Code formatting complete."
 
 fix:
-	cargo fix --broken-code --allow-dirty --allow-staged --workspace --all-targets --all-features
+	cargo fix --broken-code --allow-dirty --allow-staged --workspace --all-targets --all-features --exclude acci-tests
 	@echo "Code fixing complete."
 
 prepare-commit:
