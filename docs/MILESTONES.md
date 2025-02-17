@@ -10,34 +10,92 @@ This document defines the key milestones for developing our enterprise-grade Rus
 
 ### M1.1: Core Infrastructure ✅ (Completed)
 
-- [x] Basic repository setup
+- Basic repository setup
   - GitHub repository structure
   - Development environment (Docker)
   - Basic linting setup
-- [x] CI/CD foundation
+- CI/CD foundation
   - Simple GitHub Actions pipeline
   - Basic test automation
 
 ### M1.2: MVP Backend (In Progress)
 
-- [x] Basic Axum setup
-  - Health check endpoint
-  - Basic error handling
-  - CORS and tracing middleware
-- [x] Database integration
-  - PostgreSQL setup with migrations
-  - User schema design with UUID and timestamps
-  - Repository pattern implementation with CRUD operations
-  - Comprehensive test coverage with testcontainers
-  - CLI tools for database management
-- [-] Simple authentication
-  - [x] Basic auth provider infrastructure with trait-based design
-  - [x] Password security with Argon2 implementation
-  - [x] JWT token management and validation
-  - [x] User authentication traits and repository integration
-  - [x] Login endpoint implementation
-  - [x] Test user configuration
-  - [ ] Session management
+### Basic Axum Setup ✅
+
+- Health check endpoint implemented ✅
+- Error handling structure with custom API errors ✅
+- CORS and tracing middleware ✅
+- Health check endpoint returning service status and version ✅
+- Integration tests for health check endpoint ✅
+
+### Database Integration ✅
+
+- PostgreSQL setup in Docker Compose ✅
+- SQLx integration with offline mode support ✅
+- Database migrations system ✅
+- Initial users table migration ✅
+- CLI tool for database management ✅
+- Make commands for database operations ✅
+- User Repository implementation ✅
+  - CRUD operations ✅
+  - Email-based lookup ✅
+  - Secure password storage ✅
+  - Automatic timestamps ✅
+  - UUID-based identification ✅
+  - Comprehensive test coverage ✅
+
+### Simple Authentication (In Progress)
+
+- Basic Authentication Provider Infrastructure ✅
+  - Password security with Argon2 ✅
+  - JWT token management ✅
+  - User authentication traits ✅
+  - Repository integration ✅
+
+- Login Endpoint Implementation ✅
+  - REST API endpoint for user authentication ✅
+  - Request validation and error handling ✅
+  - Proper error mapping between core and API layers ✅
+  - Integration with BasicAuthProvider ✅
+  - Comprehensive test coverage with mock repositories ✅
+  - CORS support for authentication endpoints ✅
+  - Structured logging with sensitive data masking ✅
+  - Proper dependency injection for database access ✅
+
+- Session Management (Pending)
+  - Session repository implementation (partial) ⚠️
+  - Session model and database schema ✅
+  - Session creation on login ❌
+  - Session validation for authenticated requests ❌
+  - Session cleanup and expiration handling ❌
+  - Session invalidation on logout ❌
+  - Integration tests for session lifecycle ❌
+
+- Test User Configuration ✅
+  - Default admin user migration ✅
+  - Test user migrations ✅
+  - Password hash generation tool ✅
+  - Test user management commands ✅
+  - Integration tests for test users ✅
+
+### Remaining Tasks for M1.2
+
+1. Complete Session Management Implementation:
+   - Integrate session creation into login flow
+   - Implement session validation middleware
+   - Add session cleanup background task
+   - Add logout endpoint with session invalidation
+   - Add comprehensive session tests
+
+2. Enhance API Documentation:
+   - Add OpenAPI/Swagger documentation
+   - Document authentication flow
+   - Add example requests/responses
+
+3. Improve Observability:
+   - Add structured logging to all endpoints
+   - Add request correlation IDs
+   - Add basic metrics collection
 
 ### M1.3: MVP Frontend (Week 2-3)
 

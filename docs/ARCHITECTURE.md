@@ -124,6 +124,116 @@ sequenceDiagram
     API -->> Frontend: Return session details
 ```
 
+### 6.2 Session Management
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Auth (Keycloak)
+    participant Session Store
+    participant Database
+
+    User ->> Frontend: Login with Credentials
+    Frontend ->> API: POST /auth/login
+    API ->> Auth (Keycloak): Validate credentials
+    Auth (Keycloak) -->> API: Return JWT Token
+    API ->> Database: Fetch user data
+    API ->> Session Store: Create session
+    Session Store -->> API: Return session ID
+    API -->> Frontend: Return session details & JWT
+    
+    Note over Frontend,API: Subsequent Requests
+    Frontend ->> API: Request with JWT
+    API ->> Session Store: Validate session
+    Session Store -->> API: Session valid/invalid
+    alt Session Valid
+        API ->> Database: Process request
+        API -->> Frontend: Return response
+    else Session Invalid
+        API -->> Frontend: 401 Unauthorized
+    end
+```
+
+### 6.3 Observability Architecture
+
+```mermaid
+graph TD
+    subgraph Application
+        API[API Endpoints]
+        Auth[Auth Service]
+        DB[Database Service]
+    end
+    
+    subgraph Observability
+        Logger[Structured Logger]
+        Metrics[Metrics Collector]
+        Traces[Trace Collector]
+    end
+    
+    subgraph Storage
+        Loki[Loki]
+        Prometheus[Prometheus]
+        Tempo[Tempo]
+    end
+    
+    subgraph Visualization
+        Grafana[Grafana Dashboards]
+    end
+    
+    API --> Logger
+    Auth --> Logger
+    DB --> Logger
+    Logger --> Loki
+    
+    API --> Metrics
+    Auth --> Metrics
+    DB --> Metrics
+    Metrics --> Prometheus
+    
+    API --> Traces
+    Auth --> Traces
+    DB --> Traces
+    Traces --> Tempo
+    
+    Loki --> Grafana
+    Prometheus --> Grafana
+    Tempo --> Grafana
+```
+
+### 6.4 Authentication Flow Details
+
+```mermaid
+graph TD
+    subgraph Frontend
+        Login[Login Form]
+        Token[Token Storage]
+    end
+    
+    subgraph API Gateway
+        Auth[Auth Middleware]
+        Session[Session Validator]
+    end
+    
+    subgraph Services
+        Basic[Basic Auth Provider]
+        JWT[JWT Service]
+        UserRepo[User Repository]
+        SessionRepo[Session Repository]
+    end
+    
+    Login -->|Credentials| Auth
+    Auth -->|Validate| Basic
+    Basic -->|Lookup| UserRepo
+    Basic -->|Create Token| JWT
+    JWT -->|Create| SessionRepo
+    Auth -->|Return| Token
+    
+    Token -->|Subsequent Requests| Session
+    Session -->|Validate| SessionRepo
+```
+
 ---
 
 ## 7. Deployment View
@@ -151,6 +261,58 @@ sequenceDiagram
 - **Tracing with OpenTelemetry**
 - **Metrics with Prometheus**
 - **Logging with Loki & Grafana dashboards**
+
+### Session Management
+
+- **Session Storage:**
+  - PostgreSQL-based session store
+  - UUID session identifiers
+  - JWT token association
+  - Automatic expiration
+  - Concurrent session handling
+  - Session invalidation on logout
+
+- **Session Security:**
+  - Secure session ID generation
+  - Token rotation on security events
+  - Session fixation prevention
+  - IP binding (optional)
+  - User agent validation
+  - Rate limiting per session
+
+- **Session Lifecycle:**
+  - Creation on successful login
+  - Validation on each request
+  - Automatic cleanup of expired sessions
+  - Manual invalidation on logout
+  - Forced invalidation for security
+  - Session extension on activity
+
+### Observability
+
+- **Structured Logging:**
+  - JSON log format
+  - Correlation IDs
+  - Request/Response logging
+  - Error context capture
+  - PII data masking
+  - Log level management
+
+- **Metrics Collection:**
+  - Request rates
+  - Error rates
+  - Response times
+  - Resource usage
+  - Business metrics
+  - SLO compliance
+
+- **Distributed Tracing:**
+  - Request tracing
+  - Service dependencies
+  - Database operations
+  - External calls
+  - Error propagation
+  - Performance bottlenecks
 
 ---
 

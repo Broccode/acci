@@ -150,20 +150,37 @@ async fn test_error_handling() -> Result<()> {
 
 ## Running Tests
 
-To run all integration tests:
+To run all tests (unit and integration):
 
 ```bash
-cargo test
+make test
 ```
 
-To run specific tests:
+To run only integration tests:
 
 ```bash
-cargo test test_name
+make test-integration
 ```
 
-To run tests with output:
+To run tests with coverage:
 
 ```bash
-cargo test -- --nocapture
+# Generate LCOV coverage report
+make coverage
+
+# Generate HTML coverage report (viewable in browser)
+make coverage-html
 ```
+
+For development, you might want to run the complete preparation sequence:
+
+```bash
+make prepare-commit
+```
+
+This will:
+
+1. Format the code
+2. Fix common issues
+3. Run clippy checks
+4. Run unit tests
