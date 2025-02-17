@@ -1,3 +1,8 @@
+//! Command line interface for user management.
+//!
+//! This binary provides commands for creating, listing, and managing users
+//! in the ACCI system.
+
 use acci_core::{auth::hash_password, error::Error};
 use acci_db::repositories::{
     session::PgSessionRepository,
@@ -66,7 +71,7 @@ async fn main() -> Result<()> {
     // Initialize database connection
     let pool = PgPool::connect(&cli.database_url).await?;
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
-    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let _session_repo = Arc::new(PgSessionRepository::new(pool));
 
     match cli.command {
         Commands::Add {
