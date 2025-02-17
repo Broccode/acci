@@ -20,9 +20,7 @@ acci/
 │   ├── docker/               # Docker-related files
 │   └── k8s/                  # Kubernetes manifests
 ├── docs/                      # Project documentation
-│   ├── en/                   # English documentation
-│   ├── de/                   # German documentation
-│   └── sq/                   # Albanian documentation
+│   └── infrastructure/       # Infrastructure documentation
 ├── src/                      # Main application source
 └── tests/                    # Integration tests
     ├── api/                  # API integration tests
@@ -48,7 +46,7 @@ acci/
 ## Development Guidelines
 
 1. All new crates should be added under the `crates/` directory
-2. Documentation must be maintained in all three languages (EN, DE, SQ)
+2. Documentation must be maintained in English
 3. Configuration files should be placed in the repository root
 4. Tests should be organized by type (unit, integration, e2e)
 5. Docker-related files should be placed in `deploy/docker/`
@@ -59,16 +57,17 @@ acci/
 
 ## Best Practices
 
-1. Follow the established directory structure for new components
-2. Keep documentation in sync across all language versions
-3. Update relevant configuration files when adding new features
-4. Maintain clear separation of concerns between crates
-5. Follow the testing directory structure for new tests
-6. Use proper error handling and logging throughout the codebase
-7. Implement comprehensive testing for all new features
-8. Follow security best practices for all components
-9. Keep dependencies up to date and regularly audited
-10. Maintain proper versioning and changelog updates
+1. See .cursorrules for more details
+2. Follow the established directory structure for new components
+3. Keep documentation in sync across all language versions
+4. Update relevant configuration files when adding new features
+5. Maintain clear separation of concerns between crates
+6. Follow the testing directory structure for new tests
+7. Use proper error handling and logging throughout the codebase
+8. Implement comprehensive testing for all new features
+9. Follow security best practices for all components
+10. Keep dependencies up to date and regularly audited
+11. Maintain proper versioning and changelog updates
 
 ## Security Considerations
 

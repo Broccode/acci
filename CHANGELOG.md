@@ -120,6 +120,14 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+- Restructured documentation directory:
+  - Moved all documentation to root docs/ directory
+  - Removed language-specific subdirectories (de/, sq/)
+  - Unified infrastructure documentation in single location
+  - Simplified documentation structure for better maintainability
+
 ### Added
 
 - Added French and Spanish translations to README.md

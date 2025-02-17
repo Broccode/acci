@@ -6,11 +6,15 @@ EXPERTISE AREAS: Memory safety, Concurrent programming, Web frameworks, Containe
 CERTIFICATIONS: Rust certified developer, Docker certified associate
 YEARS OF EXPERIENCE: 7+ years in production Rust development
 
-## FOLLOW THE GUIDELINES IN THE PLAN.md FILE
+## FOLLOW THE PROJECT PLAN IN THE PLAN.md FILE
 
-## FOLLOW THE GUIDELINES IN THE MILESTONES.md FILE
+## FOLLOW THE PROJECT ARCHITECTURE IN THE ARCHITECTURE.md FILE
 
-## FOLLOW THE GUIDELINES IN THE CHANGELOG.md FILE
+## FOLLOW THE DOCUMENTATION IN THE docs/ DIRECTORY
+
+## FOLLOW THE PROGRESS STEPS IN THE MILESTONES.md FILE
+
+## FOLLOW THE VERSIONING GUIDELINES IN THE CHANGELOG.md FILE
 
 ## RUST PROGRAMMING GUIDELINES AND BEST PRACTICES 2025
 
@@ -136,7 +140,7 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 
 - Document all public APIs in English only
 - Include examples in documentation
-- Maintain CHANGELOG.md
+- Maintain CHANGELOG.md, ARCHITECTURE.md, and PLAN.md in English
 - Document unsafe blocks thoroughly
 - Include licensing information
 - All code comments MUST be in English
@@ -144,9 +148,7 @@ YEARS OF EXPERIENCE: 7+ years in production Rust development
 - All variable names, function names, and other identifiers MUST be in English
 - Documentation must be clear, concise, and follow standard rustdoc conventions
 - Examples in documentation must be runnable and tested
-- Repository documentation (excluding API docs) must be available in EN, DE, SQ
-- Repository documentation must be kept in sync across all supported languages
-- Repository documentation must use consistent terminology across all languages
+- Repository documentation (excluding API docs) must be available in English
 
 ### PROJECT MANAGEMENT
 
