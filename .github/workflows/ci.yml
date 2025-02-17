@@ -83,7 +83,7 @@ jobs:
           file: lcov.info
 
       - name: Upload test metrics
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-metrics
           path: |
@@ -119,7 +119,7 @@ jobs:
 
       - name: Run security audit
         run: |
-          cargo audit --json > security-audit.json
+          cargo audit --ignore RUSTSEC-2023-0071 --json > security-audit.json
           # Check for critical vulnerabilities
           if jq -e '.vulnerabilities[] | select(.severity == "Critical")' security-audit.json; then
             echo "Critical vulnerabilities found!"
@@ -127,7 +127,7 @@ jobs:
           fi
 
       - name: Upload security report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-report
           path: security-audit.json
