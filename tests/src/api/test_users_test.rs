@@ -31,7 +31,6 @@ async fn setup() -> Result<(
 #[tokio::test]
 async fn test_test_users_authentication() -> Result<()> {
     let (_container, user_repo, session_repo) = setup().await?;
-    let test_config = TestUserConfig::default();
     let auth_config = AuthConfig::default();
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), auth_config);
 
@@ -84,6 +83,7 @@ async fn test_test_users_exist() -> Result<()> {
 #[tokio::test]
 async fn test_authenticate_test_admin_user() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
+    #[allow(unused_mut)]
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
@@ -135,6 +135,7 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
 #[tokio::test]
 async fn test_authenticate_test_regular_user() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
+    #[allow(unused_mut)]
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
@@ -186,6 +187,7 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
 #[tokio::test]
 async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
+    #[allow(unused_mut)]
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();

@@ -120,6 +120,10 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed unused_mut linter warnings in test files by adding #[allow(unused_mut)] attributes for MockSessionRepository instances
+
 ## [0.1.24] - 2024-03-28
 
 ### Changed
