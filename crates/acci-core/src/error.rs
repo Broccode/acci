@@ -30,6 +30,13 @@ pub enum Error {
         message: String,
     },
 
+    /// A resource was not found.
+    #[error("Not found: {message}")]
+    NotFound {
+        /// A message describing what resource was not found.
+        message: String,
+    },
+
     /// An authentication error occurred with the specified message.
     #[error("Authentication failed: {0}")]
     AuthenticationFailed(String),
@@ -65,6 +72,13 @@ impl Error {
             message: message.into(),
         }
     }
+
+    /// Creates a new not found error with the given message.
+    pub fn not_found<S: Into<String>>(message: S) -> Self {
+        Self::NotFound {
+            message: message.into(),
+        }
+    }
 }
 
 impl From<time::error::ComponentRange> for Error {
@@ -89,5 +103,12 @@ mod tests {
         let err = Error::internal("something went wrong");
         assert!(matches!(err, Error::Internal { .. }));
         assert_eq!(err.to_string(), "Internal error: something went wrong");
+    }
+
+    #[test]
+    fn test_not_found_error() {
+        let err = Error::not_found("user not found");
+        assert!(matches!(err, Error::NotFound { .. }));
+        assert_eq!(err.to_string(), "Not found: user not found");
     }
 }

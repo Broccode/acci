@@ -11,6 +11,8 @@ use acci_db::{
 };
 use base64::{engine::general_purpose::URL_SAFE, Engine};
 use futures::future::join_all;
+use metrics::{counter, Counter};
+use once_cell::sync::Lazy;
 use proptest::prelude::*;
 use serde_json::json;
 use std::sync::Arc;
@@ -37,6 +39,46 @@ async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), E
         .map_err(|e| Error::internal(format!("Failed to create test user: {}", e)))?;
 
     Ok((user, password.to_string()))
+}
+
+/// Metrics for rate limiting tests
+static RATE_LIMIT_METRICS: Lazy<RateLimitMetrics> = Lazy::new(|| RateLimitMetrics::new());
+
+struct RateLimitMetrics {
+    attempts: Counter,
+    exceeded: Counter,
+    reset: Counter,
+}
+
+impl RateLimitMetrics {
+    fn new() -> Self {
+        Self {
+            attempts: counter!(
+                "rate_limit_attempts_total",
+                "Total number of rate-limited endpoint attempts"
+            ),
+            exceeded: counter!(
+                "rate_limit_exceeded_total",
+                "Total number of rate limit exceeded events"
+            ),
+            reset: counter!(
+                "rate_limit_reset_total",
+                "Total number of rate limit reset events"
+            ),
+        }
+    }
+
+    fn record_attempt(&self) {
+        self.attempts.increment(1);
+    }
+
+    fn record_exceeded(&self) {
+        self.exceeded.increment(1);
+    }
+
+    fn record_reset(&self) {
+        self.reset.increment(1);
+    }
 }
 
 #[tokio::test]
@@ -1488,28 +1530,61 @@ async fn test_token_validation_proptest_signatures() {
     });
 }
 
+/// Configuration for rate limiting tests
+#[derive(Debug, Clone)]
+struct RateLimitConfig {
+    endpoint: &'static str,
+    limit: u32,
+    window: Duration,
+    burst_size: Option<u32>,
+}
+
+impl RateLimitConfig {
+    fn new(endpoint: &'static str, limit: u32, window: Duration) -> Self {
+        Self {
+            endpoint,
+            limit,
+            window,
+            burst_size: None,
+        }
+    }
+
+    fn with_burst(mut self, burst_size: u32) -> Self {
+        self.burst_size = Some(burst_size);
+        self
+    }
+}
+
 #[tokio::test]
-async fn test_rate_limiting_comprehensive() {
+async fn test_rate_limiting_with_metrics() {
     // Setup
     let user_repo = MockUserRepository::new();
-    let auth_service = AuthService::new(user_repo.clone());
+    let auth_service = AuthService::new(user_repo);
     let test_ip = "192.168.1.1";
     let test_user_agent = "test-browser/1.0";
 
-    // Test different endpoints
-    let endpoints = vec![
-        ("login", 5),          // 5 attempts per minute for login
-        ("token_refresh", 10), // 10 attempts per minute for refresh
-        ("registration", 3),   // 3 attempts per minute for registration
+    // Test configurations
+    let configs = vec![
+        RateLimitConfig::new("login", 5, Duration::from_secs(60)),
+        RateLimitConfig::new("token_refresh", 10, Duration::from_secs(60)).with_burst(15),
+        RateLimitConfig::new("registration", 3, Duration::from_secs(60)),
     ];
 
-    for (endpoint, limit) in endpoints {
+    // Record initial metric values
+    let initial_attempts = RATE_LIMIT_METRICS.attempts.get();
+    let initial_exceeded = RATE_LIMIT_METRICS.exceeded.get();
+    let initial_reset = RATE_LIMIT_METRICS.reset.get();
+
+    for config in configs {
         let mut attempts = 0;
         let start_time = SystemTime::now();
+        let mut burst_exceeded = false;
 
         // Make requests until rate limited
         loop {
-            let result = match endpoint {
+            RATE_LIMIT_METRICS.record_attempt();
+
+            let result = match config.endpoint {
                 "login" => {
                     auth_service
                         .login(Credentials {
@@ -1537,119 +1612,112 @@ async fn test_rate_limiting_comprehensive() {
             attempts += 1;
 
             if let Err(AuthError::RateLimitExceeded) = result {
-                // Verify we hit the limit at the expected attempt
-                assert_eq!(
-                    attempts,
-                    limit + 1,
-                    "Rate limit for {} should trigger after {} attempts",
-                    endpoint,
-                    limit
-                );
+                RATE_LIMIT_METRICS.record_exceeded();
+
+                // For endpoints with burst capacity
+                if let Some(burst_size) = config.burst_size {
+                    if !burst_exceeded && attempts <= burst_size {
+                        panic!(
+                            "Rate limit triggered too early for {} (attempt {}, burst size {})",
+                            config.endpoint, attempts, burst_size
+                        );
+                    }
+                    burst_exceeded = true;
+                } else {
+                    // Verify we hit the limit at the expected attempt
+                    assert_eq!(
+                        attempts,
+                        config.limit + 1,
+                        "Rate limit for {} should trigger after {} attempts",
+                        config.endpoint,
+                        config.limit
+                    );
+                }
                 break;
             }
 
-            if attempts > limit + 1 {
+            if attempts > config.limit + config.burst_size.unwrap_or(0) + 1 {
                 panic!(
                     "Rate limit not triggered for {} after {} attempts",
-                    endpoint, attempts
+                    config.endpoint, attempts
                 );
             }
+
+            // Add small delay to prevent overwhelming the service
+            sleep(Duration::from_millis(50)).await;
         }
 
-        // Verify rate limit duration
+        // Verify rate limit window
         let elapsed = SystemTime::now().duration_since(start_time).unwrap();
         assert!(
-            elapsed.as_secs() < 70,
-            "Rate limit test for {} took too long: {} seconds",
-            endpoint,
-            elapsed.as_secs()
+            elapsed < config.window + Duration::from_secs(10),
+            "Rate limit test for {} took too long: {:?}",
+            config.endpoint,
+            elapsed
+        );
+
+        // Wait for rate limit to reset
+        sleep(config.window).await;
+        RATE_LIMIT_METRICS.record_reset();
+
+        // Verify we can make requests again
+        RATE_LIMIT_METRICS.record_attempt();
+        let result = match config.endpoint {
+            "login" => {
+                auth_service
+                    .login(Credentials {
+                        username: "test".to_string(),
+                        password: "test".to_string(),
+                    })
+                    .await
+            },
+            "token_refresh" => {
+                auth_service
+                    .refresh_token("dummy_token", test_ip, test_user_agent)
+                    .await
+            },
+            "registration" => {
+                auth_service
+                    .register(Credentials {
+                        username: "test_reset".to_string(),
+                        password: "test".to_string(),
+                    })
+                    .await
+            },
+            _ => unreachable!(),
+        };
+
+        assert!(
+            !matches!(result, Err(AuthError::RateLimitExceeded)),
+            "Rate limit should be reset for {} after window duration",
+            config.endpoint
         );
     }
-}
 
-#[tokio::test]
-async fn test_rate_limiting_bypass_attempts() {
-    // Setup
-    let user_repo = MockUserRepository::new();
-    let auth_service = AuthService::new(user_repo.clone());
-    let base_credentials = Credentials {
-        username: "test".to_string(),
-        password: "test".to_string(),
-    };
+    // Verify metrics
+    let final_attempts = RATE_LIMIT_METRICS.attempts.get();
+    let final_exceeded = RATE_LIMIT_METRICS.exceeded.get();
+    let final_reset = RATE_LIMIT_METRICS.reset.get();
 
-    // Test IP rotation bypass attempt
-    let ips = vec![
-        "192.168.1.1",
-        "192.168.1.2",
-        "192.168.1.3",
-        "192.168.1.4",
-        "192.168.1.5",
-    ];
+    // Calculate expected values
+    let expected_attempts = configs.iter().map(|c| c.limit + 2).sum::<u32>() as u64;
+    let expected_exceeded = configs.len() as u64;
+    let expected_reset = configs.len() as u64;
 
-    let mut successful_attempts = 0;
-    for ip in ips {
-        let result = auth_service
-            .login_with_context(base_credentials.clone(), ip, "test-browser/1.0")
-            .await;
-
-        if result.is_ok() {
-            successful_attempts += 1;
-        }
-    }
-
-    // Verify that IP rotation doesn't bypass rate limiting
-    assert!(
-        successful_attempts <= 5,
-        "Rate limiting should prevent excessive attempts even with IP rotation"
+    assert_eq!(
+        final_attempts - initial_attempts,
+        expected_attempts,
+        "Unexpected number of rate limit attempts"
     );
-
-    // Test User-Agent rotation bypass attempt
-    let user_agents = vec![
-        "browser1/1.0",
-        "browser2/1.0",
-        "browser3/1.0",
-        "browser4/1.0",
-        "browser5/1.0",
-    ];
-
-    successful_attempts = 0;
-    for ua in user_agents {
-        let result = auth_service
-            .login_with_context(base_credentials.clone(), "192.168.1.1", ua)
-            .await;
-
-        if result.is_ok() {
-            successful_attempts += 1;
-        }
-    }
-
-    // Verify that User-Agent rotation doesn't bypass rate limiting
-    assert!(
-        successful_attempts <= 5,
-        "Rate limiting should prevent excessive attempts even with User-Agent rotation"
+    assert_eq!(
+        final_exceeded - initial_exceeded,
+        expected_exceeded,
+        "Unexpected number of rate limit exceeded events"
     );
-
-    // Test distributed attack simulation
-    let combinations: Vec<(&str, &str)> = ips
-        .iter()
-        .flat_map(|ip| user_agents.iter().map(move |ua| (*ip, *ua)))
-        .collect();
-
-    successful_attempts = 0;
-    for (ip, ua) in combinations {
-        let result = auth_service
-            .login_with_context(base_credentials.clone(), ip, ua)
-            .await;
-
-        if result.is_ok() {
-            successful_attempts += 1;
-        }
-    }
-
-    // Verify that combined rotation doesn't bypass rate limiting
-    assert!(
-        successful_attempts <= 10,
-        "Rate limiting should prevent excessive attempts even with combined IP/UA rotation"
+    assert_eq!(
+        final_reset - initial_reset,
+        expected_reset,
+        "Unexpected number of rate limit reset events"
     );
 }
 
@@ -1934,6 +2002,738 @@ async fn test_session_security_granular() -> Result<(), Error> {
     assert!(
         timing_diff.as_millis() < 100,
         "Token validation timing difference should be minimal to prevent timing attacks"
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_rate_limiting_under_load() {
+    // Setup
+    let user_repo = Arc::new(MockUserRepository::new());
+    let auth_service = Arc::new(AuthService::new(user_repo.clone()));
+    let test_ip = "192.168.1.1";
+    let test_user_agent = "test-browser/1.0";
+
+    // Test configurations with shorter windows for load testing
+    let configs = vec![
+        RateLimitConfig::new("login", 50, Duration::from_secs(5)),
+        RateLimitConfig::new("token_refresh", 100, Duration::from_secs(5)).with_burst(150),
+        RateLimitConfig::new("registration", 30, Duration::from_secs(5)),
+    ];
+
+    for config in configs {
+        let concurrent_users = 10;
+        let requests_per_user = config.limit as usize + 5; // Ensure we exceed the limit
+        let mut handles = Vec::new();
+
+        let start_time = SystemTime::now();
+        let auth_service = auth_service.clone();
+
+        // Spawn concurrent user tasks
+        for user_id in 0..concurrent_users {
+            let auth_service = auth_service.clone();
+            let test_ip = format!("192.168.1.{}", user_id + 1);
+
+            handles.push(tokio::spawn(async move {
+                let mut successes = 0;
+                let mut rate_limited = 0;
+                let mut other_errors = 0;
+
+                for req_id in 0..requests_per_user {
+                    let result = match config.endpoint {
+                        "login" => {
+                            auth_service
+                                .login(Credentials {
+                                    username: format!("test_user_{}", user_id),
+                                    password: "test".to_string(),
+                                })
+                                .await
+                        },
+                        "token_refresh" => {
+                            auth_service
+                                .refresh_token(
+                                    &format!("dummy_token_{}", req_id),
+                                    &test_ip,
+                                    test_user_agent,
+                                )
+                                .await
+                        },
+                        "registration" => {
+                            auth_service
+                                .register(Credentials {
+                                    username: format!("test_user_{}_{}", user_id, req_id),
+                                    password: "test".to_string(),
+                                })
+                                .await
+                        },
+                        _ => unreachable!(),
+                    };
+
+                    match result {
+                        Ok(_) => successes += 1,
+                        Err(AuthError::RateLimitExceeded) => rate_limited += 1,
+                        Err(_) => other_errors += 1,
+                    }
+
+                    // Random delay between 10-50ms to simulate realistic load
+                    sleep(Duration::from_millis(10 + rand::random::<u64>() % 40)).await;
+                }
+
+                (successes, rate_limited, other_errors)
+            }));
+        }
+
+        // Collect results
+        let results = join_all(handles).await;
+        let mut total_successes = 0;
+        let mut total_rate_limited = 0;
+        let mut total_other_errors = 0;
+
+        for result in results {
+            let (successes, rate_limited, other_errors) = result.unwrap();
+            total_successes += successes;
+            total_rate_limited += rate_limited;
+            total_other_errors += other_errors;
+        }
+
+        // Calculate statistics
+        let total_requests = concurrent_users * requests_per_user;
+        let success_rate = (total_successes as f64 / total_requests as f64) * 100.0;
+        let rate_limited_rate = (total_rate_limited as f64 / total_requests as f64) * 100.0;
+
+        // Verify test duration
+        let elapsed = SystemTime::now().duration_since(start_time).unwrap();
+        assert!(
+            elapsed < config.window + Duration::from_secs(5),
+            "Load test for {} took too long: {:?}",
+            config.endpoint,
+            elapsed
+        );
+
+        // Verify rate limiting effectiveness
+        assert!(
+            success_rate > 0.0,
+            "Expected some successful requests for {}, but all were rate limited",
+            config.endpoint
+        );
+        assert!(
+            rate_limited_rate > 0.0,
+            "Expected some rate limited requests for {}, but none occurred",
+            config.endpoint
+        );
+        assert_eq!(
+            total_other_errors, 0,
+            "Unexpected errors occurred during load test for {}",
+            config.endpoint
+        );
+
+        // Verify burst behavior if configured
+        if let Some(burst_size) = config.burst_size {
+            assert!(
+                total_successes >= burst_size as usize,
+                "Expected at least {} successful requests during burst for {}, but got {}",
+                burst_size,
+                config.endpoint,
+                total_successes
+            );
+        }
+
+        // Verify rate limiting consistency
+        let expected_max_success =
+            (config.limit as usize * concurrent_users) + config.burst_size.unwrap_or(0) as usize;
+        assert!(
+            total_successes <= expected_max_success,
+            "Too many successful requests for {} (got {}, expected <= {})",
+            config.endpoint,
+            total_successes,
+            expected_max_success
+        );
+
+        // Wait for rate limits to reset before next test
+        sleep(config.window).await;
+    }
+}
+
+/// Represents different types of rate limit bypass attempts
+#[derive(Debug, Clone)]
+enum BypassAttempt {
+    /// Attempts to bypass rate limiting by rotating IP addresses
+    IpRotation {
+        base_ip: String,
+        rotation_pattern: RotationPattern,
+    },
+    /// Attempts to bypass rate limiting by modifying User-Agent strings
+    UserAgentVariation {
+        base_agent: String,
+        variation_type: UserAgentVariationType,
+    },
+    /// Attempts to bypass rate limiting by manipulating request headers
+    HeaderManipulation {
+        headers: Vec<(String, String)>,
+        manipulation_type: HeaderManipulationType,
+    },
+    /// Attempts to bypass rate limiting through distributed requests
+    DistributedRequests {
+        ip_ranges: Vec<String>,
+        user_agent_pools: Vec<String>,
+    },
+}
+
+#[derive(Debug, Clone)]
+enum RotationPattern {
+    Sequential,   // 1.1.1.1, 1.1.1.2, ...
+    Random,       // Random IPs from a pool
+    Subnet,       // IPs within same subnet
+    CrossNetwork, // IPs from different networks
+}
+
+#[derive(Debug, Clone)]
+enum UserAgentVariationType {
+    VersionIncrement, // Chrome/90.0 -> Chrome/91.0
+    BrowserRotation,  // Chrome -> Firefox -> Safari
+    CustomStrings,    // Completely custom User-Agent strings
+    MalformedStrings, // Invalid or malformed User-Agent strings
+}
+
+#[derive(Debug, Clone)]
+enum HeaderManipulationType {
+    Addition,     // Add new headers
+    Modification, // Modify existing headers
+    Removal,      // Remove standard headers
+    Duplication,  // Duplicate headers with different values
+}
+
+impl BypassAttempt {
+    fn execute(&self, auth_service: &AuthService, credentials: &Credentials) -> Vec<AuthResult> {
+        match self {
+            BypassAttempt::IpRotation {
+                base_ip,
+                rotation_pattern,
+            } => {
+                let ips = match rotation_pattern {
+                    RotationPattern::Sequential => (1..=10)
+                        .map(|i| format!("{}.{}", base_ip, i))
+                        .collect::<Vec<_>>(),
+                    RotationPattern::Random => (0..10)
+                        .map(|_| {
+                            format!(
+                                "{}.{}.{}.{}",
+                                rand::random::<u8>(),
+                                rand::random::<u8>(),
+                                rand::random::<u8>(),
+                                rand::random::<u8>()
+                            )
+                        })
+                        .collect(),
+                    RotationPattern::Subnet => {
+                        let parts: Vec<&str> = base_ip.split('.').collect();
+                        if parts.len() >= 3 {
+                            (1..=10)
+                                .map(|i| format!("{}.{}.{}.{}", parts[0], parts[1], parts[2], i))
+                                .collect()
+                        } else {
+                            vec![base_ip.to_string()]
+                        }
+                    },
+                    RotationPattern::CrossNetwork => {
+                        vec![
+                            "10.0.0.1".to_string(),
+                            "172.16.0.1".to_string(),
+                            "192.168.0.1".to_string(),
+                            "127.0.0.1".to_string(),
+                            "169.254.0.1".to_string(),
+                        ]
+                    },
+                };
+
+                ips.iter()
+                    .map(|ip| {
+                        auth_service
+                            .login_with_context(credentials.clone(), ip, "test-browser/1.0")
+                            .await
+                    })
+                    .collect()
+            },
+            BypassAttempt::UserAgentVariation {
+                base_agent,
+                variation_type,
+            } => {
+                let user_agents = match variation_type {
+                    UserAgentVariationType::VersionIncrement => {
+                        let parts: Vec<&str> = base_agent.split('/').collect();
+                        if parts.len() >= 2 {
+                            let version_parts: Vec<&str> = parts[1].split('.').collect();
+                            if !version_parts.is_empty() {
+                                (0..10)
+                                    .map(|i| {
+                                        format!(
+                                            "{}/{}.0",
+                                            parts[0],
+                                            version_parts[0].parse::<i32>().unwrap_or(0) + i
+                                        )
+                                    })
+                                    .collect()
+                            } else {
+                                vec![base_agent.to_string()]
+                            }
+                        } else {
+                            vec![base_agent.to_string()]
+                        }
+                    },
+                    UserAgentVariationType::BrowserRotation => vec![
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/90.0".to_string(),
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/89.0".to_string(),
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Safari/537.36".to_string(),
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/91.0".to_string(),
+                        "Opera/9.80 (Windows NT 10.0; Win64; x64)".to_string(),
+                    ],
+                    UserAgentVariationType::CustomStrings => vec![
+                        "Custom Browser/1.0".to_string(),
+                        "Test Agent/2.0".to_string(),
+                        "Rate Limit Tester/3.0".to_string(),
+                        "Security Scanner/4.0".to_string(),
+                        "API Client/5.0".to_string(),
+                    ],
+                    UserAgentVariationType::MalformedStrings => vec![
+                        "".to_string(),
+                        " ".to_string(),
+                        "Invalid/Format".to_string(),
+                        "Missing Version".to_string(),
+                        "特殊文字/1.0".to_string(),
+                    ],
+                };
+
+                user_agents
+                    .iter()
+                    .map(|ua| {
+                        auth_service
+                            .login_with_context(credentials.clone(), "192.168.1.1", ua)
+                            .await
+                    })
+                    .collect()
+            },
+            BypassAttempt::HeaderManipulation {
+                headers,
+                manipulation_type,
+            } => {
+                let manipulated_headers = match manipulation_type {
+                    HeaderManipulationType::Addition => headers
+                        .iter()
+                        .map(|(name, value)| (name.clone(), value.clone()))
+                        .collect::<Vec<_>>(),
+                    HeaderManipulationType::Modification => headers
+                        .iter()
+                        .map(|(name, _)| {
+                            (name.clone(), format!("Modified-{}", rand::random::<u32>()))
+                        })
+                        .collect(),
+                    HeaderManipulationType::Removal => Vec::new(),
+                    HeaderManipulationType::Duplication => headers
+                        .iter()
+                        .flat_map(|(name, value)| {
+                            vec![
+                                (name.clone(), value.clone()),
+                                (name.clone(), format!("Duplicate-{}", value)),
+                            ]
+                        })
+                        .collect(),
+                };
+
+                manipulated_headers
+                    .iter()
+                    .map(|(name, value)| {
+                        auth_service
+                            .login_with_context_headers(
+                                credentials.clone(),
+                                "192.168.1.1",
+                                "test-browser/1.0",
+                                vec![(name.clone(), value.clone())],
+                            )
+                            .await
+                    })
+                    .collect()
+            },
+            BypassAttempt::DistributedRequests {
+                ip_ranges,
+                user_agent_pools,
+            } => {
+                let combinations = ip_ranges
+                    .iter()
+                    .flat_map(|ip| {
+                        user_agent_pools
+                            .iter()
+                            .map(move |ua| (ip.clone(), ua.clone()))
+                    })
+                    .collect::<Vec<_>>();
+
+                combinations
+                    .iter()
+                    .map(|(ip, ua)| {
+                        auth_service
+                            .login_with_context(credentials.clone(), ip, ua)
+                            .await
+                    })
+                    .collect()
+            },
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_rate_limiting_bypass_attempts() {
+    // Setup
+    let user_repo = Arc::new(MockUserRepository::new());
+    let auth_service = Arc::new(AuthService::new(user_repo.clone()));
+    let credentials = Credentials {
+        username: "test".to_string(),
+        password: "test".to_string(),
+    };
+
+    // Test different bypass attempts
+    let bypass_attempts = vec![
+        BypassAttempt::IpRotation {
+            base_ip: "192.168.1".to_string(),
+            rotation_pattern: RotationPattern::Sequential,
+        },
+        BypassAttempt::IpRotation {
+            base_ip: "10.0.0".to_string(),
+            rotation_pattern: RotationPattern::Subnet,
+        },
+        BypassAttempt::IpRotation {
+            base_ip: "172.16.0".to_string(),
+            rotation_pattern: RotationPattern::CrossNetwork,
+        },
+        BypassAttempt::UserAgentVariation {
+            base_agent: "Chrome/90.0".to_string(),
+            variation_type: UserAgentVariationType::VersionIncrement,
+        },
+        BypassAttempt::UserAgentVariation {
+            base_agent: "Firefox/89.0".to_string(),
+            variation_type: UserAgentVariationType::BrowserRotation,
+        },
+        BypassAttempt::UserAgentVariation {
+            base_agent: "Test/1.0".to_string(),
+            variation_type: UserAgentVariationType::MalformedStrings,
+        },
+        BypassAttempt::HeaderManipulation {
+            headers: vec![
+                ("X-Forwarded-For".to_string(), "10.0.0.1".to_string()),
+                ("X-Real-IP".to_string(), "192.168.1.1".to_string()),
+            ],
+            manipulation_type: HeaderManipulationType::Addition,
+        },
+        BypassAttempt::HeaderManipulation {
+            headers: vec![
+                ("User-Agent".to_string(), "Custom/1.0".to_string()),
+                ("X-Forwarded-For".to_string(), "10.0.0.1".to_string()),
+            ],
+            manipulation_type: HeaderManipulationType::Duplication,
+        },
+        BypassAttempt::DistributedRequests {
+            ip_ranges: vec![
+                "192.168.1.1".to_string(),
+                "10.0.0.1".to_string(),
+                "172.16.0.1".to_string(),
+            ],
+            user_agent_pools: vec![
+                "Chrome/90.0".to_string(),
+                "Firefox/89.0".to_string(),
+                "Safari/537.36".to_string(),
+            ],
+        },
+    ];
+
+    for attempt in bypass_attempts {
+        let results = attempt.execute(&auth_service, &credentials);
+        let successful_requests = results.iter().filter(|r| r.is_ok()).count();
+        let rate_limited_requests = results
+            .iter()
+            .filter(|r| matches!(r, Err(AuthError::RateLimitExceeded)))
+            .count();
+
+        // Verify that bypass attempts are not successful
+        assert!(
+            successful_requests <= 5,
+            "Rate limiting bypass possible with {:?}: {} successful requests",
+            attempt,
+            successful_requests
+        );
+
+        assert!(
+            rate_limited_requests > 0,
+            "Rate limiting not triggered for {:?}",
+            attempt
+        );
+
+        // Wait for rate limits to reset
+        sleep(Duration::from_secs(5)).await;
+    }
+}
+
+/// Represents different types of rate limiting strategies
+#[derive(Debug, Clone)]
+enum RateLimitStrategy {
+    /// Fixed window rate limiting
+    /// Resets counter at fixed intervals
+    FixedWindow { limit: u32, window: Duration },
+    /// Sliding window rate limiting
+    /// Uses a moving time window
+    SlidingWindow {
+        limit: u32,
+        window: Duration,
+        precision: Duration,
+    },
+    /// Token bucket rate limiting
+    /// Allows bursts while maintaining average rate
+    TokenBucket {
+        rate: f64,
+        capacity: u32,
+        initial_tokens: u32,
+    },
+    /// Leaky bucket rate limiting
+    /// Processes requests at a constant rate
+    LeakyBucket { rate: f64, capacity: u32 },
+}
+
+impl RateLimitStrategy {
+    fn is_allowed(&self, history: &[SystemTime]) -> bool {
+        match self {
+            RateLimitStrategy::FixedWindow { limit, window } => {
+                let now = SystemTime::now();
+                let window_start = now - *window;
+                let requests_in_window =
+                    history.iter().filter(|&time| *time >= window_start).count();
+                requests_in_window < *limit as usize
+            },
+            RateLimitStrategy::SlidingWindow {
+                limit,
+                window,
+                precision,
+            } => {
+                let now = SystemTime::now();
+                let window_start = now - *window;
+
+                // Count requests in each precision bucket
+                let bucket_count = (window.as_secs_f64() / precision.as_secs_f64()).ceil() as usize;
+                let mut buckets = vec![0; bucket_count];
+
+                for time in history {
+                    if *time >= window_start {
+                        let elapsed = time
+                            .duration_since(window_start)
+                            .unwrap_or(Duration::from_secs(0));
+                        let bucket = (elapsed.as_secs_f64() / precision.as_secs_f64()) as usize;
+                        if bucket < bucket_count {
+                            buckets[bucket] += 1;
+                        }
+                    }
+                }
+
+                let total_requests: u32 = buckets.iter().sum();
+                total_requests < *limit
+            },
+            RateLimitStrategy::TokenBucket {
+                rate,
+                capacity,
+                initial_tokens,
+            } => {
+                if history.is_empty() {
+                    return true; // First request always allowed
+                }
+
+                let now = SystemTime::now();
+                let first_request = history.first().unwrap();
+                let elapsed = now
+                    .duration_since(*first_request)
+                    .unwrap_or(Duration::from_secs(0));
+
+                // Calculate available tokens
+                let generated_tokens = (elapsed.as_secs_f64() * rate) as u32;
+                let total_tokens = (*initial_tokens + generated_tokens).min(*capacity);
+                let used_tokens = history.len() as u32;
+
+                total_tokens > used_tokens
+            },
+            RateLimitStrategy::LeakyBucket { rate, capacity } => {
+                if history.is_empty() {
+                    return true; // First request always allowed
+                }
+
+                let now = SystemTime::now();
+                let mut queue_size = 0;
+
+                // Calculate current queue size
+                for time in history.iter().rev() {
+                    let elapsed = now.duration_since(*time).unwrap_or(Duration::from_secs(0));
+                    let processed = (elapsed.as_secs_f64() * rate) as u32;
+                    if processed < 1 {
+                        queue_size += 1;
+                    }
+                }
+
+                queue_size < *capacity
+            },
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_rate_limiting_strategies() {
+    // Setup
+    let user_repo = Arc::new(MockUserRepository::new());
+    let auth_service = Arc::new(AuthService::new(user_repo.clone()));
+    let credentials = Credentials {
+        username: "test".to_string(),
+        password: "test".to_string(),
+    };
+
+    let strategies = vec![
+        RateLimitStrategy::FixedWindow {
+            limit: 5,
+            window: Duration::from_secs(5),
+        },
+        RateLimitStrategy::SlidingWindow {
+            limit: 10,
+            window: Duration::from_secs(10),
+            precision: Duration::from_secs(1),
+        },
+        RateLimitStrategy::TokenBucket {
+            rate: 1.0,
+            capacity: 5,
+            initial_tokens: 5,
+        },
+        RateLimitStrategy::LeakyBucket {
+            rate: 1.0,
+            capacity: 5,
+        },
+    ];
+
+    for strategy in strategies {
+        let mut request_history = Vec::new();
+        let mut successful_requests = 0;
+        let mut rate_limited_requests = 0;
+
+        // Test the strategy with multiple requests
+        for i in 0..15 {
+            if strategy.is_allowed(&request_history) {
+                let result = auth_service
+                    .login(Credentials {
+                        username: format!("test_{}", i),
+                        password: "test".to_string(),
+                    })
+                    .await;
+
+                match result {
+                    Ok(_) => {
+                        successful_requests += 1;
+                        request_history.push(SystemTime::now());
+                    },
+                    Err(AuthError::RateLimitExceeded) => rate_limited_requests += 1,
+                    Err(e) => panic!("Unexpected error: {:?}", e),
+                }
+            } else {
+                rate_limited_requests += 1;
+            }
+
+            // Add small delay between requests
+            sleep(Duration::from_millis(100)).await;
+        }
+
+        // Verify rate limiting behavior
+        match &strategy {
+            RateLimitStrategy::FixedWindow { limit, .. } => {
+                assert!(
+                    successful_requests <= *limit,
+                    "Fixed window: Too many successful requests"
+                );
+            },
+            RateLimitStrategy::SlidingWindow { limit, .. } => {
+                assert!(
+                    successful_requests <= *limit,
+                    "Sliding window: Too many successful requests"
+                );
+            },
+            RateLimitStrategy::TokenBucket { capacity, .. } => {
+                assert!(
+                    successful_requests <= *capacity,
+                    "Token bucket: Too many successful requests"
+                );
+            },
+            RateLimitStrategy::LeakyBucket { capacity, .. } => {
+                assert!(
+                    successful_requests <= *capacity,
+                    "Leaky bucket: Too many successful requests"
+                );
+            },
+        }
+
+        assert!(
+            rate_limited_requests > 0,
+            "Strategy {:?} did not trigger rate limiting",
+            strategy
+        );
+
+        // Wait for rate limits to reset
+        sleep(Duration::from_secs(5)).await;
+    }
+}
+
+#[tokio::test]
+async fn test_session_invalidation_on_account_changes() -> Result<(), Error> {
+    // Setup test environment
+    let (_container, pool) = setup_database()
+        .await
+        .map_err(|e| Error::internal(e.to_string()))?;
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let config = AuthConfig::default();
+    let provider = BasicAuthProvider::new(user_repo.clone(), session_repo.clone(), config);
+
+    // Create test user and multiple sessions
+    let (user, password) = setup_test_user(&*user_repo).await?;
+    let credentials = Credentials {
+        username: user.email.clone(),
+        password: password.clone(),
+    };
+
+    // Create multiple sessions
+    let mut sessions = Vec::new();
+    for _ in 0..3 {
+        let auth_response = provider.authenticate(credentials.clone()).await?;
+        sessions.push(auth_response);
+    }
+
+    // Verify all sessions are valid
+    for session in &sessions {
+        let validation = provider.validate_token(&session.session.token).await;
+        assert!(
+            validation.is_ok(),
+            "Session should be valid before invalidation"
+        );
+    }
+
+    // Simulate account change by invalidating all sessions
+    let invalidated = provider.invalidate_user_sessions(user.id).await?;
+    assert_eq!(invalidated, 3, "Should have invalidated 3 sessions");
+
+    // Verify all sessions are now invalid
+    for session in &sessions {
+        let validation = provider.validate_token(&session.session.token).await;
+        assert!(
+            validation.is_err(),
+            "Session should be invalid after invalidation"
+        );
+    }
+
+    // Verify user can still create new sessions
+    let new_auth = provider.authenticate(credentials).await?;
+    assert!(
+        provider
+            .validate_token(&new_auth.session.token)
+            .await
+            .is_ok(),
+        "Should be able to create new valid session after invalidation"
     );
 
     Ok(())

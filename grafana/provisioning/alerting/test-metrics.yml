@@ -1,0 +1,200 @@
+groups:
+  - name: TestMetricsAlerts
+    folder: Test Quality
+    interval: 1m
+    rules:
+      - title: Low Code Coverage
+        condition: test_coverage_percentage{type="total"} < 80
+        for: 5m
+        labels:
+          severity: warning
+          category: quality
+          team: qa
+        annotations:
+          summary: Total code coverage is below threshold
+          description: The total code coverage has dropped to {{ $value }}%, which is below the minimum threshold of 80%.
+          runbook_url: http://wiki.internal/runbooks/coverage-alerts
+          dashboard_url: http://grafana:3000/d/test-coverage/test-coverage-overview
+
+      - title: Critical Path Coverage Alert
+        condition: test_component_coverage_percentage{component=~"auth|core|db"} < 90
+        for: 5m
+        labels:
+          severity: critical
+          category: quality
+          team: qa
+        annotations:
+          summary: Critical path coverage is below threshold
+          description: Coverage for {{ $labels.component }} has dropped to {{ $value }}%, which is below the minimum threshold of 90%.
+          runbook_url: http://wiki.internal/runbooks/critical-coverage
+          dashboard_url: http://grafana:3000/d/component-coverage/component-coverage-details
+
+      - title: Low Mutation Score
+        condition: test_mutation_score < 80
+        for: 5m
+        labels:
+          severity: warning
+          category: quality
+          team: qa
+        annotations:
+          summary: Mutation score is below threshold
+          description: The mutation score has dropped to {{ $value }}%, which is below the minimum threshold of 80%.
+          runbook_url: http://wiki.internal/runbooks/mutation-score
+          dashboard_url: http://grafana:3000/d/mutation-testing/mutation-testing-overview
+
+      - title: Mutation Score Regression
+        condition: (test_mutation_score - avg_over_time(test_mutation_score[24h])) < -5
+        for: 15m
+        labels:
+          severity: warning
+          category: quality
+          team: qa
+        annotations:
+          summary: Mutation score has regressed
+          description: The mutation score has dropped by more than 5% compared to the 24-hour average.
+          runbook_url: http://wiki.internal/runbooks/mutation-regression
+          dashboard_url: http://grafana:3000/d/mutation-trends/mutation-score-trends
+
+      - title: High Test Execution Time (p99)
+        condition: test_execution_time{type="p99"} > 300
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          team: performance
+        annotations:
+          summary: p99 test execution time is above threshold
+          description: The p99 test execution time is {{ $value }}s, which is above the maximum threshold of 300s.
+          runbook_url: http://wiki.internal/runbooks/test-performance
+          dashboard_url: http://grafana:3000/d/test-performance/test-performance-overview
+
+      - title: Component Coverage Regression
+        condition: |
+          (
+            test_component_coverage_percentage
+            -
+            avg_over_time(test_component_coverage_percentage[24h])
+          ) < -3
+        for: 15m
+        labels:
+          severity: warning
+          category: quality
+          team: qa
+        annotations:
+          summary: Component coverage regression detected
+          description: Coverage for {{ $labels.component }} has dropped by more than 3% compared to the 24-hour average.
+          runbook_url: http://wiki.internal/runbooks/coverage-regression
+          dashboard_url: http://grafana:3000/d/component-coverage/component-coverage-details
+
+      - title: Test Execution Errors
+        condition: rate(test_execution_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          category: reliability
+          team: qa
+        annotations:
+          summary: Test execution errors detected
+          description: {{ $value }} test execution errors detected in the last 5 minutes.
+          runbook_url: http://wiki.internal/runbooks/test-execution-errors
+          dashboard_url: http://grafana:3000/d/test-reliability/test-reliability-overview
+
+      - title: Test Resource Usage
+        condition: test_memory_usage > 1024 or test_cpu_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          team: performance
+        annotations:
+          summary: High resource usage in test execution
+          description: Tests are consuming excessive resources (Memory: {{ $value }}MB).
+          runbook_url: http://wiki.internal/runbooks/resource-usage
+          dashboard_url: http://grafana:3000/d/resource-usage/resource-usage-overview
+
+      - title: Test Duration Trend
+        condition: |
+          avg_over_time(test_execution_time{type="mean"}[1h])
+          >
+          1.2 * avg_over_time(test_execution_time{type="mean"}[24h])
+        for: 30m
+        labels:
+          severity: warning
+          category: performance
+          team: performance
+        annotations:
+          summary: Test execution time is trending upward
+          description: Average test execution time has increased by more than 20% compared to the 24-hour average.
+          runbook_url: http://wiki.internal/runbooks/duration-trend
+          dashboard_url: http://grafana:3000/d/test-performance/test-performance-overview
+
+notification_policies:
+  - name: Default
+    group_by: [alertname, team]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    contact_points:
+      - name: DevOps Team
+        type: email
+        settings:
+          addresses: [devops@example.com]
+      - name: Development Team
+        type: slack
+        settings:
+          channel: "#test-alerts"
+    match:
+      - severity: critical
+    match_re:
+      category: .*
+
+  - name: Performance
+    group_by: [alertname, category]
+    group_wait: 1m
+    group_interval: 10m
+    repeat_interval: 1h
+    contact_points:
+      - name: Performance Team
+        type: email
+        settings:
+          addresses: [performance@example.com]
+      - name: Performance Slack
+        type: slack
+        settings:
+          channel: "#performance-alerts"
+    match:
+      - category: performance
+
+  - name: Quality
+    group_by: [alertname, category]
+    group_wait: 1m
+    group_interval: 10m
+    repeat_interval: 2h
+    contact_points:
+      - name: QA Team
+        type: email
+        settings:
+          addresses: [qa@example.com]
+      - name: QA Slack
+        type: slack
+        settings:
+          channel: "#qa-alerts"
+    match:
+      - category: quality
+
+  - name: Reliability
+    group_by: [alertname, category]
+    group_wait: 1m
+    group_interval: 10m
+    repeat_interval: 2h
+    contact_points:
+      - name: QA Team
+        type: email
+        settings:
+          addresses: [qa@example.com]
+      - name: Development Team
+        type: slack
+        settings:
+          channel: "#reliability-alerts"
+    match:
+      - category: reliability

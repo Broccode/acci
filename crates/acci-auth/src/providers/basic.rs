@@ -362,4 +362,14 @@ impl AuthProvider for BasicAuthProvider {
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
         self.internal_logout(session_id).await
     }
+
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error> {
+        self.session_repo
+            .invalidate_user_sessions(user_id)
+            .await
+            .map_err(|e| {
+                error!("Failed to invalidate sessions for user {}: {}", user_id, e);
+                Error::internal(format!("Failed to invalidate sessions: {e}"))
+            })
+    }
 }

@@ -18,5 +18,6 @@ mock! {
         async fn get_by_email(&self, email: &str) -> Result<Option<User>>;
         async fn update(&self, id: Uuid, user: UpdateUser) -> Result<Option<User>>;
         async fn delete(&self, id: Uuid) -> Result<bool>;
+        async fn list(&self) -> Result<Vec<User>>;
     }
 }

@@ -1,0 +1,40 @@
+[package]
+name = "acci-cli"
+version.workspace = true
+edition.workspace = true
+description = "CLI tools for ACCI system management"
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "acci-users"
+path = "src/bin/users.rs"
+
+[[bin]]
+name = "acci-passwd"
+path = "src/bin/passwd.rs"
+
+[dependencies]
+# Internal dependencies
+acci-core = { workspace = true }
+acci-db = { workspace = true }
+acci-auth = { workspace = true }
+
+# External dependencies
+tokio = { workspace = true }
+clap = { workspace = true, features = ["env"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+validator = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.0.14"
+predicates = "3.1.0"
+tempfile = "3.10.1"
+
+[lints]
+workspace = true

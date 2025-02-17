@@ -35,8 +35,46 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
+      - name: Install cargo-mutants
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-mutants
+
+      - name: Install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+
       - name: Generate code coverage
-        run: cargo llvm-cov --lib --bins --all-features --workspace --lcov --output-path lcov.info
+        run: |
+          # Generate detailed coverage report
+          cargo llvm-cov --lib --bins --all-features --workspace --lcov --output-path lcov.info
+          # Generate JSON report for metrics
+          cargo llvm-cov --lib --bins --all-features --workspace --json --output-path coverage.json
+
+      - name: Run mutation testing
+        run: |
+          cargo mutants --all --json > mutation-report.json
+          # Check mutation score
+          score=$(jq '.score' mutation-report.json)
+          if (( $(echo "$score < 80" | bc -l) )); then
+            echo "Mutation score below threshold: $score% < 80%"
+            exit 1
+          fi
+
+      - name: Run performance benchmarks
+        run: |
+          cargo bench --workspace --json > benchmark-results.json
+          # Check for performance regressions
+          ./scripts/check-performance.sh benchmark-results.json
+
+      - name: Generate test metrics report
+        run: |
+          ./scripts/generate-test-metrics.sh \
+            --coverage coverage.json \
+            --mutation mutation-report.json \
+            --benchmarks benchmark-results.json \
+            --output test-metrics.json
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2.2.3
@@ -44,11 +82,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: lcov.info
 
+      - name: Upload test metrics
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-metrics
+          path: |
+            coverage.json
+            mutation-report.json
+            benchmark-results.json
+            test-metrics.json
+
       - name: Run unit tests
         run: cargo test --lib --bins --all-features --workspace --exclude acci-tests
 
       - name: Run integration tests
         run: cargo test -p acci-tests --lib --all-features
+
+      - name: Push metrics to Prometheus
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          ./scripts/push-metrics.sh \
+            --metrics test-metrics.json \
+            --endpoint ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
 
   security-audit:
     name: Security Audit
@@ -63,7 +118,19 @@ jobs:
         run: cargo install cargo-audit
 
       - name: Run security audit
-        run: cargo audit --ignore RUSTSEC-2023-0071
+        run: |
+          cargo audit --json > security-audit.json
+          # Check for critical vulnerabilities
+          if jq -e '.vulnerabilities[] | select(.severity == "Critical")' security-audit.json; then
+            echo "Critical vulnerabilities found!"
+            exit 1
+          fi
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: security-audit.json
 
   sbom:
     name: Generate SBOM

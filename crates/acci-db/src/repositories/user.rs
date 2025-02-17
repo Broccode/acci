@@ -63,6 +63,9 @@ pub trait UserRepository: Send + Sync + std::fmt::Debug {
 
     /// Deletes a user from the database.
     async fn delete(&self, id: Uuid) -> Result<bool>;
+
+    /// Lists all users in the database.
+    async fn list(&self) -> Result<Vec<User>>;
 }
 
 /// PostgreSQL implementation of the `UserRepository` trait.
@@ -282,6 +285,18 @@ impl UserRepository for PgUserRepository {
 
         Ok(result.rows_affected() > 0)
     }
+
+    /// Lists all users in the database.
+    async fn list(&self) -> Result<Vec<User>> {
+        let users = sqlx::query_as!(
+            User,
+            r#"SELECT id as "id: Uuid", email, password_hash, full_name, created_at, updated_at FROM acci.users"#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(users)
+    }
 }
 
 /// A mock implementation of the `UserRepository` trait for testing purposes.
@@ -323,6 +338,10 @@ impl UserRepository for MockUserRepository {
 
     async fn get_by_id(&self, _id: Uuid) -> Result<Option<User>> {
         Ok(None)
+    }
+
+    async fn list(&self) -> Result<Vec<User>> {
+        Ok(Vec::new())
     }
 }
 

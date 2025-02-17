@@ -1,10 +1,42 @@
 use async_trait::async_trait;
+use metrics::{counter, Counter, Label};
+use once_cell::sync::Lazy;
 use sqlx::PgPool;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 use crate::models::session::Session;
 use crate::Error;
+
+/// Metrics for session operations
+static SESSION_METRICS: Lazy<SessionMetrics> = Lazy::new(|| SessionMetrics::new());
+
+/// Metrics for session operations
+struct SessionMetrics {
+    sessions_invalidated: Counter,
+    invalidation_errors: Counter,
+}
+
+impl SessionMetrics {
+    fn new() -> Self {
+        Self {
+            sessions_invalidated: counter!(
+                "acci_db_sessions_invalidated_total",
+                vec![Label::new(
+                    "description",
+                    "Total number of sessions invalidated programmatically (e.g., due to user account changes)."
+                )]
+            ),
+            invalidation_errors: counter!(
+                "acci_db_session_invalidation_errors_total",
+                vec![Label::new(
+                    "description",
+                    "Total number of errors encountered while attempting to invalidate user sessions."
+                )]
+            ),
+        }
+    }
+}
 
 /// Defines the interface for managing user sessions in the database.
 ///
@@ -58,6 +90,21 @@ pub trait SessionRepository: Send + Sync {
     ///
     /// The number of sessions that were deleted
     async fn delete_expired_sessions(&self) -> Result<u64, Error>;
+
+    /// Invalidates all sessions for a specific user.
+    ///
+    /// This method should be called when a user's account is modified in a way that
+    /// requires all existing sessions to be terminated (e.g., password change,
+    /// security settings update, or account deactivation).
+    ///
+    /// # Arguments
+    ///
+    /// * `user_id` - The ID of the user whose sessions should be invalidated
+    ///
+    /// # Returns
+    ///
+    /// The number of sessions that were invalidated
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error>;
 }
 
 /// PostgreSQL implementation of the `SessionRepository` trait.
@@ -186,6 +233,36 @@ impl SessionRepository for PgSessionRepository {
 
         let affected = result.rows_affected();
         info!("Deleted {} expired sessions", affected);
+        Ok(affected)
+    }
+
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM acci.sessions
+            WHERE user_id = $1
+            "#,
+            user_id
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            SESSION_METRICS.invalidation_errors.increment(1);
+            warn!(
+                user_id = %user_id,
+                error = %e,
+                "Failed to invalidate user sessions, this might be due to a transient database issue"
+            );
+            Error::from(e)
+        })?;
+
+        let affected = result.rows_affected();
+        SESSION_METRICS.sessions_invalidated.increment(affected);
+        info!(
+            user_id = %user_id,
+            invalidated_sessions = affected,
+            "Successfully invalidated user sessions"
+        );
         Ok(affected)
     }
 }

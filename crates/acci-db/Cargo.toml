@@ -40,6 +40,8 @@ time = { workspace = true }
 async-trait = { workspace = true }
 argon2 = { workspace = true }
 tracing = { workspace = true }
+once_cell = { workspace = true }
+metrics = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints

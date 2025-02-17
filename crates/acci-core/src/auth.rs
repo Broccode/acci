@@ -56,6 +56,21 @@ pub trait AuthProvider: Send + Sync + Debug {
 
     /// Invalidates an authentication session
     async fn logout(&self, session_id: Uuid) -> Result<(), crate::error::Error>;
+
+    /// Invalidates all sessions for a specific user.
+    ///
+    /// This method should be called when a user's account is modified in a way that
+    /// requires all existing sessions to be terminated (e.g., password change,
+    /// security settings update, or account deactivation).
+    ///
+    /// # Arguments
+    ///
+    /// * `user_id` - The ID of the user whose sessions should be invalidated
+    ///
+    /// # Returns
+    ///
+    /// The number of sessions that were invalidated
+    async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, crate::error::Error>;
 }
 
 /// Configuration for the authentication provider

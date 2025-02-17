@@ -1,0 +1,72 @@
+{
+    "coverage": {
+        "total": {
+            "threshold": 80,
+            "description": "Minimum total code coverage percentage"
+        },
+        "critical": {
+            "threshold": 95,
+            "description": "Minimum coverage for critical paths"
+        },
+        "functions": {
+            "threshold": 85,
+            "description": "Minimum function coverage percentage"
+        },
+        "branches": {
+            "threshold": 85,
+            "description": "Minimum branch coverage percentage"
+        }
+    },
+    "mutation": {
+        "score": {
+            "threshold": 80,
+            "description": "Minimum mutation score percentage"
+        }
+    },
+    "performance": {
+        "regression": {
+            "threshold": 5,
+            "description": "Maximum allowed performance regression percentage"
+        },
+        "execution_time": {
+            "threshold": 300,
+            "description": "Maximum allowed test execution time in seconds"
+        },
+        "memory_usage": {
+            "threshold": 1024,
+            "description": "Maximum allowed memory usage in MB"
+        }
+    },
+    "components": {
+        "auth": {
+            "coverage": {
+                "threshold": 95,
+                "description": "Minimum coverage for auth component"
+            }
+        },
+        "core": {
+            "coverage": {
+                "threshold": 90,
+                "description": "Minimum coverage for core component"
+            }
+        },
+        "db": {
+            "coverage": {
+                "threshold": 90,
+                "description": "Minimum coverage for db component"
+            }
+        },
+        "api": {
+            "coverage": {
+                "threshold": 85,
+                "description": "Minimum coverage for api component"
+            }
+        }
+    },
+    "flaky_tests": {
+        "max_allowed": {
+            "threshold": 0,
+            "description": "Maximum allowed number of flaky tests"
+        }
+    }
+}

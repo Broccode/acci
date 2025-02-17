@@ -393,3 +393,45 @@ async fn test_expired_sessions_parameterized() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_invalidate_user_sessions() {
+    let pool = setup_test_db().await;
+    let repo = PgSessionRepository::new(pool.clone());
+
+    // Create a test user
+    let user_id = Uuid::new_v4();
+
+    // Create multiple sessions for the user
+    let session1 = Session {
+        session_id: Uuid::new_v4(),
+        user_id,
+        created_at: OffsetDateTime::now_utc(),
+        expires_at: OffsetDateTime::now_utc() + Duration::hours(1),
+    };
+    let session2 = Session {
+        session_id: Uuid::new_v4(),
+        user_id,
+        created_at: OffsetDateTime::now_utc(),
+        expires_at: OffsetDateTime::now_utc() + Duration::hours(1),
+    };
+
+    // Insert the sessions
+    repo.create_session(&session1).await.unwrap();
+    repo.create_session(&session2).await.unwrap();
+
+    // Verify sessions exist
+    let sessions = repo.get_user_sessions(user_id).await.unwrap();
+    assert_eq!(sessions.len(), 2, "Expected 2 sessions to be created");
+
+    // Invalidate all sessions for the user
+    let invalidated = repo.invalidate_user_sessions(user_id).await.unwrap();
+    assert_eq!(invalidated, 2, "Expected 2 sessions to be invalidated");
+
+    // Verify sessions were deleted
+    let sessions = repo.get_user_sessions(user_id).await.unwrap();
+    assert!(
+        sessions.is_empty(),
+        "Expected all sessions to be invalidated"
+    );
+}
