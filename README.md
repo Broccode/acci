@@ -2,7 +2,7 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/Broccode/acci/badge.svg?branch=master)](https://coveralls.io/github/Broccode/acci?branch=master)
 
-[English](#english) | [Deutsch](#deutsch) | [Shqip](#shqip)
+[English](#english) | [Deutsch](#deutsch) | [Français](#français) | [Español](#español) | [Shqip](#shqip)
 
 ## English
 
@@ -73,6 +73,78 @@ make test
 ```
 
 Detaillierte Einrichtungsanweisungen und Dokumentation finden Sie in unserer [Dokumentation](docs/de/).
+
+---
+
+## Français
+
+ACCI est un framework d'application robuste de niveau entreprise, construit avec Rust, conçu pour gérer des scénarios d'entreprise complexes à travers plusieurs locataires. Il fournit des capacités sécurisées, évolutives et efficaces pour les applications logicielles modernes, y compris la gestion des licences, l'authentification et d'autres fonctionnalités d'entreprise.
+
+### Fonctionnalités Principales
+
+- Architecture multi-locataires
+- Contrôle d'accès basé sur les rôles (RBAC)
+- Sécurité de niveau entreprise
+- Système de gestion des licences
+- API complète (REST & GraphQL)
+- Surveillance et observabilité avancées
+- Prêt pour le déploiement conteneurisé
+- Support multilingue (EN, DE, SQ)
+
+### Démarrage Rapide
+
+```bash
+# Cloner le dépôt
+git clone https://github.com/yourusername/acci.git
+cd acci
+
+# Démarrer l'environnement de développement
+make dev
+
+# Exécuter les migrations de base de données
+make db-migrate
+
+# Exécuter tous les tests
+make test
+```
+
+Pour des instructions détaillées de configuration et la documentation, visitez notre [documentation](docs/fr/).
+
+---
+
+## Español
+
+ACCI es un framework de aplicaciones robusto de nivel empresarial, construido con Rust, diseñado para manejar escenarios empresariales complejos a través de múltiples inquilinos. Proporciona capacidades seguras, escalables y eficientes para aplicaciones de software modernas, incluyendo gestión de licencias, autenticación y otras características empresariales.
+
+### Características Principales
+
+- Arquitectura multi-inquilino
+- Control de acceso basado en roles (RBAC)
+- Seguridad de nivel empresarial
+- Sistema de gestión de licencias
+- API completa (REST & GraphQL)
+- Monitoreo y observabilidad avanzados
+- Listo para despliegue en contenedores
+- Soporte multilingüe (EN, DE, SQ)
+
+### Inicio Rápido
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/yourusername/acci.git
+cd acci
+
+# Iniciar entorno de desarrollo
+make dev
+
+# Ejecutar migraciones de base de datos
+make db-migrate
+
+# Ejecutar todas las pruebas
+make test
+```
+
+Para instrucciones detalladas de configuración y documentación, visite nuestra [documentación](docs/es/).
 
 ---
 

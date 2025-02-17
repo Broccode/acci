@@ -122,6 +122,7 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Added
 
+- Added French and Spanish translations to README.md
 - Added new helper module `tests/src/helpers/auth.rs` for authentication test utilities
 - Added new mock implementation `tests/src/mocks/user.rs` for user testing
 
