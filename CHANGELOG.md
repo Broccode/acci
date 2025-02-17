@@ -131,6 +131,11 @@ Create a git tag for the version (e.g., v0.2.0)
 - Modified Makefile targets to exclude integration tests:
   - Added `--exclude acci-tests` to `clippy` target to prevent unwanted changes in test files
   - Added `--exclude acci-tests` to `fix` target to preserve test-specific imports
+- Enhanced pre-commit hook script to improve development workflow:
+  - Added proper error handling with `set -e`
+  - Improved script organization with clear comments
+  - Added automatic directory change to repository root
+  - Added clear status messages for better user feedback
 
 ### Added
 
