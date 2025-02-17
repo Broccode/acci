@@ -130,14 +130,170 @@ Create a git tag for the version (e.g., v0.2.0)
 - Alert configuration for test quality monitoring
 - Links to related testing documentation
 - Maintenance and update guidelines for testing documentation
+- Comprehensive authentication test suite improvements:
+  - Property-based testing for auth flows
+  - Detailed error scenario coverage
+  - Configuration testing for rate limiting
+  - Concurrent authentication flow testing
+  - Enhanced token tampering tests
+  - Registration validation tests
+- Enhanced CLI tool test coverage:
+  - Comprehensive test suite for database CLI tool
+  - Improved password hashing tool tests
+  - Enhanced test user management tool tests
+  - Property-based testing for password hashing
+  - Detailed output format validation
+  - Extensive error scenario coverage
+  - Performance benchmarking for critical operations
+- Enhanced CI pipeline with comprehensive test metrics collection
+  - Added mutation testing with cargo-mutants
+  - Added performance benchmark tracking
+  - Added detailed coverage reporting for critical paths
+  - Added metrics collection and reporting to Prometheus
+- New test metrics scripts
+  - Added performance regression checking
+  - Added test metrics report generation
+  - Added Prometheus metrics push capability
+- Configurable test metrics thresholds
+  - Added JSON configuration for all test metrics
+  - Component-specific coverage thresholds
+  - Performance and memory usage limits
+- Enhanced metrics reporting
+  - Detailed component coverage tracking
+  - Performance percentiles (p50, p90, p99)
+  - Memory usage monitoring
+  - Status tracking for coverage, mutation, and performance
+- Comprehensive test metrics documentation
+  - Added detailed system overview
+  - Configuration guide
+  - Usage instructions
+  - Maintenance procedures
+  - Troubleshooting guide
+  - System architecture diagram
+  - Customization examples
+- Grafana alerting rules
+  - Coverage alerts
+  - Performance regression alerts
+  - Memory usage alerts
+  - Component-specific alerts
+  - Customized notification policies
+  - Mutation score regression alerts
+  - Granular performance alerts (p50, p90, p99)
+  - Enhanced flaky test detection
+- Alert resolution documentation
+  - Detailed investigation procedures
+  - Step-by-step resolution guides
+  - Escalation procedures
+  - Contact information
+  - Response time requirements
+  - Alert-specific troubleshooting
+  - Severity level definitions
+  - Investigation tools and commands
+  - Automation opportunities
+  - Dashboard links
+  - Runbook references
+- Enhanced Grafana alerting rules
+  - Added component coverage regression detection
+  - Added test execution error monitoring
+  - Added resource usage alerts (CPU & Memory)
+  - Added test duration trend analysis
+  - Added runbook and dashboard links to all alerts
+  - Added team assignments for better routing
+- Improved notification policies
+  - Added team-specific Slack channels
+  - Enhanced alert grouping by team and category
+  - Optimized notification intervals
+  - Added dedicated performance alert channel
+- Enhanced token validation testing framework with granular tampering actions
+- New property-based tests for comprehensive token validation:
+  - Combined tampering scenarios
+  - Claim-specific manipulations
+  - Header modifications
+  - Signature tampering tests
+- Improved test documentation and error reporting
+- Data-driven approach to token manipulation testing
+- CLI tools for user management and password hashing
+  - `acci-users` tool for managing users (add, list, delete, reset password)
+  - `acci-passwd` tool for password hashing with Argon2id
+  - Comprehensive test suite for both tools
+  - Support for JSON output format in password hashing
+  - Concurrent operation support
+  - Error handling and input validation
+  - Standardized JSON error output format
+  - Enhanced documentation with usage examples
+  - Improved security considerations and best practices
+  - Explicit input validation using validator crate
+- Improved CI/CD pipeline:
+  - Enhanced coverage reporting with detailed component analysis
+  - Switched from Codecov to Coveralls for better integration
+  - Added comprehensive security reporting
+  - Improved metrics collection and visualization
+  - Enhanced artifact organization and documentation
+  - Added detailed test execution time tracking
+  - Implemented strict coverage thresholds by component
+  - Added automated security vulnerability reporting
+  - Enhanced SBOM generation and documentation
+  - Improved test metrics reporting with detailed breakdowns
+- Comprehensive rate limiting tests including bypass attempts
+- Tests for endpoint-specific rate limits
+- Tests for IP and User-Agent rotation attempts
+- Comprehensive session security tests
+- Session fixation prevention tests
+- Session hijacking prevention tests
+- Session replay prevention tests
+- Concurrent session management tests
+- Granular session security tests
+- Admin-initiated session invalidation tests
+- Session invalidation on account changes tests
+- Basic timing attack prevention tests
 
 ### Changed
 
+- Updated error handling in CLI tools:
+  - Replaced generic error handling with specific error types
+  - Added NotFound error variant for resource lookup failures
+  - Improved user-facing error messages in CLI tools
+  - Enhanced error handling documentation
 - Reorganized documentation structure:
   - Moved all test-related documentation from `docs/infrastructure/` to `docs/tests/`
   - Moved action plans from `docs/infrastructure/` to root `docs/` directory
   - Improved documentation organization for better maintainability
   - Updated document cross-references to reflect new structure
+- Updated CI workflow to include additional test quality checks
+- Improved security audit reporting with JSON output
+- Enhanced artifact collection for test metrics
+- Improved Prometheus metric naming and documentation
+- Updated metrics collection to use external configuration
+- Enhanced performance metrics collection with percentiles
+- Refined alerting thresholds and policies
+- Improved metrics documentation structure
+- Enhanced flaky test handling with rate and count thresholds
+- Updated alert notification policies with team-specific channels
+- Improved alert resolution procedures with detailed guides
+- Enhanced documentation with tool-specific guidance
+- Updated alert severity classifications
+- Improved runbook organization and references
+- Refined alert conditions for better accuracy
+  - Updated regression detection thresholds
+  - Improved trend analysis timeframes
+  - Enhanced resource usage monitoring
+  - Optimized alert timing parameters
+- Enhanced alert annotations
+  - Added runbook links for all alerts
+  - Added dashboard links for quick access
+  - Improved alert descriptions
+  - Added team ownership information
+- Refactored token tampering functionality for better reusability
+- Improved error handling in token validation tests
+- Enhanced test coverage for security-critical scenarios
+- Enhanced test infrastructure:
+  - Improved coverage reporting granularity
+  - Added component-specific coverage thresholds
+  - Enhanced security audit reporting
+  - Improved metrics collection and visualization
+  - Updated test execution time tracking
+  - Enhanced artifact organization
+  - Improved documentation generation
 
 ### Fixed
 
@@ -145,6 +301,54 @@ Create a git tag for the version (e.g., v0.2.0)
 - Clarified resource allocation and infrastructure requirements
 - Added missing links between testing documentation files
 - Improved consistency in metrics definitions across phases
+- Fixed `BasicAuthProvider::authenticate` to return `AuthResponse` instead of `AuthSession`
+- Fixed constructor arguments in `BasicAuthProvider::new` to include `session_repo`
+- Fixed session repository implementation in `crates/acci-db/src/repositories/session.rs`
+- Fixed error handling in `crates/acci-core/src/error.rs`
+- Fixed authentication route implementation in `crates/acci-api/src/routes/auth.rs`
+
+### Security
+
+- Added extensive security-focused tests for authentication:
+  - Token tampering detection
+  - Rate limiting validation
+  - Concurrent session handling
+  - Error scenario coverage
+- Added detailed security vulnerability reporting in CI
+- Implemented critical vulnerability checks in security audit
+- Enhanced security metrics tracking
+- Added security-specific alerting rules
+- Improved security incident response procedures
+- Enhanced security tool integration documentation
+- Added comprehensive testing for JWT security vulnerabilities
+- Improved validation of token claims and headers
+- Enhanced detection of token tampering attempts
+- Enhanced rate limiting test coverage for authentication endpoints
+- Added distributed attack simulation tests
+- Improved session security validation
+- Added session ID property validation
+- Enhanced session invalidation tests
+- Added granular IP and User-Agent validation
+- Implemented timing attack prevention checks
+
+### TODO
+
+- Parameterize rate limits in integration tests
+- Add metrics assertions for rate limiting events
+- Implement load tests for rate limiting under high concurrency
+- Add tests for advanced bypass techniques
+- Support different types of rate limits (time window, sliding window)
+- Add more granular session hijacking tests
+- Implement admin-initiated session invalidation tests
+- Add tests for session invalidation on account changes
+- Document security assumptions in tests
+- Add timing attack prevention tests
+- Parameterize session security test data using proptest
+- Expand timing attack tests with sophisticated analysis
+- Add negative test cases for session invalidation
+- Implement property-based tests for session ID generation
+- Add session security integration tests
+- Document session security assumptions and requirements
 
 ## [0.1.24] - 2024-03-28
 
@@ -184,18 +388,17 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Fixed
 
-- Fixed `BasicAuthProvider::authenticate` to return `AuthResponse` instead of `AuthSession`
-- Fixed constructor arguments in `BasicAuthProvider::new` to include `session_repo`
-- Fixed session repository implementation in `crates/acci-db/src/repositories/session.rs`
-- Fixed error handling in `crates/acci-core/src/error.rs`
-- Fixed authentication route implementation in `crates/acci-api/src/routes/auth.rs`
-
-### Technical
-
-- Updated dependencies in Cargo.toml files:
-  - Root workspace dependencies
-  - acci-core crate dependencies
-  - test crate dependencies
+- Fixed test user password hashes in database migration to match the actual test user passwords
+- Added helper program to generate correct Argon2 password hashes
+- Fixed test targets in Makefile to properly separate unit and integration tests:
+  - test-unit now excludes acci-tests crate
+  - test-integration now correctly runs tests in acci-tests crate
+  - Fixed incorrect test pattern in integration test target
+- Fixed Clippy warnings:
+  - Added missing error documentation for hash_password function
+  - Added #[allow(clippy::large_stack_arrays)] at crate level for acci-db
+  - Added Eq implementation for Environment enum
+  - Used Self instead of type name in Environment::default implementation
 
 ## [0.1.23] - 2024-03-28
 
