@@ -1,4 +1,3 @@
-use acci_core::error::Error;
 use acci_db::{
     repositories::user::{CreateUser, UpdateUser, UserRepository},
     User,
