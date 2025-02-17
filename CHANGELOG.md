@@ -120,6 +120,10 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Added detailed documentation for pre-commit hook setup in `scripts/SETUP_PRE_COMMIT.md`
+
 ### Fixed
 
 - Fixed unused_mut linter warnings in test files by adding #[allow(unused_mut)] attributes for MockSessionRepository instances
