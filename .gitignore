@@ -26,3 +26,6 @@ acci.cdx.xml
 node_modules/
 
 .repomix-output.txt
+
+# Private individual user cursor rules
+.cursor/rules/_*.mdc
