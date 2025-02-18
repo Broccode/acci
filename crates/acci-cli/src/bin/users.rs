@@ -6,7 +6,7 @@
 use acci_core::{auth::hash_password, error::Error};
 use acci_db::repositories::{
     session::PgSessionRepository,
-    user::{CreateUser, PgUserRepository, UpdateUser, UserRepository},
+    user::{PgUserRepository, UserRepository},
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -29,31 +29,27 @@ struct Cli {
 enum Commands {
     /// Add a new user
     Add {
-        /// User's email address
+        /// User's username
         #[arg(short, long)]
-        email: String,
+        username: String,
 
         /// User's password
         #[arg(short, long)]
         password: String,
-
-        /// User's full name
-        #[arg(short, long)]
-        full_name: String,
     },
     /// List all users
     List,
     /// Delete a user
     Delete {
-        /// User's email address
+        /// User's username
         #[arg(short, long)]
-        email: String,
+        username: String,
     },
     /// Reset a user's password
     Reset {
-        /// User's email address
+        /// User's username
         #[arg(short, long)]
-        email: String,
+        username: String,
 
         /// New password
         #[arg(short, long)]
@@ -74,58 +70,42 @@ async fn main() -> Result<()> {
     let _session_repo = Arc::new(PgSessionRepository::new(pool));
 
     match cli.command {
-        Commands::Add {
-            email,
-            password,
-            full_name,
-        } => {
+        Commands::Add { username, password } => {
             let hash = hash_password(&password)?;
             let user = user_repo
-                .create(CreateUser {
-                    email: email.clone(),
-                    password_hash: hash,
-                    full_name,
-                })
+                .create_user(&username, &hash)
                 .await
                 .map_err(|e| Error::internal(format!("Failed to create user: {e}")))?;
 
-            info!("Created user: {}", user.email);
+            info!("Created user: {}", user.username);
             Ok(())
         },
         Commands::List => {
-            let users = user_repo.list().await?;
-            for user in users {
-                println!("Email: {}, Name: {}", user.email, user.full_name);
-            }
+            println!("Listing users is not implemented yet.");
             Ok(())
         },
-        Commands::Delete { email } => {
+        Commands::Delete { username } => {
             let user = user_repo
-                .get_by_email(&email)
+                .get_user_by_username(&username)
                 .await?
-                .ok_or_else(|| Error::not_found(format!("User with email {email} not found")))?;
+                .ok_or_else(|| {
+                    Error::not_found(format!("User with username {username} not found"))
+                })?;
 
-            user_repo.delete(user.id).await?;
-            info!("Deleted user: {}", email);
+            user_repo.delete_user(user.id).await?;
+            info!("Deleted user: {}", username);
             Ok(())
         },
-        Commands::Reset { email, password } => {
+        Commands::Reset { username, password } => {
             let user = user_repo
-                .get_by_email(&email)
+                .get_user_by_username(&username)
                 .await?
-                .ok_or_else(|| Error::not_found(format!("User with email {email} not found")))?;
+                .ok_or_else(|| {
+                    Error::not_found(format!("User with username {username} not found"))
+                })?;
             let hash = hash_password(&password)?;
-            user_repo
-                .update(
-                    user.id,
-                    UpdateUser {
-                        password_hash: Some(hash),
-                        email: None,
-                        full_name: None,
-                    },
-                )
-                .await?;
-            info!("Reset password for user: {}", email);
+            user_repo.update_password(user.id, &hash).await?;
+            info!("Reset password for user: {}", username);
             Ok(())
         },
     }

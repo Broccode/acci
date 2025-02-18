@@ -8,5 +8,3 @@
 /// This module provides a simple username/password based authentication provider
 /// that uses JWT tokens for session management.
 pub mod basic;
-
-pub use basic::BasicAuthProvider;

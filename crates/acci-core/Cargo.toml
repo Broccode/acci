@@ -13,18 +13,27 @@ name = "acci_core"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace Dependencies
+# Authentication & Security
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+rand_core = { workspace = true }
+
+# Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
-async-trait = { workspace = true }
-uuid = { workspace = true }
-rand_core = { workspace = true }
+
+# Time
 time = { workspace = true }
 
-# External Dependencies
-argon2 = { workspace = true }
+# Error Handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Async
+async-trait = { workspace = true }
+
+# UUID
+uuid = { workspace = true }
 
 [lints]
 workspace = true # Enable workspace-wide lints

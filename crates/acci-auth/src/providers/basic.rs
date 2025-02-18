@@ -1,13 +1,10 @@
 #![allow(clippy::large_stack_arrays)]
 
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials, TestUserConfig},
+    auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials},
     error::Error,
 };
-use acci_db::{
-    models::Session,
-    repositories::{session::SessionRepository, user::UserRepository},
-};
+use acci_db::repositories::{session::SessionRepository, user::UserRepository};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -16,7 +13,6 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc};
 use time::{Duration, OffsetDateTime};
-use tracing::{debug, error, info, instrument};
 use uuid::Uuid;
 
 /// Claims structure for JWT tokens
@@ -46,12 +42,13 @@ pub struct BasicAuthProvider {
 }
 
 impl BasicAuthProvider {
-    /// Creates a new `BasicAuthProvider` instance.
+    /// Creates a new basic authentication provider instance.
     ///
     /// # Arguments
-    /// * `user_repo` - Repository for user operations
-    /// * `session_repo` - Repository for session operations
-    /// * `config` - Authentication configuration
+    ///
+    /// * `user_repo` - The user repository implementation
+    /// * `session_repo` - The session repository implementation
+    /// * `config` - The authentication configuration
     #[must_use]
     pub fn new(
         user_repo: Arc<dyn UserRepository + Send + Sync>,
@@ -65,311 +62,178 @@ impl BasicAuthProvider {
         }
     }
 
-    /// Extracts the session ID from a JWT token.
+    /// Hashes a password using Argon2.
     ///
     /// # Arguments
-    /// * `token` - The JWT token to extract the session ID from
+    ///
+    /// * `password` - The password to hash
     ///
     /// # Returns
-    /// The session ID if the token is valid
     ///
-    /// # Errors
-    /// Returns an error if:
-    /// * The token is invalid
-    /// * The session ID is invalid
-    fn extract_session_id(&self, token: &str) -> Result<Uuid, Error> {
-        let decoded = decode::<Claims>(
-            token,
-            &DecodingKey::from_secret(self.config.jwt_secret.as_bytes()),
-            &Validation::default(),
-        )
-        .map_err(|e| Error::TokenValidationFailed(format!("Failed to decode token: {e}")))?;
-
-        Uuid::from_str(&decoded.claims.jti)
-            .map_err(|_| Error::TokenValidationFailed("Invalid session ID".to_string()))
+    /// The hashed password
+    fn hash_password(&self, password: &str) -> Result<String, Error> {
+        let salt = SaltString::generate(&mut OsRng);
+        let argon2 = Argon2::default();
+        let password_hash = argon2
+            .hash_password(password.as_bytes(), &salt)
+            .map_err(|e| Error::Internal(format!("Failed to hash password: {e}")))?
+            .to_string();
+        Ok(password_hash)
     }
 
-    /// Verifies a password against its hash using Argon2.
+    /// Verifies a password against its hash.
     ///
-    /// # Errors
-    /// Returns an error if password verification fails.
-    #[instrument(skip(password, hash))]
-    pub(crate) fn verify_password(password: &str, hash: &str) -> Result<bool, Error> {
+    /// # Arguments
+    ///
+    /// * `password` - The password to verify
+    /// * `hash` - The hash to verify against
+    ///
+    /// # Returns
+    ///
+    /// `true` if the password matches the hash, `false` otherwise
+    fn verify_password(&self, password: &str, hash: &str) -> Result<bool, Error> {
         let parsed_hash = PasswordHash::new(hash)
-            .map_err(|e| Error::internal(format!("Failed to parse password hash: {e}")))?;
+            .map_err(|e| Error::Internal(format!("Failed to parse password hash: {e}")))?;
 
         Ok(Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)
             .is_ok())
     }
 
-    /// Hashes a password using Argon2.
-    ///
-    /// # Errors
-    /// Returns an error if password hashing fails.
-    #[instrument(skip(password))]
-    pub(crate) fn hash_password(password: &str) -> Result<String, Error> {
-        let salt = SaltString::generate(&mut OsRng);
-        let argon2 = Argon2::default();
-
-        argon2
-            .hash_password(password.as_bytes(), &salt)
-            .map(|hash| hash.to_string())
-            .map_err(|e| Error::internal(format!("Failed to hash password: {e}")))
-    }
-
-    /// Creates a new JWT token for the given user ID.
+    /// Creates a JWT token for a user.
     ///
     /// # Arguments
-    /// * `user_id` - The ID of the user to create a token for
-    /// * `config` - The authentication configuration to use
     ///
-    /// # Errors
-    /// Returns an error if token creation fails.
-    #[instrument(skip(config))]
-    pub(crate) fn create_token(
-        user_id: Uuid,
-        config: &AuthConfig,
-    ) -> Result<(String, i64, i64), Error> {
+    /// * `user_id` - The ID of the user
+    ///
+    /// # Returns
+    ///
+    /// The JWT token
+    fn create_token(&self, user_id: Uuid) -> Result<String, Error> {
         let now = OffsetDateTime::now_utc();
-        let exp = now + Duration::seconds(config.token_duration);
+        let exp = now + Duration::seconds(self.config.token_duration);
 
         let claims = Claims {
             sub: user_id.to_string(),
-            iss: config.token_issuer.clone(),
+            iss: self.config.token_issuer.clone(),
             exp: exp.unix_timestamp(),
             iat: now.unix_timestamp(),
             jti: Uuid::new_v4().to_string(),
         };
 
-        let token = encode(
+        encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(config.jwt_secret.as_bytes()),
+            &EncodingKey::from_secret(self.config.jwt_secret.as_bytes()),
         )
-        .map_err(|e| Error::internal(format!("Failed to create JWT token: {e}")))?;
-
-        Ok((token, now.unix_timestamp(), exp.unix_timestamp()))
+        .map_err(|e| Error::Internal(format!("Failed to create token: {e}")))
     }
 
-    /// Authenticates a user with the provided credentials.
+    /// Validates a JWT token.
     ///
-    /// # Errors
-    /// Returns an error if:
-    /// - User is not found
-    /// - Password is invalid
-    /// - Token creation fails
-    #[instrument(skip(self, credentials), fields(username = %credentials.username))]
-    async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
-        debug!("Attempting authentication for user");
-
-        // First try to get the user from the database
-        let user = self
-            .user_repo
-            .get_by_email(&credentials.username)
-            .await
-            .map_err(|e| {
-                error!("Failed to get user: {}", e);
-                Error::internal(format!("Failed to get user: {e}"))
-            })?;
-
-        if let Some(user) = user {
-            // For the default admin user, verify the password directly
-            if user.email == "admin" && credentials.password == "whiskey" {
-                let (token, created_at, expires_at) = Self::create_token(user.id, &self.config)?;
-                let session_id = self.extract_session_id(&token)?;
-                let session =
-                    Session::new(user.id, OffsetDateTime::from_unix_timestamp(expires_at)?);
-                self.session_repo
-                    .create_session(&session)
-                    .await
-                    .map_err(|e| {
-                        error!("Failed to create session: {}", e);
-                        Error::internal(format!("Failed to create session: {e}"))
-                    })?;
-
-                let auth_session = AuthSession {
-                    session_id,
-                    user_id: user.id,
-                    token,
-                    created_at,
-                    expires_at,
-                };
-                return Ok(AuthResponse {
-                    session: auth_session,
-                    token_type: "Bearer".to_string(),
-                });
-            }
-
-            // For test users, verify the password against the test config
-            let test_config = TestUserConfig::default();
-            if test_config.enabled {
-                if let Some(test_user) = test_config
-                    .users
-                    .iter()
-                    .find(|u| u.email == credentials.username)
-                {
-                    if test_user.password == credentials.password {
-                        info!("Test User '{}' successfully authenticated", test_user.email);
-                        let (token, created_at, expires_at) =
-                            Self::create_token(user.id, &self.config)?;
-                        let session_id = self.extract_session_id(&token)?;
-                        let session =
-                            Session::new(user.id, OffsetDateTime::from_unix_timestamp(expires_at)?);
-                        self.session_repo
-                            .create_session(&session)
-                            .await
-                            .map_err(|e| {
-                                error!("Failed to create session: {}", e);
-                                Error::internal(format!("Failed to create session: {e}"))
-                            })?;
-
-                        let auth_session = AuthSession {
-                            session_id,
-                            user_id: user.id,
-                            token,
-                            created_at,
-                            expires_at,
-                        };
-                        return Ok(AuthResponse {
-                            session: auth_session,
-                            token_type: "Bearer".to_string(),
-                        });
-                    }
-                    error!("Invalid password for test user '{}'", test_user.email);
-                    return Err(Error::InvalidCredentials);
-                }
-            }
-
-            // For regular users, verify the password hash
-            if Self::verify_password(&credentials.password, &user.password_hash)? {
-                let (token, created_at, expires_at) = Self::create_token(user.id, &self.config)?;
-                let session_id = self.extract_session_id(&token)?;
-                let session =
-                    Session::new(user.id, OffsetDateTime::from_unix_timestamp(expires_at)?);
-                self.session_repo
-                    .create_session(&session)
-                    .await
-                    .map_err(|e| {
-                        error!("Failed to create session: {}", e);
-                        Error::internal(format!("Failed to create session: {e}"))
-                    })?;
-
-                let auth_session = AuthSession {
-                    session_id,
-                    user_id: user.id,
-                    token,
-                    created_at,
-                    expires_at,
-                };
-                return Ok(AuthResponse {
-                    session: auth_session,
-                    token_type: "Bearer".to_string(),
-                });
-            }
-            error!("Invalid password for user '{}'", credentials.username);
-            return Err(Error::InvalidCredentials);
-        }
-
-        error!("User not found: '{}'", credentials.username);
-        Err(Error::InvalidCredentials)
-    }
-
-    /// Validates a JWT token and returns the associated session.
+    /// # Arguments
     ///
-    /// # Errors
-    /// Returns an error if token validation fails.
-    #[instrument(skip(self))]
-    async fn validate_token(&self, token: &str) -> Result<AuthSession, Error> {
-        let session_id = self.extract_session_id(token)?;
-
-        // Check if session exists in database
-        let db_session = self
-            .session_repo
-            .get_session(session_id)
-            .await
-            .map_err(|e| {
-                error!("Failed to get session from database: {}", e);
-                Error::internal(format!("Failed to get session: {e}"))
-            })?;
-
-        let Some(db_session) = db_session else {
-            return Err(Error::TokenValidationFailed(
-                "Session not found".to_string(),
-            ));
-        };
-
-        if db_session.is_expired() {
-            return Err(Error::SessionExpired);
-        }
-
-        let decoded = decode::<Claims>(
+    /// * `token` - The token to validate
+    ///
+    /// # Returns
+    ///
+    /// The claims from the token if valid
+    fn validate_token(&self, token: &str) -> Result<Claims, Error> {
+        let validation = Validation::default();
+        let token_data = decode::<Claims>(
             token,
             &DecodingKey::from_secret(self.config.jwt_secret.as_bytes()),
-            &Validation::default(),
+            &validation,
         )
-        .map_err(|e| Error::TokenValidationFailed(format!("Failed to decode token: {e}")))?;
+        .map_err(|e| Error::InvalidToken(format!("Failed to validate token: {e}")))?;
 
-        let claims = decoded.claims;
-        let user_id = Uuid::from_str(&claims.sub)
-            .map_err(|_| Error::TokenValidationFailed("Invalid user ID in token".to_string()))?;
-
-        // Verify user still exists
-        if self
-            .user_repo
-            .get_by_id(user_id)
-            .await
-            .map_err(|e| Error::internal(e.to_string()))?
-            .is_none()
-        {
-            return Err(Error::TokenValidationFailed("User not found".to_string()));
-        }
-
-        Ok(AuthSession {
-            session_id,
-            user_id,
-            token: token.to_string(),
-            created_at: claims.iat,
-            expires_at: claims.exp,
-        })
-    }
-
-    /// Logs out a user by invalidating their session.
-    ///
-    /// # Errors
-    /// Returns an error if session invalidation fails.
-    async fn internal_logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.session_repo
-            .delete_session(session_id)
-            .await
-            .map_err(|e| {
-                error!("Failed to delete session: {}", e);
-                Error::internal(format!("Failed to delete session: {e}"))
-            })
+        Ok(token_data.claims)
     }
 }
 
 #[async_trait::async_trait]
 impl AuthProvider for BasicAuthProvider {
     async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
-        self.authenticate(credentials).await
+        // Get user
+        let user = self
+            .user_repo
+            .get_user_by_username(&credentials.username)
+            .await
+            .map_err(|e| Error::Database(e.to_string()))?
+            .ok_or_else(|| Error::NotFound("User not found".to_string()))?;
+
+        // Verify password
+        if !self.verify_password(&credentials.password, &user.password_hash)? {
+            return Err(Error::InvalidCredentials);
+        }
+
+        // Create token
+        let token = self.create_token(user.id)?;
+
+        // Create session
+        let expires_at = OffsetDateTime::now_utc() + Duration::seconds(self.config.token_duration);
+        let session = self
+            .session_repo
+            .create_session(user.id, &token, expires_at)
+            .await
+            .map_err(|e| Error::Database(e.to_string()))?;
+
+        Ok(AuthResponse {
+            session: AuthSession {
+                session_id: session.id,
+                user_id: user.id,
+                token: token.clone(),
+                created_at: session.created_at.unix_timestamp(),
+                expires_at: session.expires_at.unix_timestamp(),
+            },
+            token_type: "Bearer".to_string(),
+        })
     }
 
-    async fn validate_token(&self, token: &str) -> Result<AuthSession, Error> {
-        self.validate_token(token).await
+    async fn validate_token(&self, token: String) -> Result<AuthSession, Error> {
+        // Validate token
+        let claims = self.validate_token(&token)?;
+
+        // Get session
+        let session = self
+            .session_repo
+            .get_session(Uuid::from_str(&claims.jti).map_err(|e| Error::Internal(e.to_string()))?)
+            .await
+            .map_err(|e| Error::Database(e.to_string()))?
+            .ok_or_else(|| Error::NotFound("Session not found".to_string()))?;
+
+        Ok(AuthSession {
+            session_id: session.id,
+            user_id: session.user_id,
+            token: token.to_string(),
+            created_at: session.created_at.unix_timestamp(),
+            expires_at: session.expires_at.unix_timestamp(),
+        })
     }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.internal_logout(session_id).await
+        self.session_repo
+            .delete_session(session_id)
+            .await
+            .map_err(|e| Error::Database(e.to_string()))
     }
 
     async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error> {
-        self.session_repo
-            .invalidate_user_sessions(user_id)
+        let sessions = self
+            .session_repo
+            .get_active_sessions(user_id)
             .await
-            .map_err(|e| {
-                error!("Failed to invalidate sessions for user {}: {}", user_id, e);
-                Error::internal(format!("Failed to invalidate sessions: {e}"))
-            })
+            .map_err(|e| Error::Database(e.to_string()))?;
+
+        let mut count = 0;
+        for session in sessions {
+            self.session_repo
+                .delete_session(session.id)
+                .await
+                .map_err(|e| Error::Database(e.to_string()))?;
+            count += 1;
+        }
+
+        Ok(count)
     }
 }

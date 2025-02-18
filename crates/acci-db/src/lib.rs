@@ -17,7 +17,8 @@ pub mod models;
 pub mod repositories;
 
 pub use error::DbError;
-pub use repositories::user::{CreateUser, PgUserRepository, UpdateUser, User, UserRepository};
+pub use repositories::session::{PgSessionRepository, SessionRepository};
+pub use repositories::user::{PgUserRepository, UserRepository};
 pub use sqlx;
 
 /// Configuration for database connections.
@@ -168,7 +169,6 @@ pub enum Error {
 }
 
 pub use models::Session;
-pub use repositories::SessionRepository;
 
 #[cfg(test)]
 mod tests {

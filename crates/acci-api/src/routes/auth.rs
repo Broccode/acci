@@ -2,47 +2,54 @@
 
 #![allow(clippy::large_stack_arrays)]
 
-use axum::{extract::State, routing::post, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{debug, error, info, instrument};
-use validator::Validate;
+use uuid::Uuid;
 
-use acci_auth::{AuthConfig, BasicAuthProvider};
-use acci_core::{
-    auth::{AuthProvider, AuthResponse, Credentials},
-    error::Error as CoreError,
-};
+use acci_auth::BasicAuthProvider;
+use acci_core::auth::{AuthConfig, AuthProvider, Credentials};
 use acci_db::{
-    repositories::{session::PgSessionRepository, user::PgUserRepository},
+    create_pool,
+    repositories::{PgSessionRepository, PgUserRepository},
     sqlx::PgPool,
+    DbConfig,
 };
-
-use crate::error::{ApiError, ApiResult};
 
 /// Login request payload
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     /// Username or email
-    #[validate(length(min = 1, max = 255))]
     pub username: String,
     /// Password
-    #[validate(length(min = 8, max = 72))]
     pub password: String,
 }
 
 /// Login response payload
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginResponse {
     /// The authentication response containing the session and token
-    pub auth: AuthResponse,
-    /// The type of token (e.g., "Bearer")
-    pub token_type: String,
+    pub token: String,
 }
 
 /// Creates a router for authentication endpoints
-pub fn router(pool: PgPool) -> Router {
-    Router::new().route("/auth/login", post(login).with_state(pool))
+pub async fn create_auth_router(db_config: DbConfig) -> Router {
+    let pool = create_pool(db_config).await.unwrap();
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let auth_config = AuthConfig::default();
+    let auth_provider = Arc::new(BasicAuthProvider::new(user_repo, session_repo, auth_config));
+
+    Router::new()
+        .route("/auth/register", post(register))
+        .route("/auth/login", post(login))
+        .route("/auth/logout", post(logout))
+        .route("/auth/validate", get(validate))
+        .with_state(auth_provider)
 }
 
 /// Login handler
@@ -80,44 +87,77 @@ pub fn router(pool: PgPool) -> Router {
 /// }
 /// ```
 #[allow(clippy::large_stack_arrays)]
-#[instrument(skip_all, fields(username = %credentials.username))]
 async fn login(
-    State(pool): State<PgPool>,
-    Json(credentials): Json<LoginRequest>,
-) -> ApiResult<Json<AuthResponse>> {
-    debug!("Processing login request");
-
-    // Validate request using validator
-    if let Err(validation_errors) = credentials.validate() {
-        error!("Validation failed: {:?}", validation_errors);
-        return Err(ApiError::BadRequest(validation_errors.to_string()));
-    }
-
-    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
-    let session_repo = Arc::new(PgSessionRepository::new(pool));
-    let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
-
+    State(auth_provider): State<Arc<BasicAuthProvider>>,
+    Json(request): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, String> {
     let credentials = Credentials {
-        username: credentials.username.trim().to_string(),
-        password: credentials.password,
+        username: request.username,
+        password: request.password,
     };
 
-    match auth_provider.authenticate(credentials).await {
-        Ok(response) => {
-            info!("User successfully authenticated");
-            Ok(Json(response))
-        },
-        Err(CoreError::InvalidCredentials) => {
-            error!("Invalid credentials provided");
-            Err(ApiError::Unauthorized)
-        },
-        Err(CoreError::AuthenticationFailed(msg)) => {
-            error!("Authentication failed: {}", msg);
-            Err(ApiError::BadRequest(msg))
-        },
-        Err(e) => {
-            error!("Internal error during authentication: {}", e);
-            Err(ApiError::Internal(e.into()))
-        },
-    }
+    let auth_result = auth_provider
+        .authenticate(credentials)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(Json(LoginResponse {
+        token: auth_result.session.token,
+    }))
+}
+
+async fn register(
+    State(auth_provider): State<Arc<BasicAuthProvider>>,
+    Json(request): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, String> {
+    let credentials = Credentials {
+        username: request.username,
+        password: request.password,
+    };
+
+    let auth_result = auth_provider
+        .authenticate(credentials)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(Json(LoginResponse {
+        token: auth_result.session.token,
+    }))
+}
+
+async fn logout(
+    State(auth_provider): State<Arc<BasicAuthProvider>>,
+    Json(session_id): Json<String>,
+) -> Result<(), String> {
+    let session_id =
+        Uuid::parse_str(&session_id).map_err(|e| format!("Invalid session ID: {e}"))?;
+
+    auth_provider
+        .logout(session_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+async fn validate(
+    State(auth_provider): State<Arc<BasicAuthProvider>>,
+    Json(token): Json<String>,
+) -> Result<Json<bool>, String> {
+    let result = auth_provider
+        .validate_token(token)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(Json(true))
+}
+
+pub fn router(pool: PgPool) -> Router {
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PgSessionRepository::new(pool));
+    let auth_config = AuthConfig::default();
+    let auth_provider = Arc::new(BasicAuthProvider::new(user_repo, session_repo, auth_config));
+
+    Router::new()
+        .route("/auth/login", post(login))
+        .route("/auth/register", post(register))
+        .with_state(auth_provider)
 }

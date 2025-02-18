@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT session_id, user_id, created_at, expires_at\n            FROM acci.sessions\n            WHERE user_id = $1\n            ",
+  "query": "\n            INSERT INTO acci.sessions (user_id, token, created_at, expires_at)\n            VALUES ($1, $2, $3, $4)\n            RETURNING id, user_id, token, created_at, expires_at\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "session_id",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
@@ -15,26 +15,35 @@
       },
       {
         "ordinal": 2,
+        "name": "token",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "expires_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
       ]
     },
     "nullable": [
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "13794a035c94d50c3b9ed0de3b3e0c47f8585d636521d72acee626ecded59df0"
+  "hash": "395eb80b5a08983d80db7da636628ac0a121360f923eb94c8cca4829f58e08c1"
 }

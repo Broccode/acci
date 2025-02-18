@@ -17,25 +17,16 @@ pub enum Error {
     Serialization(#[from] serde_json::Error),
 
     /// A validation error occurred.
-    #[error("Validation error: {message}")]
-    Validation {
-        /// A message describing the validation error.
-        message: String,
-    },
+    #[error("Validation error: {0}")]
+    Validation(String),
 
     /// An internal error occurred.
-    #[error("Internal error: {message}")]
-    Internal {
-        /// A message describing the internal error.
-        message: String,
-    },
+    #[error("Internal error: {0}")]
+    Internal(String),
 
     /// A resource was not found.
-    #[error("Not found: {message}")]
-    NotFound {
-        /// A message describing what resource was not found.
-        message: String,
-    },
+    #[error("Not found: {0}")]
+    NotFound(String),
 
     /// An authentication error occurred with the specified message.
     #[error("Authentication failed: {0}")]
@@ -56,28 +47,50 @@ pub enum Error {
     /// The requested session could not be found.
     #[error("Session not found")]
     SessionNotFound,
+
+    /// A database error occurred with the specified message.
+    #[error("Database error: {0}")]
+    Database(String),
+
+    /// The provided credentials are already in use.
+    #[error("Already exists: {0}")]
+    AlreadyExists(String),
+
+    /// Permission denied for the operation.
+    #[error("Permission denied")]
+    PermissionDenied,
+
+    /// Authorization error occurred with the specified message.
+    #[error("Authorization error: {0}")]
+    Authorization(String),
+
+    /// Rate limit exceeded for the operation.
+    #[error("Rate limit exceeded")]
+    RateLimit,
+
+    /// Invalid token error occurred with the specified message.
+    #[error("Invalid token: {0}")]
+    InvalidToken(String),
+
+    /// Session error occurred with the specified message.
+    #[error("Session error: {0}")]
+    Session(String),
 }
 
 impl Error {
     /// Creates a new validation error with the given message.
     pub fn validation<S: Into<String>>(message: S) -> Self {
-        Self::Validation {
-            message: message.into(),
-        }
+        Self::Validation(message.into())
     }
 
     /// Creates a new internal error with the given message.
     pub fn internal<S: Into<String>>(message: S) -> Self {
-        Self::Internal {
-            message: message.into(),
-        }
+        Self::Internal(message.into())
     }
 
     /// Creates a new not found error with the given message.
     pub fn not_found<S: Into<String>>(message: S) -> Self {
-        Self::NotFound {
-            message: message.into(),
-        }
+        Self::NotFound(message.into())
     }
 }
 

@@ -3,8 +3,9 @@ SET search_path TO public, acci;
 
 -- Create sessions table
 CREATE TABLE acci.sessions (
-    session_id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES acci.users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL
 );

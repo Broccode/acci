@@ -10,7 +10,10 @@ use acci_db::sqlx::PgPool;
 use axum::Router;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
+use tokio::signal;
+use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
+use tracing::info;
 
 /// API server configuration
 #[derive(Debug, Clone)]
@@ -19,6 +22,15 @@ pub struct ApiConfig {
     pub bind_address: SocketAddr,
     /// Database connection pool
     pub db_pool: PgPool,
+}
+
+/// Configuration for the API server
+#[derive(Debug, Clone)]
+pub struct Config {
+    /// The address to bind to
+    pub bind_addr: SocketAddr,
+    /// The database configuration
+    pub db_config: acci_db::DbConfig,
 }
 
 /// Starts the API server with the given configuration
@@ -43,6 +55,47 @@ pub async fn serve(config: ApiConfig) -> anyhow::Result<()> {
 
     let listener = TcpListener::bind(config.bind_address).await?;
     axum::serve(listener, app).await.map_err(Into::into)
+}
+
+/// Start the API server
+pub async fn start(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Starting API server on {}", config.bind_addr);
+
+    let app = Router::new()
+        .merge(routes::health::router())
+        .merge(routes::auth::create_auth_router(config.db_config).await)
+        .layer(CorsLayer::permissive());
+
+    let listener = TcpListener::bind(&config.bind_addr).await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
+
+    info!("Shutdown signal received");
 }
 
 #[cfg(test)]

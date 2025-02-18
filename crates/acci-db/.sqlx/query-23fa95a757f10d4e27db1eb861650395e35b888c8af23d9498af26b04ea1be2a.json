@@ -1,35 +1,40 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            FROM acci.users\n            WHERE email ILIKE $1\n            ",
+  "query": "\n            SELECT id, username, email, password_hash, is_admin, created_at, updated_at\n            FROM acci.users\n            WHERE username = $1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id: Uuid",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "username",
         "type_info": "Varchar"
       },
       {
         "ordinal": 2,
-        "name": "password_hash",
+        "name": "email",
         "type_info": "Varchar"
       },
       {
         "ordinal": 3,
-        "name": "full_name",
+        "name": "password_hash",
         "type_info": "Varchar"
       },
       {
         "ordinal": 4,
+        "name": "is_admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -45,8 +50,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "271e891aa734467902cbe00039c67c63b541ebe0740df2a9e3423dbf4925e97e"
+  "hash": "23fa95a757f10d4e27db1eb861650395e35b888c8af23d9498af26b04ea1be2a"
 }

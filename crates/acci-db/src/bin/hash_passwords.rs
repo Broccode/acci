@@ -21,7 +21,7 @@ fn main() {
             .hash_password(user.password.as_bytes(), &salt)
             .expect("Failed to hash password");
 
-        println!("-- User: {}", user.email);
+        println!("-- User: {}", user.username);
         println!("-- Password: {}", user.password);
         println!("-- Hash: {hash}");
     }

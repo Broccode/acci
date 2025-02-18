@@ -13,13 +13,15 @@
 /// in the ACCI system, including traits for authentication providers and user sessions.
 pub mod auth;
 pub mod error;
-// pub mod models;
+/// Core models used throughout the application.
+pub mod models;
 // pub mod traits;
 // pub mod types;
 
 /// Re-export of common types and traits
 pub mod prelude {
     pub use crate::error::{Error, Result};
+    pub use crate::models::User;
     // pub use crate::traits::*;
     // pub use crate::types::*;
 }

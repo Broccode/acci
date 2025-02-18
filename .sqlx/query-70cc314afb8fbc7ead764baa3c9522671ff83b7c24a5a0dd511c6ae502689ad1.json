@@ -1,35 +1,40 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE acci.users\n            SET\n                email = COALESCE($1, email),\n                password_hash = COALESCE($2, password_hash),\n                full_name = COALESCE($3, full_name)\n            WHERE id = $4\n            RETURNING\n                id as \"id: Uuid\",\n                email,\n                password_hash,\n                full_name,\n                created_at,\n                updated_at\n            ",
+  "query": "\n            INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING id, username, email, password_hash, is_admin, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id: Uuid",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "username",
         "type_info": "Varchar"
       },
       {
         "ordinal": 2,
-        "name": "password_hash",
+        "name": "email",
         "type_info": "Varchar"
       },
       {
         "ordinal": 3,
-        "name": "full_name",
+        "name": "password_hash",
         "type_info": "Varchar"
       },
       {
         "ordinal": 4,
+        "name": "is_admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -39,7 +44,9 @@
         "Varchar",
         "Varchar",
         "Varchar",
-        "Uuid"
+        "Bool",
+        "Timestamptz",
+        "Timestamptz"
       ]
     },
     "nullable": [
@@ -48,8 +55,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "15cb5fb1aa63573af432293f068621bea96479e9e825fb2a2452e3388a77a029"
+  "hash": "70cc314afb8fbc7ead764baa3c9522671ff83b7c24a5a0dd511c6ae502689ad1"
 }

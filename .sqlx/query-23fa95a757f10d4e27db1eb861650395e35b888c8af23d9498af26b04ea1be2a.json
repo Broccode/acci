@@ -1,43 +1,51 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id as \"id: Uuid\", email, password_hash, full_name, created_at, updated_at FROM acci.users",
+  "query": "\n            SELECT id, username, email, password_hash, is_admin, created_at, updated_at\n            FROM acci.users\n            WHERE username = $1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id: Uuid",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "username",
         "type_info": "Varchar"
       },
       {
         "ordinal": 2,
-        "name": "password_hash",
+        "name": "email",
         "type_info": "Varchar"
       },
       {
         "ordinal": 3,
-        "name": "full_name",
+        "name": "password_hash",
         "type_info": "Varchar"
       },
       {
         "ordinal": 4,
+        "name": "is_admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text"
+      ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -46,5 +54,5 @@
       false
     ]
   },
-  "hash": "d59f1770e218bc7ab245fc1548af2e0f3850d612f9c1209e2baddd24aebfd741"
+  "hash": "23fa95a757f10d4e27db1eb861650395e35b888c8af23d9498af26b04ea1be2a"
 }

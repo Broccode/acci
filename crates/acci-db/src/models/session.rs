@@ -9,9 +9,11 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Session {
     /// Unique identifier for the session
-    pub session_id: Uuid,
+    pub id: Uuid,
     /// ID of the user this session belongs to
     pub user_id: Uuid,
+    /// The session token
+    pub token: String,
     /// Timestamp when the session was created
     pub created_at: OffsetDateTime,
     /// Timestamp when the session expires
@@ -24,16 +26,18 @@ impl Session {
     /// # Arguments
     ///
     /// * `user_id` - The ID of the user this session belongs to
+    /// * `token` - The session token
     /// * `expires_at` - When the session should expire
     ///
     /// # Returns
     ///
     /// A new session instance with a randomly generated session ID
     #[must_use]
-    pub fn new(user_id: Uuid, expires_at: OffsetDateTime) -> Self {
+    pub fn new(user_id: Uuid, token: String, expires_at: OffsetDateTime) -> Self {
         Self {
-            session_id: Uuid::new_v4(),
+            id: Uuid::new_v4(),
             user_id,
+            token,
             created_at: OffsetDateTime::now_utc(),
             expires_at,
         }

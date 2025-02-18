@@ -15,14 +15,15 @@ BEGIN
     password_hash := '$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0c2FsdA$WScssxqkuNGE4lp2sphIWXiKJYI94xUUA9L4wgUuhxc';
 
     -- Insert default admin user if it doesn't exist
-    INSERT INTO acci.users (id, email, password_hash, full_name, created_at, updated_at)
+    INSERT INTO acci.users (id, username, email, password_hash, is_admin, created_at, updated_at)
     VALUES (
         public.gen_random_uuid(), -- Generate UUID for id
         'admin',                  -- Username
+        'admin@example.com',      -- Email
         password_hash,            -- Hashed password
-        'Default Admin',          -- Full name
+        true,                     -- Is admin
         CURRENT_TIMESTAMP,        -- Created at
         CURRENT_TIMESTAMP         -- Updated at
     )
-    ON CONFLICT (email) DO NOTHING; -- Skip if user already exists
+    ON CONFLICT (username) DO NOTHING; -- Skip if user already exists
 END $$;
