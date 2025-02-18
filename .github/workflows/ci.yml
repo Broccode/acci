@@ -54,7 +54,7 @@ jobs:
 
       - name: Run mutation testing
         run: |
-          cargo mutants --all --json > mutation-report.json
+          cargo mutants --workspace --test-workspace true --all-features --json > mutation-report.json
           # Check mutation score
           score=$(jq '.score' mutation-report.json)
           if (( $(echo "$score < 80" | bc -l) )); then
@@ -98,12 +98,12 @@ jobs:
       - name: Run integration tests
         run: cargo test -p acci-tests --lib --all-features
 
-      - name: Push metrics to Prometheus
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          ./scripts/push-metrics.sh \
-            --metrics test-metrics.json \
-            --endpoint ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
+      # - name: Push metrics to Prometheus
+      #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      #   run: |
+      #     ./scripts/push-metrics.sh \
+      #       --metrics test-metrics.json \
+      #       --endpoint ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
 
   security-audit:
     name: Security Audit
