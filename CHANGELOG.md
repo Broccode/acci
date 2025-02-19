@@ -173,10 +173,10 @@ Create a git tag for the version (e.g., v0.2.0)
   - Standardized database initialization process
 
 - **Mutation Testing:**
-  - Fixed JSON output handling in mutation testing step
-  - Added proper error handling for mutation report parsing
-  - Updated command line arguments for cargo-mutants
-  - Improved error reporting and status tracking
+  - Fixed command line arguments for cargo-mutants
+  - Updated output handling to use correct JSON output location
+  - Added proper file copying for mutation reports
+  - Improved error handling and status tracking
   - Enhanced mutation test reliability
 
 ### Fixed

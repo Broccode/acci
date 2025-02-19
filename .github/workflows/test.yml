@@ -266,10 +266,15 @@ jobs:
           cargo mutants \
             --workspace \
             --all-features \
-            --test-workspace \
-            --output-json mutation-results/mutation-report.json \
-            --output-html mutation-results/html \
+            --test-workspace true \
+            --output mutation-results \
+            --json \
             2>&1 | tee mutation-results/mutation-output.log
+
+          # Move the JSON output to our desired location
+          if [ -f "mutation-results/mutants.out/summary.json" ]; then
+            cp mutation-results/mutants.out/summary.json mutation-results/mutation-report.json
+          fi
 
           # Check if JSON file exists and is valid
           if [ -f "mutation-results/mutation-report.json" ]; then

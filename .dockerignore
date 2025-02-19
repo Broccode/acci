@@ -47,7 +47,7 @@ coverage/
 bom.json
 acci.cdx.xml
 .repomix-output.txt
-mutants.out/
+mutants.out*/
 
 # Keep necessary files
 !Cargo.toml
