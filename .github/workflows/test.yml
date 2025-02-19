@@ -62,10 +62,24 @@ jobs:
       - name: Generate coverage reports
         if: always()
         run: |
-          # Generate detailed coverage data
+          # Create output directory
+          mkdir -p target/coverage-report
+
+          # Generate LCOV report
           cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
-            --output-path target/coverage-report \
-            --lcov --html --json --summary-only
+            --lcov --output-path target/coverage-report/lcov.info
+
+          # Generate HTML report
+          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+            --html --output-dir target/coverage-report/html
+
+          # Generate JSON report
+          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+            --json --output-path target/coverage-report/coverage.json
+
+          # Generate summary
+          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+            --summary-only > target/coverage-report/coverage-summary.txt
 
       - name: Check coverage thresholds
         if: always()

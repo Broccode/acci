@@ -160,6 +160,16 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added fallback for component count in case of JSON parsing errors
   - Improved error handling in SBOM report generation
 
+### Fixed
+
+#### CI/CD Pipeline 🔄
+
+- **Coverage Report Generation:**
+  - Split coverage report generation into separate steps for each output format
+  - Fixed incompatibility between `--lcov` and `--json` output formats
+  - Improved organization of coverage reports in dedicated directory structure
+  - Added separate steps for LCOV, HTML, JSON, and summary reports
+
 ## [0.1.26] - 2024-03-28
 
 ### Changed
