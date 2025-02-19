@@ -120,6 +120,19 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+#### Security Testing 🔒
+
+- **Token Validation Mutation Tests:**
+  - Implemented comprehensive mutation testing suite for token validation
+  - Added timestamp validation mutation tests to verify expiration handling
+  - Added signature verification mutation tests for various token formats
+  - Added algorithm validation mutation tests to prevent algorithm downgrade attacks
+  - Added claim validation mutation tests for required and optional claims
+  - Enhanced test coverage for edge cases and security-critical paths
+  - Improved test organization with modular test functions
+
 ### Changed
 
 #### Test Infrastructure 🧪

@@ -1,7 +1,7 @@
 use acci_core::auth;
 use acci_core::auth::AuthConfig;
 use acci_core::error::Error;
-use argon2::{Argon2, Params};
+// use argon2::{Argon2, Params};
 use jsonwebtoken;
 use serde::{Deserialize, Serialize};
 use time;
@@ -36,17 +36,17 @@ pub fn get_min_password_length() -> usize {
         .unwrap_or(8) // 8 characters minimum
 }
 
-fn create_argon2_instance() -> Argon2<'static> {
-    let params = Params::new(
-        get_argon2_memory_size(),
-        get_argon2_iterations(),
-        get_argon2_parallelism(),
-        None,
-    )
-    .expect("Invalid Argon2 parameters");
-    println!("Argon2 Hashing Parameters: {:?}", params);
-    Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params)
-}
+// fn create_argon2_instance() -> Argon2<'static> {
+//     let params = Params::new(
+//         get_argon2_memory_size(),
+//         get_argon2_iterations(),
+//         get_argon2_parallelism(),
+//         None,
+//     )
+//     .expect("Invalid Argon2 parameters");
+//     println!("Argon2 Hashing Parameters: {:?}", params);
+//     Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params)
+// }
 
 pub fn verify_password(password: &str, hash: &str) -> Result<bool, Error> {
     auth::verify_password(password, hash)

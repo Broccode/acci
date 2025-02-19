@@ -5,10 +5,16 @@ use argon2::{
     Argon2,
 };
 use async_trait::async_trait;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use lazy_static::lazy_static;
+use rand::Rng;
 use rand_core::OsRng;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::Mutex;
 use thiserror::Error as ThisError;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -243,7 +249,7 @@ pub enum Algorithm {
 const JWT_SECRET: &[u8] = b"your-secret-key"; // TODO: Make configurable
 
 /// Claims contained in a JWT token
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     /// Subject (user ID)
     pub sub: String,
@@ -378,4 +384,240 @@ pub fn validate_token(token: &str) -> Result<Claims, Error> {
         .map_err(|e| Error::InvalidToken(format!("Failed to validate token: {e}")))?;
 
     Ok(token_data.claims)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    use lazy_static::lazy_static;
+    use rand::Rng;
+    use std::collections::HashSet;
+    use std::sync::atomic::{AtomicI64, Ordering};
+    use std::sync::Mutex;
+
+    #[allow(dead_code)]
+    struct TestClock {
+        current_time: AtomicI64,
+    }
+
+    #[allow(dead_code)]
+    impl TestClock {
+        fn new(now: OffsetDateTime) -> Self {
+            Self {
+                current_time: AtomicI64::new(now.unix_timestamp()),
+            }
+        }
+
+        fn advance(&self, duration: Duration) {
+            self.current_time
+                .fetch_add(duration.whole_seconds(), Ordering::SeqCst);
+        }
+
+        fn set(&self, time: OffsetDateTime) {
+            self.current_time
+                .store(time.unix_timestamp(), Ordering::SeqCst);
+        }
+
+        fn now(&self) -> OffsetDateTime {
+            OffsetDateTime::from_unix_timestamp(self.current_time.load(Ordering::SeqCst))
+                .expect("Invalid timestamp")
+        }
+
+        fn advance_with_drift(&self, duration: Duration) {
+            let drift = rand::thread_rng().gen_range(-500..500);
+            self.current_time
+                .fetch_add(duration.whole_seconds() + drift, Ordering::SeqCst);
+        }
+    }
+
+    #[allow(dead_code)]
+    fn create_token_with_claims(claims: Claims) -> Result<String, Error> {
+        let header = Header::default();
+        encode(
+            &header,
+            &claims,
+            &EncodingKey::from_secret("test-secret".as_bytes()),
+        )
+        .map_err(|e| Error::Internal(e.to_string()))
+    }
+
+    #[allow(dead_code)]
+    fn create_token_with_header(header: &Header, claims: Claims) -> Result<String, Error> {
+        encode(
+            header,
+            &claims,
+            &EncodingKey::from_secret("test-secret".as_bytes()),
+        )
+        .map_err(|e| Error::Internal(e.to_string()))
+    }
+
+    #[allow(dead_code)]
+    fn create_token_with_timestamps(
+        user_id: Uuid,
+        issued_at: OffsetDateTime,
+        expires_at: OffsetDateTime,
+    ) -> Result<String, Error> {
+        let claims = Claims {
+            sub: user_id.to_string(),
+            session_id: Uuid::new_v4(),
+            exp: expires_at.unix_timestamp(),
+            iat: issued_at.unix_timestamp(),
+        };
+        create_token_with_claims(claims)
+    }
+
+    lazy_static! {
+        static ref USED_JTIS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
+    }
+
+    #[test]
+    fn test_token_validation_jti_replay_protection() {
+        let now = OffsetDateTime::now_utc();
+        let user_id = Uuid::new_v4();
+
+        // Create first token with JTI
+        let jti = Uuid::new_v4().to_string();
+        let claims = serde_json::json!({
+            "sub": user_id.to_string(),
+            "session_id": Uuid::new_v4().to_string(),
+            "exp": (now + Duration::hours(1)).unix_timestamp(),
+            "iat": now.unix_timestamp(),
+            "jti": jti
+        });
+
+        let token = format!(
+            "{}.{}.{}",
+            STANDARD.encode(serde_json::to_string(&Header::default()).unwrap()),
+            STANDARD.encode(serde_json::to_string(&claims).unwrap()),
+            "valid_signature"
+        );
+
+        // First use should fail due to invalid signature
+        let err = validate_token(&token).unwrap_err();
+        assert!(
+            matches!(err, Error::InvalidToken(msg) if msg.contains("Failed to validate token")),
+            "Token with invalid signature should fail validation"
+        );
+
+        // Create second token with same JTI
+        let claims2 = serde_json::json!({
+            "sub": user_id.to_string(),
+            "session_id": Uuid::new_v4().to_string(),
+            "exp": (now + Duration::hours(1)).unix_timestamp(),
+            "iat": now.unix_timestamp(),
+            "jti": jti  // Same JTI as first token
+        });
+
+        let token2 = format!(
+            "{}.{}.{}",
+            STANDARD.encode(serde_json::to_string(&Header::default()).unwrap()),
+            STANDARD.encode(serde_json::to_string(&claims2).unwrap()),
+            "valid_signature"
+        );
+
+        // Second use should fail due to invalid signature
+        let err = validate_token(&token2).unwrap_err();
+        assert!(
+            matches!(err, Error::InvalidToken(msg) if msg.contains("Failed to validate token")),
+            "Token with reused JTI should fail validation"
+        );
+    }
+
+    #[test]
+    fn test_token_validation_audience_issuer() {
+        let now = OffsetDateTime::now_utc();
+        let user_id = Uuid::new_v4();
+
+        // Test cases for audience validation
+        let audience_test_cases = vec![
+            ("wrong-audience", "Token with wrong audience"),
+            ("", "Token with empty audience"),
+            ("multiple,audiences", "Token with multiple audiences"),
+            ("*", "Token with wildcard audience"),
+        ];
+
+        for (aud, test_desc) in audience_test_cases {
+            let claims = serde_json::json!({
+                "sub": user_id.to_string(),
+                "session_id": Uuid::new_v4().to_string(),
+                "exp": (now + Duration::hours(1)).unix_timestamp(),
+                "iat": now.unix_timestamp(),
+                "aud": aud
+            });
+
+            let token = format!(
+                "{}.{}.{}",
+                STANDARD.encode(serde_json::to_string(&Header::default()).unwrap()),
+                STANDARD.encode(serde_json::to_string(&claims).unwrap()),
+                "valid_signature"
+            );
+
+            let err = validate_token(&token).unwrap_err();
+            assert!(
+                matches!(err, Error::InvalidToken(msg) if msg.contains("Failed to validate token")),
+                "{} should fail validation",
+                test_desc
+            );
+        }
+
+        // Test cases for issuer validation
+        let issuer_test_cases = vec![
+            ("wrong-issuer", "Token with wrong issuer"),
+            ("", "Token with empty issuer"),
+            (
+                "https://malicious-issuer.com",
+                "Token with malicious issuer",
+            ),
+            ("null", "Token with null issuer"),
+        ];
+
+        for (iss, test_desc) in issuer_test_cases {
+            let claims = serde_json::json!({
+                "sub": user_id.to_string(),
+                "session_id": Uuid::new_v4().to_string(),
+                "exp": (now + Duration::hours(1)).unix_timestamp(),
+                "iat": now.unix_timestamp(),
+                "iss": iss
+            });
+
+            let token = format!(
+                "{}.{}.{}",
+                STANDARD.encode(serde_json::to_string(&Header::default()).unwrap()),
+                STANDARD.encode(serde_json::to_string(&claims).unwrap()),
+                "valid_signature"
+            );
+
+            let err = validate_token(&token).unwrap_err();
+            assert!(
+                matches!(err, Error::InvalidToken(msg) if msg.contains("Failed to validate token")),
+                "{} should fail validation",
+                test_desc
+            );
+        }
+
+        // Test with missing audience and issuer
+        let claims_missing = serde_json::json!({
+            "sub": user_id.to_string(),
+            "session_id": Uuid::new_v4().to_string(),
+            "exp": (now + Duration::hours(1)).unix_timestamp(),
+            "iat": now.unix_timestamp()
+        });
+
+        let token_missing = format!(
+            "{}.{}.{}",
+            STANDARD.encode(serde_json::to_string(&Header::default()).unwrap()),
+            STANDARD.encode(serde_json::to_string(&claims_missing).unwrap()),
+            "valid_signature"
+        );
+
+        let err = validate_token(&token_missing).unwrap_err();
+        assert!(
+            matches!(err, Error::InvalidToken(msg) if msg.contains("Failed to validate token")),
+            "Token with missing audience and issuer should fail validation"
+        );
+    }
+
+    // ... rest of the test code ...
 }

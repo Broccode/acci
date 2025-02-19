@@ -35,6 +35,15 @@ async-trait = { workspace = true }
 # UUID
 uuid = { workspace = true }
 
+# Base64 encoding/decoding
+base64 = { workspace = true }
+
+# Random number generation
+rand = { workspace = true }
+
+# Lazy Static
+lazy_static = { workspace = true }
+
 [lints]
 workspace = true # Enable workspace-wide lints
 
