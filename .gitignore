@@ -29,3 +29,5 @@ node_modules/
 
 # Private individual user cursor rules
 .cursor/rules/_*.mdc
+
+mutants.out/

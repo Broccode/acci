@@ -42,6 +42,13 @@ temp/
 .rustup/
 **/*.rs.fmt
 
+lcov.info
+coverage/
+bom.json
+acci.cdx.xml
+.repomix-output.txt
+mutants.out/
+
 # Keep necessary files
 !Cargo.toml
 !Cargo.lock

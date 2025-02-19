@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html fmt help test-users-list test-users-reset test-users-clean
+.PHONY: dev dev-down dev-rebuild db-reset db-migrate sqlx-prepare clippy test test-unit test-integration coverage coverage-html fmt help test-users-list test-users-reset test-users-clean prod-image
 
 # Development Environment Variables
 export DATABASE_URL=postgres://acci:development_only@localhost:5432/acci
@@ -21,6 +21,7 @@ help:
 	@echo "  make test-users-list  - List all test users"
 	@echo "  make test-users-reset - Reset test users to default configuration"
 	@echo "  make test-users-clean - Delete all test users"
+	@echo "  make prod-image   - Build production Docker image"
 
 dev:
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
@@ -98,3 +99,6 @@ test-users-reset:
 
 test-users-clean:
 	DATABASE_URL=postgres://acci:development_only@localhost:5432/acci cargo run -p acci-db --bin test_users -- clean
+
+prod-image:
+	docker build -t acci-prod -f ./deploy/docker/Dockerfile.prod .
