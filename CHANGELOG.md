@@ -172,6 +172,13 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved test isolation and reliability
   - Standardized database initialization process
 
+- **Mutation Testing:**
+  - Fixed JSON output handling in mutation testing step
+  - Added proper error handling for mutation report parsing
+  - Updated command line arguments for cargo-mutants
+  - Improved error reporting and status tracking
+  - Enhanced mutation test reliability
+
 ### Fixed
 
 #### CI/CD Pipeline 🔄
