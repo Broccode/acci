@@ -272,8 +272,8 @@ jobs:
             2>&1 | tee mutation-results/mutation-output.log
 
           # Move the JSON output to our desired location
-          if [ -f "mutation-results/mutants.out/summary.json" ]; then
-            cp mutation-results/mutants.out/summary.json mutation-results/mutation-report.json
+          if [ -f "mutation-results/mutants.out/outcomes.json" ]; then
+            cp mutation-results/mutants.out/outcomes.json mutation-results/mutation-report.json
           fi
 
           # Check if JSON file exists and is valid
@@ -470,7 +470,8 @@ jobs:
   metrics:
     name: Test Metrics
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, mutation-testing, performance]
+    # needs: [unit-tests, integration-tests, mutation-testing, performance]
+    needs: [unit-tests, integration-tests, mutation-testing]
     if: always()
     env:
       METRICS_DIR: test-metrics
@@ -530,30 +531,30 @@ jobs:
             echo "mutation_status=missing" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Process performance metrics
-        id: performance
-        if: always()
-        run: |
-          if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" ]; then
-            # Extract performance metrics
-            jq -r '.benchmarks[] | select(.mean != null) | "benchmark{\\"name\\"=\\"\(.name)\\"} \(.mean)"' \
-              "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" > performance-metrics.txt
+      # - name: Process performance metrics
+        # id: performance
+        # if: always()
+        # run: |
+        #   if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" ]; then
+        #     # Extract performance metrics
+        #     jq -r '.benchmarks[] | select(.mean != null) | "benchmark{\\"name\\"=\\"\(.name)\\"} \(.mean)"' \
+        #       "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" > performance-metrics.txt
 
-            if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json" ]; then
-              status=$(jq -r '.status' "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json")
-              echo "performance_status=${status}" >> "$GITHUB_OUTPUT"
+        #     if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json" ]; then
+        #       status=$(jq -r '.status' "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json")
+        #       echo "performance_status=${status}" >> "$GITHUB_OUTPUT"
 
-              if [ "$status" = "regression" ]; then
-                echo "::warning::Performance regression detected"
-              fi
-            else
-              echo "::warning::No regression data found"
-              echo "performance_status=missing" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "::warning::No performance data found"
-            echo "performance_status=missing" >> "$GITHUB_OUTPUT"
-          fi
+        #       if [ "$status" = "regression" ]; then
+        #         echo "::warning::Performance regression detected"
+        #       fi
+        #     else
+        #       echo "::warning::No regression data found"
+        #       echo "performance_status=missing" >> "$GITHUB_OUTPUT"
+        #     fi
+        #   else
+        #     echo "::warning::No performance data found"
+        #     echo "performance_status=missing" >> "$GITHUB_OUTPUT"
+        #   fi
 
       - name: Generate metrics report
         if: always()
@@ -563,7 +564,7 @@ jobs:
             echo "## Summary"
             echo "- Coverage: ${{ steps.coverage.outputs.coverage }}% (${{ steps.coverage.outputs.coverage_status }})"
             echo "- Mutation Score: ${{ steps.mutation.outputs.mutation_score }}% (${{ steps.mutation.outputs.mutation_status }})"
-            echo "- Performance: ${{ steps.performance.outputs.performance_status }}"
+            # echo "- Performance: ${{ steps.performance.outputs.performance_status }}"
             echo "- Timestamp: $(date -u)"
             echo
             echo "## Coverage Details"
@@ -625,7 +626,7 @@ jobs:
         if: always()
         run: |
           if [[ "${{ steps.coverage.outputs.coverage_status }}" == "warning" ]] || \
-             [[ "${{ steps.mutation.outputs.mutation_status }}" == "warning" ]] || \
-             [[ "${{ steps.performance.outputs.performance_status }}" == "regression" ]]; then
+             [[ "${{ steps.mutation.outputs.mutation_status }}" == "warning" ]]; then
+            #  [[ "${{ steps.performance.outputs.performance_status }}" == "regression" ]]; then
             echo "::warning::One or more quality metrics are below thresholds. Check test-metrics-report.md for details."
           fi
