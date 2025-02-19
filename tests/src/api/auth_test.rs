@@ -52,6 +52,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
                 email: "test_user@example.com".to_string(),
                 password_hash: auth::hash_password("test_password")
                     .expect("Password hashing should succeed in test setup"),
+                full_name: "Test User".to_string(),
                 is_admin: false,
                 created_at: now,
                 updated_at: now,
@@ -158,6 +159,7 @@ async fn test_session_management() -> Result<(), Error> {
                 email: "test_user@example.com".to_string(),
                 password_hash: auth::hash_password("test_password")
                     .expect("Password hashing should succeed in test setup"),
+                full_name: "Test User".to_string(),
                 is_admin: false,
                 created_at: now,
                 updated_at: now,
@@ -198,6 +200,7 @@ async fn test_session_management() -> Result<(), Error> {
             email: "test_user@example.com".to_string(),
             password_hash: auth::hash_password("test_password")
                 .expect("Password hashing should succeed in test setup"),
+            full_name: "Test User".to_string(),
             is_admin: false,
             created_at: now,
             updated_at: now,
@@ -255,6 +258,7 @@ async fn test_token_validation() -> Result<(), Error> {
             email: "test_user@example.com".to_string(),
             password_hash: auth::hash_password("test_password")
                 .expect("Password hashing should succeed in test setup"),
+            full_name: "Test User".to_string(),
             is_admin: false,
             created_at: now,
             updated_at: now,
@@ -510,6 +514,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                 email: "test@example.com".to_string(),
                 password_hash: auth::hash_password("test_password")
                     .expect("Password hashing should succeed in test setup"),
+                full_name: "Test User".to_string(),
                 is_admin: false,
                 created_at: now,
                 updated_at: now,
@@ -527,6 +532,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                 email: "test@example.com".to_string(),
                 password_hash: auth::hash_password("test_password")
                     .expect("Password hashing should succeed in test setup"),
+                full_name: "Test User".to_string(),
                 is_admin: false,
                 created_at: now,
                 updated_at: now,
@@ -649,6 +655,7 @@ async fn test_login_default_admin() -> Result<(), Error> {
                 email: "admin@example.com".to_string(),
                 password_hash: auth::hash_password("whiskey")
                     .expect("Password hashing should succeed in test setup"),
+                full_name: "Admin User".to_string(),
                 is_admin: true,
                 created_at: now,
                 updated_at: now,
