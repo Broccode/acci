@@ -62,15 +62,13 @@ impl BasicAuthProvider {
         }
     }
 
-    /// Hashes a password using Argon2.
+    /// Hashes a password using Argon2id.
     ///
-    /// # Arguments
-    ///
-    /// * `password` - The password to hash
-    ///
-    /// # Returns
-    ///
-    /// The hashed password
+    /// # Errors
+    /// Returns an error if:
+    /// - Password hashing fails
+    /// - Memory allocation fails
+    /// - Algorithm parameters are invalid
     fn hash_password(&self, password: &str) -> Result<String, Error> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
@@ -83,14 +81,11 @@ impl BasicAuthProvider {
 
     /// Verifies a password against its hash.
     ///
-    /// # Arguments
-    ///
-    /// * `password` - The password to verify
-    /// * `hash` - The hash to verify against
-    ///
-    /// # Returns
-    ///
-    /// `true` if the password matches the hash, `false` otherwise
+    /// # Errors
+    /// Returns an error if:
+    /// - Hash parsing fails
+    /// - Password verification fails
+    /// - Invalid hash format
     fn verify_password(&self, password: &str, hash: &str) -> Result<bool, Error> {
         let parsed_hash = PasswordHash::new(hash)
             .map_err(|e| Error::Internal(format!("Failed to parse password hash: {e}")))?;
@@ -102,13 +97,10 @@ impl BasicAuthProvider {
 
     /// Creates a JWT token for a user.
     ///
-    /// # Arguments
-    ///
-    /// * `user_id` - The ID of the user
-    ///
-    /// # Returns
-    ///
-    /// The JWT token
+    /// # Errors
+    /// Returns an error if:
+    /// - Token creation fails
+    /// - Signing process fails
     fn create_token(&self, user_id: Uuid) -> Result<String, Error> {
         let now = OffsetDateTime::now_utc();
         let exp = now + Duration::seconds(self.config.token_duration);
@@ -131,13 +123,11 @@ impl BasicAuthProvider {
 
     /// Validates a JWT token.
     ///
-    /// # Arguments
-    ///
-    /// * `token` - The token to validate
-    ///
-    /// # Returns
-    ///
-    /// The claims from the token if valid
+    /// # Errors
+    /// Returns an error if:
+    /// - Token is invalid
+    /// - Token is expired
+    /// - Signature verification fails
     fn validate_token(&self, token: &str) -> Result<Claims, Error> {
         let validation = Validation::default();
         let token_data = decode::<Claims>(

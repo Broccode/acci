@@ -283,7 +283,13 @@ pub fn hash_password(password: &str) -> Result<String, Error> {
         .map_err(|e| Error::Internal(format!("Password hashing failed: {e}")))
 }
 
-/// Verifies a password against its hash
+/// Verifies if a password matches a hash.
+///
+/// # Errors
+/// Returns an error if the password verification process fails due to:
+/// - Invalid hash format
+/// - Memory allocation issues
+/// - Algorithm version mismatch
 pub fn verify_password(password: &str, hash: &str) -> Result<bool, Error> {
     let parsed_hash = PasswordHash::new(hash)
         .map_err(|e| Error::Internal(format!("Failed to parse password hash: {e}")))?;
@@ -293,7 +299,13 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, Error> {
         .is_ok())
 }
 
-/// Creates a JWT token for a user
+/// Creates a JWT token for a user.
+///
+/// # Errors
+/// Returns an error if:
+/// - Token creation fails
+/// - Signing process fails
+/// - Invalid key format
 pub fn create_token(user_id: Uuid) -> Result<String, Error> {
     let session_id = Uuid::new_v4();
     let now = OffsetDateTime::now_utc();
@@ -314,7 +326,13 @@ pub fn create_token(user_id: Uuid) -> Result<String, Error> {
     .map_err(|e| Error::Internal(format!("Failed to create token: {e}")))
 }
 
-/// Validates a JWT token
+/// Validates a JWT token and returns the claims.
+///
+/// # Errors
+/// Returns an error if:
+/// - Token is invalid
+/// - Token is expired
+/// - Signature verification fails
 pub fn validate_token(token: &str) -> Result<Claims, Error> {
     let validation = Validation::default();
     let token_data = decode::<Claims>(token, &DecodingKey::from_secret(JWT_SECRET), &validation)

@@ -1,42 +1,10 @@
 use async_trait::async_trait;
-use metrics::{counter, Counter, Label};
-use once_cell::sync::Lazy;
 use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::models::session::Session;
 use crate::Error;
-
-/// Metrics for session operations
-static SESSION_METRICS: Lazy<SessionMetrics> = Lazy::new(SessionMetrics::new);
-
-/// Metrics for session operations
-struct SessionMetrics {
-    sessions_invalidated: Counter,
-    invalidation_errors: Counter,
-}
-
-impl SessionMetrics {
-    fn new() -> Self {
-        Self {
-            sessions_invalidated: counter!(
-                "acci_db_sessions_invalidated_total",
-                vec![Label::new(
-                    "description",
-                    "Total number of sessions invalidated programmatically (e.g., due to user account changes)."
-                )]
-            ),
-            invalidation_errors: counter!(
-                "acci_db_session_invalidation_errors_total",
-                vec![Label::new(
-                    "description",
-                    "Total number of errors encountered while attempting to invalidate user sessions."
-                )]
-            ),
-        }
-    }
-}
 
 /// Defines the interface for managing user sessions in the database.
 ///

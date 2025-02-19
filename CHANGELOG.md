@@ -992,3 +992,14 @@ Create a git tag for the version (e.g., v0.2.0)
 
 - Fixed SBOM generation in CI pipeline by correcting cargo-cyclonedx command syntax
 - Fixed Clippy lint group priorities for pedantic and nursery groups
+
+### Fixed
+
+- Fixed Clippy warnings:
+  - Added missing error documentation for Result-returning functions
+  - Added missing panic documentation for functions that may panic
+  - Removed unused metrics in session repository
+  - Fixed redundant pattern matching in auth provider
+  - Removed unused self parameters in basic auth provider
+  - Added allow attribute for large_stack_arrays in logging macros
+  - Renamed unused variable ip to _ip in auth module

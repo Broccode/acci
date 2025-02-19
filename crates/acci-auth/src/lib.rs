@@ -72,11 +72,12 @@ impl AuthService<SystemClock> {
 impl<C: Clock> AuthServiceTrait for AuthService<C> {
     async fn register(&self, credentials: Credentials) -> Result<AuthResult, Error> {
         // Check if user exists
-        if let Some(_) = self
+        if self
             .user_repo
             .get_user_by_username(&credentials.username)
             .await
             .map_err(|e| Error::Database(e.to_string()))?
+            .is_some()
         {
             return Err(Error::AlreadyExists("User already exists".to_string()));
         }
@@ -169,7 +170,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
     async fn validate_token_with_context(
         &self,
         token: String,
-        ip: String,
+        _ip: String,
     ) -> Result<ValidationResult, Error> {
         // Validate token
         let claims =

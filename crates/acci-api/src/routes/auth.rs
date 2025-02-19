@@ -36,9 +36,14 @@ pub struct LoginResponse {
     pub token: String,
 }
 
-/// Creates a router for authentication endpoints
+/// Creates the authentication router with all routes.
+///
+/// # Panics
+/// Panics if the database connection pool cannot be created.
 pub async fn create_auth_router(db_config: DbConfig) -> Router {
-    let pool = create_pool(db_config).await.unwrap();
+    let pool = create_pool(db_config)
+        .await
+        .expect("Failed to create database connection pool");
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));
     let auth_config = AuthConfig::default();
@@ -106,6 +111,13 @@ async fn login(
     }))
 }
 
+/// Handles user registration.
+///
+/// # Errors
+/// Returns an error if:
+/// - User already exists
+/// - Database operation fails
+/// - Password hashing fails
 async fn register(
     State(auth_provider): State<Arc<BasicAuthProvider>>,
     Json(request): Json<LoginRequest>,
@@ -125,6 +137,12 @@ async fn register(
     }))
 }
 
+/// Handles user logout.
+///
+/// # Errors
+/// Returns an error if:
+/// - Session not found
+/// - Database operation fails
 async fn logout(
     State(auth_provider): State<Arc<BasicAuthProvider>>,
     Json(session_id): Json<String>,
@@ -138,6 +156,13 @@ async fn logout(
         .map_err(|e| e.to_string())
 }
 
+/// Validates a JWT token.
+///
+/// # Errors
+/// Returns an error if:
+/// - Token is invalid
+/// - Token is expired
+/// - Signature verification fails
 async fn validate(
     State(auth_provider): State<Arc<BasicAuthProvider>>,
     Json(token): Json<String>,
@@ -150,6 +175,10 @@ async fn validate(
     Ok(Json(true))
 }
 
+/// Creates the authentication router with all routes.
+///
+/// This function sets up all authentication-related routes including login,
+/// logout, registration, and token validation.
 pub fn router(pool: PgPool) -> Router {
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));

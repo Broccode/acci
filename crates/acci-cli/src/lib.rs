@@ -1,3 +1,5 @@
+#![allow(clippy::large_stack_arrays)]
+
 //! CLI utilities and error handling for the ACCI system.
 //! Provides common functionality for command-line tools including error types and formatting.
 use serde::Serialize;
