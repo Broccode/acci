@@ -1,6 +1,9 @@
 use crate::helpers::db::wait_for_db;
 use acci_auth::providers::basic::BasicAuthProvider;
-use acci_core::auth::{AuthConfig, AuthProvider, Credentials};
+use acci_core::{
+    auth::{AuthConfig, AuthProvider, Credentials},
+    error::Error,
+};
 use acci_db::{
     create_pool,
     repositories::{
@@ -14,6 +17,9 @@ use acci_db::{
 use anyhow::Result;
 use std::sync::Arc;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
+use time::Duration;
+
+use crate::helpers::db::setup_database;
 
 async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository, PgPool)> {
     let container = postgres::Postgres::default().start().await?;
@@ -67,19 +73,48 @@ async fn test_default_admin_user_exists() -> Result<()> {
 
 #[tokio::test]
 async fn test_default_admin_authentication() -> Result<()> {
-    let (_container, repo, pool) = setup().await?;
-
-    // Ensure database is ready
-    wait_for_db(&pool).await?;
+    let (_container, pool) = setup_database().await?;
 
     // Create auth provider and try to authenticate
-    let user_repo = Arc::new(repo);
+    let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool.clone()));
     let auth_provider = BasicAuthProvider::new(user_repo, session_repo, AuthConfig::default());
 
+    // Add a small delay to ensure database is ready
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+    // Verify default admin user exists in DB directly
+    let admin_user = sqlx::query_as::<_, (String, bool, String)>(
+        "SELECT username, is_admin, password_hash FROM acci.users WHERE username = 'admin'",
+    )
+    .fetch_optional(&pool)
+    .await?;
+
+    match admin_user {
+        Some((username, is_admin, password_hash)) => {
+            assert_eq!(username, "admin", "Admin username should be 'admin'");
+            assert!(is_admin, "Admin user should have is_admin = true");
+            println!("Password hash from database: {}", password_hash);
+
+            // Generate hash of "whiskey123!" using the same hashing function
+            let expected_hash = crate::helpers::auth::hash_password("whiskey123!")
+                .expect("Failed to hash default password in test");
+            println!("Expected hash of 'whiskey123!': {}", expected_hash);
+
+            // Verify the password directly using auth::verify_password
+            let password_valid =
+                crate::helpers::auth::verify_password("whiskey123!", &password_hash)
+                    .expect("Failed to verify password in test");
+            println!("Password verification result: {}", password_valid);
+        },
+        None => {
+            panic!("Default admin user not found in database after migrations!");
+        },
+    }
+
     let credentials = Credentials {
         username: "admin".to_string(),
-        password: "whiskey".to_string(),
+        password: "whiskey123!".to_string(),
     };
 
     let result = auth_provider.authenticate(credentials).await;

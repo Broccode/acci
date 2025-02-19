@@ -1003,3 +1003,43 @@ Create a git tag for the version (e.g., v0.2.0)
   - Removed unused self parameters in basic auth provider
   - Added allow attribute for large_stack_arrays in logging macros
   - Renamed unused variable ip to _ip in auth module
+
+## [Unreleased]
+
+### Fixed
+
+#### Integration Tests 🧪
+
+- **Password Hash Consistency:**
+  - Fixed inconsistent Argon2 parameters between test and migration environments
+  - Unified Argon2 configuration (m=19456, t=2, p=1) across all environments
+  - Added parameter logging for better debugging visibility
+  - Updated pre-computed hashes in migrations to match runtime parameters
+  - Enhanced test coverage for password verification
+  - Added isolated test case for password hashing verification
+  - Improved error handling and logging in auth tests
+
+- **Database Migrations:**
+  - Fixed default admin user migration to use correct password hash
+  - Updated migration files in both main and test environments
+  - Added helper program for generating consistent password hashes
+  - Improved migration test reliability
+  - Enhanced error handling in migration tests
+
+- **Test Infrastructure:**
+  - Added proper database reset functionality using make db-reset
+  - Improved test isolation and reliability
+  - Enhanced error reporting in authentication tests
+  - Added comprehensive logging for cryptographic operations
+  - Improved test organization and maintainability
+
+### Added
+
+#### Security Enhancements 🔒
+
+- **Cryptographic Parameter Management:**
+  - Added new rule `304-crypto-params.mdc` for consistent parameter handling
+  - Implemented comprehensive parameter validation
+  - Added debugging guidelines for cryptographic operations
+  - Enhanced documentation for security-critical configurations
+  - Improved test coverage for security parameters

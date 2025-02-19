@@ -16,6 +16,7 @@ path = "src/lib.rs"
 # Workspace Dependencies
 acci-api = { path = "../crates/acci-api" }
 acci-auth = { path = "../crates/acci-auth" }
+acci-cli = { path = "../crates/acci-cli" }
 acci-core = { path = "../crates/acci-core" }
 acci-db = { path = "../crates/acci-db" }
 anyhow = { workspace = true }
@@ -35,3 +36,7 @@ mockall = { workspace = true }
 testcontainers-modules = { workspace = true }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
+sqlx = { workspace = true }
+
+[dev-dependencies]
+testcontainers = { workspace = true }

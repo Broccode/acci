@@ -125,6 +125,7 @@ version = "0.1.23"
 dependencies = [
  "acci-api",
  "acci-auth",
+ "acci-cli",
  "acci-core",
  "acci-db",
  "anyhow",
@@ -135,6 +136,8 @@ dependencies = [
  "mockall",
  "serde",
  "serde_json",
+ "sqlx",
+ "testcontainers",
  "testcontainers-modules",
  "time",
  "tokio",

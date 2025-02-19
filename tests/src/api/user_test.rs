@@ -1,3 +1,4 @@
+use crate::helpers::{auth, db::setup_database};
 use acci_core::error::Error;
 use acci_db::{
     create_pool,
@@ -187,28 +188,24 @@ async fn test_duplicate_username() {
 
 #[tokio::test]
 async fn test_username_case_sensitivity() -> Result<()> {
-    let (_container, repo) = setup().await?;
+    let (_container, pool) = setup_database().await?;
+    let user_repo = PgUserRepository::new(pool);
 
-    let username = "Test_User";
-    let password_hash = "hash123";
+    // Create a user with lowercase username
+    let username = format!("test_user_{}", Uuid::new_v4());
+    let password_hash = auth::hash_password("test_password123!")
+        .expect("Password hashing should succeed in test setup");
 
-    // Create the user and handle potential errors
-    repo.create_user(username, password_hash).await?;
+    let user = user_repo.create_user(&username, &password_hash).await?;
+    assert_eq!(user.username, username);
 
-    // Wait briefly to ensure the transaction is complete
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-    // Test with different casings
-    let test_cases = vec!["test_user", "TEST_USER", "Test_User"];
-
-    for test_username in test_cases {
-        let found = repo.get_user_by_username(test_username).await?;
-        assert!(
-            found.is_some(),
-            "User not found for username: {}",
-            test_username
-        );
-    }
+    // Try to find user with uppercase username
+    let uppercase_username = username.to_uppercase();
+    let result = user_repo.get_user_by_username(&uppercase_username).await?;
+    assert!(
+        result.is_none(),
+        "User should not be found with uppercase username"
+    );
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 use crate::{
+    helpers::auth,
     helpers::db::setup_database,
     mocks::{MockSessionRepository, MockUserRepository},
 };
@@ -14,6 +15,7 @@ use acci_db::{
         session::{PgSessionRepository, SessionRepository},
         user::{PgUserRepository, UserRepository},
     },
+    Error as DbError,
 };
 use anyhow::Result;
 use mockall::predicate::eq;
@@ -36,6 +38,7 @@ async fn setup() -> Result<(
 async fn test_test_users_authentication() -> Result<()> {
     let (_container, user_repo, session_repo) = setup().await?;
     let auth_config = AuthConfig::default();
+    let test_config = TestUserConfig::default();
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), auth_config);
 
     // Add a small delay to ensure database is ready
@@ -43,8 +46,8 @@ async fn test_test_users_authentication() -> Result<()> {
 
     // Test admin authentication
     let admin_credentials = Credentials {
-        username: "test.admin@example.com".to_string(),
-        password: "test123!admin".to_string(),
+        username: test_config.users[0].username.clone(),
+        password: test_config.users[0].password.clone(),
     };
     let admin_result = provider.authenticate(admin_credentials).await;
     assert!(
@@ -55,8 +58,8 @@ async fn test_test_users_authentication() -> Result<()> {
 
     // Test regular user authentication
     let user_credentials = Credentials {
-        username: "test.user@example.com".to_string(),
-        password: "test123!user".to_string(),
+        username: test_config.users[1].username.clone(),
+        password: test_config.users[1].password.clone(),
     };
     let user_result = provider.authenticate(user_credentials).await;
     assert!(
@@ -90,8 +93,7 @@ async fn test_test_users_exist() -> Result<()> {
 
 #[tokio::test]
 async fn test_authenticate_test_admin_user() -> Result<(), Error> {
-    let mut user_repo = MockUserRepository::new();
-    #[allow(unused_mut)]
+    let mut user_repo = MockUserRepository::default();
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
@@ -102,6 +104,10 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
     let now = OffsetDateTime::now_utc();
     let email_clone = admin_username.clone();
 
+    // Create a valid password hash
+    let password_hash = auth::hash_password(&admin_password)
+        .expect("Password hashing should succeed in test setup");
+
     user_repo
         .expect_get_user_by_username()
         .with(eq(admin_username.clone()))
@@ -110,7 +116,7 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
                 id: user_id,
                 username: email_clone.clone(),
                 email: "test@example.com".to_string(),
-                password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
+                password_hash: password_hash.clone(),
                 full_name: "Test Admin".to_string(),
                 is_admin: true,
                 created_at: now,
@@ -129,6 +135,10 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
                 expires_at,
             })
         });
+
+    session_repo
+        .expect_update_session_token()
+        .returning(|_, _| Ok(()));
 
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
 
@@ -159,6 +169,10 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
     let now = OffsetDateTime::now_utc();
     let email_clone = user_username.clone();
 
+    // Create a valid password hash
+    let password_hash =
+        auth::hash_password(&user_password).expect("Password hashing should succeed in test setup");
+
     user_repo
         .expect_get_user_by_username()
         .with(eq(user_username.clone()))
@@ -167,7 +181,7 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
                 id: user_id,
                 username: email_clone.clone(),
                 email: "test@example.com".to_string(),
-                password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
+                password_hash: password_hash.clone(),
                 full_name: "Test User".to_string(),
                 is_admin: false,
                 created_at: now,
@@ -186,6 +200,10 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
                 expires_at,
             })
         });
+
+    session_repo
+        .expect_update_session_token()
+        .returning(|_, _| Ok(()));
 
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
 
@@ -215,6 +233,10 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
     let now = OffsetDateTime::now_utc();
     let email_clone = admin_username.clone();
 
+    // Create a valid password hash for the correct password
+    let password_hash = auth::hash_password(&test_config.users[0].password)
+        .expect("Password hashing should succeed in test setup");
+
     user_repo
         .expect_get_user_by_username()
         .with(eq(admin_username.clone()))
@@ -223,7 +245,7 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
                 id: user_id,
                 username: email_clone.clone(),
                 email: "test@example.com".to_string(),
-                password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
+                password_hash: password_hash.clone(),
                 full_name: "Test Admin".to_string(),
                 is_admin: true,
                 created_at: now,
@@ -239,8 +261,10 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
     };
 
     let result = provider.authenticate(credentials).await;
-    assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), Error::InvalidCredentials));
+    assert!(
+        matches!(result, Err(Error::InvalidCredentials)),
+        "Should return InvalidCredentials error for wrong password"
+    );
 
     Ok(())
 }
