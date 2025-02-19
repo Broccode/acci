@@ -1,4 +1,4 @@
-use crate::helpers::{auth, db::setup_database};
+use crate::helpers::auth;
 use acci_core::error::Error;
 use acci_db::{
     create_pool,

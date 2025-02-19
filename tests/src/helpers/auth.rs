@@ -1,13 +1,9 @@
 use acci_core::auth;
 use acci_core::auth::AuthConfig;
 use acci_core::error::Error;
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2, Params,
-};
+use argon2::{Argon2, Params};
 use jsonwebtoken;
 use serde::{Deserialize, Serialize};
-use std::env;
 use time;
 use uuid::Uuid;
 
