@@ -18,6 +18,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates/acci-core/Cargo.toml ./crates/acci-core/
 COPY crates/acci-api/Cargo.toml ./crates/acci-api/
 COPY crates/acci-auth/Cargo.toml ./crates/acci-auth/
+COPY crates/acci-cli/Cargo.toml ./crates/acci-cli/
 COPY crates/acci-db/Cargo.toml ./crates/acci-db/
 COPY crates/acci-frontend/Cargo.toml ./crates/acci-frontend/
 
@@ -35,6 +36,9 @@ RUN mkdir -p crates/acci-core/src && \
     echo "fn main() {}" > crates/acci-api/src/main.rs && \
     mkdir -p crates/acci-auth/src && \
     echo "pub fn dummy() {}" > crates/acci-auth/src/lib.rs && \
+    mkdir -p crates/acci-cli/src && \
+    echo "pub fn dummy() {}" > crates/acci-cli/src/lib.rs && \
+    echo "fn main() {}" > crates/acci-cli/src/main.rs && \
     mkdir -p crates/acci-db/src && \
     echo "pub fn dummy() {}" > crates/acci-db/src/lib.rs && \
     echo "fn main() {}" > crates/acci-db/src/main.rs && \
@@ -55,6 +59,7 @@ RUN rm -rf ./crates/*/src
 COPY crates/acci-core/src ./crates/acci-core/src
 COPY crates/acci-api/src ./crates/acci-api/src
 COPY crates/acci-auth/src ./crates/acci-auth/src
+COPY crates/acci-cli/src ./crates/acci-cli/src
 COPY crates/acci-db/src ./crates/acci-db/src
 COPY crates/acci-frontend/src ./crates/acci-frontend/src
 

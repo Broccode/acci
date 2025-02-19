@@ -4,10 +4,10 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2, Params,
 };
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken;
 use serde::{Deserialize, Serialize};
 use std::env;
-use time::{Duration, OffsetDateTime};
+use time;
 use uuid::Uuid;
 
 // Configurable via environment variables, with secure defaults

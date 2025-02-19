@@ -1,4 +1,3 @@
-use acci_core::error::Error as CoreError;
 use acci_db::{models::Session, repositories::session::SessionRepository, Error};
 use async_trait::async_trait;
 use mockall::automock;

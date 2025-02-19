@@ -120,6 +120,26 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+#### Infrastructure 🏗️
+
+- **Docker Build Process:**
+  - Added `acci-cli` crate to production Dockerfile build process
+  - Updated manifest copying section to include `acci-cli` Cargo.toml
+  - Added dummy source file creation for `acci-cli` crate
+  - Included `acci-cli` source code in final build stage
+
+### Fixed
+
+#### Test Infrastructure 🧪
+
+- **Code Quality:**
+  - Cleaned up unused imports in test helper files
+  - Removed redundant imports in `tests/src/helpers/auth.rs`
+  - Removed unused `CoreError` import in `tests/src/mocks/session.rs`
+  - Fixed CI pipeline code coverage step
+
 ## [0.1.25] - 2024-03-28
 
 ### Changed
