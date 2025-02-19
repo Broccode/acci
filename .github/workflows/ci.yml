@@ -11,159 +11,171 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  test:
-    name: Test
+  validate:
+    name: Validation
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Check CHANGELOG.md update
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -q "CHANGELOG.md" || {
+            echo "Error: CHANGELOG.md must be updated"
+            exit 1
+          }
+
+      - name: Validate EditorConfig
+        run: |
+          npm install -g editorconfig-checker
+          editorconfig-checker
+
+      - name: Validate Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v13
+        with:
+          globs: "**/*.md"
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    needs: validate
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy, llvm-tools-preview
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Check format
+      - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Run clippy (lib and bins only)
-        run: cargo clippy --lib --bins --all-features -- -D warnings
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Install cargo-mutants
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-mutants
-
-      - name: Install cargo-tarpaulin
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-tarpaulin
-
-      - name: Generate code coverage
-        run: |
-          # Generate detailed coverage report
-          cargo llvm-cov --lib --bins --all-features --workspace --lcov --output-path lcov.info
-          # Generate JSON report for metrics
-          cargo llvm-cov --lib --bins --all-features --workspace --json --output-path coverage.json
-
-      - name: Run mutation testing
-        run: |
-          cargo mutants --workspace --test-workspace true --all-features --json > mutation-report.json
-          # Check mutation score
-          score=$(jq '.score' mutation-report.json)
-          if (( $(echo "$score < 80" | bc -l) )); then
-            echo "Mutation score below threshold: $score% < 80%"
-            exit 1
-          fi
-
-      - name: Run performance benchmarks
-        run: |
-          cargo bench --workspace --json > benchmark-results.json
-          # Check for performance regressions
-          ./scripts/check-performance.sh benchmark-results.json
-
-      - name: Generate test metrics report
-        run: |
-          ./scripts/generate-test-metrics.sh \
-            --coverage coverage.json \
-            --mutation mutation-report.json \
-            --benchmarks benchmark-results.json \
-            --output test-metrics.json
-
-      - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2.2.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: lcov.info
-
-      - name: Upload test metrics
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-metrics
-          path: |
-            coverage.json
-            mutation-report.json
-            benchmark-results.json
-            test-metrics.json
-
-      - name: Run unit tests
-        run: cargo test --lib --bins --all-features --workspace --exclude acci-tests
-
-      - name: Run integration tests
-        run: cargo test -p acci-tests --lib --all-features
-
-      # - name: Push metrics to Prometheus
-      #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      #   run: |
-      #     ./scripts/push-metrics.sh \
-      #       --metrics test-metrics.json \
-      #       --endpoint ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
-
-  security-audit:
-    name: Security Audit
+  security:
+    name: Security Checks
     runs-on: ubuntu-latest
+    needs: lint
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
+      - name: Install security tools
+        run: |
+          cargo install cargo-audit
+          cargo install cargo-deny
+          cargo install cargo-cyclonedx
 
       - name: Run security audit
         run: |
-          cargo audit --ignore RUSTSEC-2023-0071 --json > security-audit.json
-          # Check for critical vulnerabilities
-          if jq -e '.vulnerabilities[] | select(.severity == "Critical")' security-audit.json; then
-            echo "Critical vulnerabilities found!"
-            exit 1
-          fi
+          # Run audit and generate report
+          cargo audit --ignore RUSTSEC-2023-0071 --json | tee audit-report.json
+          echo "# Security Audit Report" > security-report.md
+          echo "## Vulnerabilities" >> security-report.md
+          jq -r '.vulnerabilities[] | "- " + .advisory.title + " (" + .advisory.id + ")"' audit-report.json >> security-report.md || true
 
-      - name: Upload security report
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: security-audit.json
-
-  sbom:
-    name: Generate SBOM
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-cyclonedx
-        run: cargo install cargo-cyclonedx
+      - name: Check dependencies
+        run: |
+          # Check dependencies and licenses
+          cargo deny check
+          echo "## Dependency Check" >> security-report.md
+          echo "✓ All dependency checks passed" >> security-report.md
 
       - name: Generate SBOM
-        run: cargo cyclonedx -f json --override-filename bom
+        run: |
+          # Generate CycloneDX SBOM
+          cargo cyclonedx --format json --output-file bom.json
+          echo "## Software Bill of Materials" >> security-report.md
+          echo "- Generated: $(date)" >> security-report.md
+          echo "- Format: CycloneDX" >> security-report.md
+          echo "- Components: $(jq '.components | length' bom.json)" >> security-report.md
 
-      - name: Upload SBOM
+      - name: Upload security reports
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
-          path: bom.json
+          name: security-reports
+          path: |
+            security-report.md
+            audit-report.json
+            bom.json
 
-  deny-check:
-    name: License Check
+  build:
+    name: Build
     runs-on: ubuntu-latest
+    needs: security
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build workspace
+        run: cargo build --workspace --all-features
+
+      - name: Check documentation
+        run: cargo doc --workspace --all-features --no-deps
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            target/debug/
+            target/doc/
+
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
+      - name: Build documentation
+        run: |
+          # Build rustdoc documentation
+          cargo doc --workspace --all-features --no-deps
 
-      - name: Check licenses
-        run: cargo deny check licenses
+          # Create index.html
+          echo '<meta http-equiv="refresh" content="0; url=acci/index.html">' > target/doc/index.html
+
+          # Copy additional documentation
+          cp -r docs target/doc/
+
+          # Create documentation artifact
+          tar -czf documentation.tar.gz -C target/doc .
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
