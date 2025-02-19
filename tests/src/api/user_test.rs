@@ -1,5 +1,4 @@
 use acci_core::error::Error;
-use acci_core::models::User;
 use acci_db::{
     create_pool,
     repositories::user::{PgUserRepository, UserRepository},

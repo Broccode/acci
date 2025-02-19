@@ -36,7 +36,7 @@ async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), E
 async fn test_basic_auth_flow() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
     let mut session_repo = MockSessionRepository::new();
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     // Setup mock expectations
     let user_id = Uuid::new_v4();
@@ -110,7 +110,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
 async fn test_invalid_credentials() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
     let mut session_repo = MockSessionRepository::new();
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     // Setup mock expectations
     user_repo
@@ -143,7 +143,7 @@ async fn test_invalid_credentials() -> Result<(), Error> {
 async fn test_session_management() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
     let mut session_repo = MockSessionRepository::new();
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     // Setup mock expectations
     let user_id = Uuid::new_v4();
@@ -245,7 +245,7 @@ async fn test_session_management() -> Result<(), Error> {
 async fn test_token_validation() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
     let mut session_repo = MockSessionRepository::new();
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     // Setup mock expectations
     let user_id = Uuid::new_v4();
@@ -317,7 +317,7 @@ async fn test_logout() -> Result<(), Error> {
         .with(eq(session_id))
         .returning(|_| Ok(()));
 
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
     let auth_provider = BasicAuthProvider::new(
         Arc::new(user_repo),
         Arc::new(session_repo),
@@ -385,7 +385,7 @@ async fn test_authenticate_valid_credentials() -> Result<(), Error> {
         .map_err(|e| Error::internal(e.to_string()))?;
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     let (user, password) = setup_test_user(&*user_repo).await?;
 
@@ -394,7 +394,7 @@ async fn test_authenticate_valid_credentials() -> Result<(), Error> {
         password,
     };
 
-    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
+    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, _config);
 
     let result = auth_provider.authenticate(credentials).await?;
     assert_eq!(
@@ -412,7 +412,7 @@ async fn test_authenticate_invalid_password() -> Result<(), Error> {
         .map_err(|e| Error::internal(e.to_string()))?;
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     let (user, _) = setup_test_user(&*user_repo).await?;
 
@@ -421,7 +421,7 @@ async fn test_authenticate_invalid_password() -> Result<(), Error> {
         password: "wrong_password".to_string(),
     };
 
-    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
+    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, _config);
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
@@ -438,14 +438,14 @@ async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
         .map_err(|e| Error::internal(e.to_string()))?;
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
 
     let credentials = Credentials {
         username: "nonexistent".to_string(),
         password: "any_password".to_string(),
     };
 
-    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, config);
+    let auth_provider = BasicAuthProvider::new(user_repo.clone(), session_repo, _config);
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
@@ -641,7 +641,7 @@ fn test_create_token() -> Result<(), Error> {
 async fn test_login_default_admin() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
     let mut session_repo = MockSessionRepository::default();
-    let config = AuthConfig::default();
+    let _config = AuthConfig::default();
     let user_id = Uuid::new_v4();
     let now = OffsetDateTime::now_utc();
 
@@ -678,7 +678,8 @@ async fn test_login_default_admin() -> Result<(), Error> {
         .expect_update_session_token()
         .returning(|_, _| Ok(()));
 
-    let auth_provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
+    let auth_provider =
+        BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), _config);
 
     let credentials = Credentials {
         username: "admin".to_string(),

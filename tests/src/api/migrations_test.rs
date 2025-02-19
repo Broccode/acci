@@ -1,13 +1,10 @@
 use crate::helpers::db::wait_for_db;
 use acci_auth::providers::basic::BasicAuthProvider;
-use acci_core::{
-    auth::{AuthConfig, AuthProvider, Credentials},
-    models::User,
-};
+use acci_core::auth::{AuthConfig, AuthProvider, Credentials};
 use acci_db::{
     create_pool,
     repositories::{
-        session::{PgSessionRepository, SessionRepository},
+        session::PgSessionRepository,
         user::{PgUserRepository, UserRepository},
     },
     run_migrations,
