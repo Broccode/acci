@@ -1,9 +1,5 @@
-use crate::helpers::db::wait_for_db;
 use acci_auth::providers::basic::BasicAuthProvider;
-use acci_core::{
-    auth::{AuthConfig, AuthProvider, Credentials},
-    error::Error,
-};
+use acci_core::auth::{AuthConfig, AuthProvider, Credentials};
 use acci_db::{
     create_pool,
     repositories::{
@@ -17,7 +13,6 @@ use acci_db::{
 use anyhow::Result;
 use std::sync::Arc;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
-use time::Duration;
 
 use crate::helpers::db::setup_database;
 

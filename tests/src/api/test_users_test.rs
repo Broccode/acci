@@ -5,17 +5,16 @@ use crate::{
 };
 use acci_auth::providers::basic::BasicAuthProvider;
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, AuthResponse, Credentials, TestUserConfig},
+    auth::{AuthConfig, AuthProvider, Credentials, TestUserConfig},
     error::Error,
     models::User,
 };
 use acci_db::{
     models::Session,
     repositories::{
-        session::{PgSessionRepository, SessionRepository},
+        session::PgSessionRepository,
         user::{PgUserRepository, UserRepository},
     },
-    Error as DbError,
 };
 use anyhow::Result;
 use mockall::predicate::eq;

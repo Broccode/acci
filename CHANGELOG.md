@@ -120,6 +120,13 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+#### Test Infrastructure 🧪
+
+- **Code Quality:**
+  - Added selective clippy warning suppression for `unused_mut` in auth tests to improve code clarity while maintaining intended test structure
+
 ## [0.1.26] - 2024-03-28
 
 ### Changed

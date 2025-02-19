@@ -1,16 +1,15 @@
 use acci_auth::providers::basic::BasicAuthProvider;
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, AuthResponse, AuthSession, Credentials},
+    auth::{AuthConfig, AuthProvider, Credentials},
     error::Error,
     models::User,
 };
 use acci_db::{
     models::Session,
     repositories::{
-        session::{PgSessionRepository, SessionRepository},
+        session::PgSessionRepository,
         user::{PgUserRepository, UserRepository},
     },
-    Error as DbError,
 };
 use std::sync::Arc;
 use time::OffsetDateTime;
@@ -36,6 +35,7 @@ async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), E
 #[tokio::test]
 async fn test_basic_auth_flow() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
+    #[allow(unused_mut)]
     let mut session_repo = MockSessionRepository::new();
     let _config = AuthConfig::default();
 
@@ -110,6 +110,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
 #[tokio::test]
 async fn test_invalid_credentials() -> Result<(), Error> {
     let mut user_repo = MockUserRepository::new();
+    #[allow(unused_mut)]
     let mut session_repo = MockSessionRepository::new();
     let _config = AuthConfig::default();
 
