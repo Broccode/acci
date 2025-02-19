@@ -58,22 +58,22 @@ sqlx-prepare:
 	done
 
 clippy:
-	cargo clippy --workspace --lib --bins --fix --allow-dirty --allow-staged --all-features --exclude acci-tests -- -D warnings
+	SQLX_OFFLINE=true cargo clippy --workspace --lib --bins --fix --allow-dirty --allow-staged --all-features --exclude acci-tests -- -D warnings
 
 test: test-unit test-integration
 
 test-unit:
-	cargo test --lib --bins --all-features --workspace --exclude acci-tests
+	SQLX_OFFLINE=true cargo test --lib --bins --all-features --workspace --exclude acci-tests
 
 test-integration:
-	cargo test -p acci-tests --lib --all-features
+	SQLX_OFFLINE=true cargo test -p acci-tests --lib --all-features
 
 coverage:
-	cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+	SQLX_OFFLINE=true cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 	@echo "Coverage info written to lcov.info"
 
 coverage-html:
-	cargo llvm-cov --all-features --workspace --html
+	SQLX_OFFLINE=true cargo llvm-cov --all-features --workspace --html
 	@echo "HTML coverage report generated in target/llvm-cov/html/index.html"
 
 fmt:
@@ -82,7 +82,7 @@ fmt:
 	@echo "Code formatting complete."
 
 fix:
-	cargo fix --broken-code --allow-dirty --allow-staged --workspace --all-targets --all-features --exclude acci-tests
+	SQLX_OFFLINE=true cargo fix --broken-code --allow-dirty --allow-staged --workspace --all-targets --all-features --exclude acci-tests
 	@echo "Code fixing complete."
 
 prepare-commit:

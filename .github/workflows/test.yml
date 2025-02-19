@@ -11,6 +11,7 @@ env:
   RUST_BACKTRACE: 1
   RUST_LOG: info
   DATABASE_URL: postgres://acci:development_only@localhost:5432/acci
+  SQLX_OFFLINE: true
   CRITICAL_COVERAGE_THRESHOLD: 95
   CORE_COVERAGE_THRESHOLD: 90
   GENERAL_COVERAGE_THRESHOLD: 80
@@ -51,9 +52,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq bc
           cargo install cargo-llvm-cov
-
-      - name: Reset database
-        run: make db-reset
 
       - name: Run unit tests
         id: unit_tests
@@ -152,9 +150,6 @@ jobs:
           echo "RUST_LOG=debug" >> $GITHUB_ENV
           echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
           echo "TEST_LOG_DIR=$(pwd)/test-logs" >> $GITHUB_ENV
-
-      - name: Reset database
-        run: make db-reset
 
       - name: Run integration tests
         id: integration_tests
