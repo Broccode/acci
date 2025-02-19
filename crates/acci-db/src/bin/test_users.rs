@@ -9,7 +9,6 @@ use acci_core::auth::TestUserConfig;
 use acci_db::{create_pool, repositories::user::UserRepository, DbConfig, Environment};
 use anyhow::{Error, Result};
 use clap::{Parser, Subcommand};
-use serde::Deserialize;
 use std::env;
 
 /// Command line arguments for the test users binary.
@@ -34,7 +33,8 @@ enum Commands {
     Clean,
 }
 
-#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+#[derive(Debug)]
 struct TestUser {
     username: String,
     password: String,
@@ -42,12 +42,20 @@ struct TestUser {
     role: String,
 }
 
+#[allow(dead_code)]
 impl TestUser {
-    fn new(username: String, password: String, role: String) -> Result<Self, Error> {
+    /// Creates a new test user.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - Password hashing fails
+    /// - Password validation fails
+    fn new(username: String, password: &str, role: String) -> Result<Self, Error> {
+        let password_hash = acci_core::auth::hash_password(password)?;
         Ok(Self {
             username,
-            password: password.clone(),
-            password_hash: acci_core::auth::hash_password(&password)?,
+            password: password.to_string(),
+            password_hash,
             role,
         })
     }

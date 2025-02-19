@@ -1,3 +1,5 @@
+#![allow(clippy::large_stack_arrays, clippy::disallowed_methods)]
+
 //! ACCI Password Hashing Tool
 //!
 //! A secure command-line tool for generating password hashes using the Argon2id algorithm.

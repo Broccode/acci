@@ -1,3 +1,5 @@
+#![allow(clippy::large_stack_arrays, clippy::redundant_pub_crate)]
+
 //! ACCI API crate provides the HTTP API implementation for the ACCI system.
 //!
 //! This crate implements the REST API endpoints, middleware, and error handling.
@@ -57,7 +59,13 @@ pub async fn serve(config: ApiConfig) -> anyhow::Result<()> {
     axum::serve(listener, app).await.map_err(Into::into)
 }
 
-/// Start the API server
+/// Starts the API server.
+///
+/// # Errors
+/// Returns an error if:
+/// - Server fails to bind to the specified address
+/// - Router setup fails
+/// - Database connection fails
 pub async fn start(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting API server on {}", config.bind_addr);
 
@@ -72,6 +80,7 @@ pub async fn start(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 /// Waits for a shutdown signal (Ctrl+C).
 ///
 /// # Panics

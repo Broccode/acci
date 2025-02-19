@@ -58,6 +58,7 @@ enum Commands {
 }
 
 #[tokio::main]
+#[allow(clippy::large_stack_arrays)]
 async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();

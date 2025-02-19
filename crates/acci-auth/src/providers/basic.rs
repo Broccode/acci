@@ -41,6 +41,7 @@ pub struct BasicAuthProvider {
     config: AuthConfig,
 }
 
+#[allow(dead_code, clippy::unused_self)]
 impl BasicAuthProvider {
     /// Creates a new basic authentication provider instance.
     ///

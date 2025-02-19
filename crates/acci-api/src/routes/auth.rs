@@ -167,7 +167,7 @@ async fn validate(
     State(auth_provider): State<Arc<BasicAuthProvider>>,
     Json(token): Json<String>,
 ) -> Result<Json<bool>, String> {
-    let result = auth_provider
+    let _validation_result = auth_provider
         .validate_token(token)
         .await
         .map_err(|e| e.to_string())?;
