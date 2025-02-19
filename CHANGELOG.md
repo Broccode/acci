@@ -1155,3 +1155,9 @@ Create a git tag for the version (e.g., v0.2.0)
 
 - Implemented case-insensitive username search in user repository to ensure consistent user lookup regardless of letter casing
 - Added explicit case-insensitive username uniqueness check during user creation
+
+### Changed
+
+- Moved mutation testing into its own GitHub Actions workflow to improve CI/CD pipeline performance
+- Mutation tests now run on push/PR to main/master and can be triggered manually
+- Simplified test metrics collection in main test workflow

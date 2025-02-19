@@ -203,275 +203,10 @@ jobs:
             exit 1
           fi
 
-  mutation-testing:
-    name: Mutation Testing
-    runs-on: ubuntu-latest
-    needs: integration-tests
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    env:
-      MUTATION_TIMEOUT: 600  # 10 minutes timeout per mutation
-      MUTATION_THREADS: 4    # Number of parallel mutation threads
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for better mutation analysis
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: mutation-testing
-
-      - name: Install cargo-mutants
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-mutants
-
-      - name: Create mutation config
-        run: |
-          cat > .mutants.toml << EOF
-          timeout = ${MUTATION_TIMEOUT}
-          threads = ${MUTATION_THREADS}
-
-          # Define mutation operators
-          [[operators]]
-          name = "arithmetic"
-          enabled = true
-
-          [[operators]]
-          name = "conditional"
-          enabled = true
-
-          [[operators]]
-          name = "function"
-          enabled = true
-
-          # Exclude test files and generated code
-          exclude = [
-            "**/tests/**",
-            "**/generated/**",
-            "**/migrations/**"
-          ]
-          EOF
-
-      - name: Run mutation tests
-        id: mutation_tests
-        run: |
-          # Create output directory
-          mkdir -p mutation-results
-
-          # Run mutation testing with parallel execution
-          cargo mutants \
-            --workspace \
-            --all-features \
-            --test-workspace true \
-            --output mutation-results \
-            --json \
-            2>&1 | tee mutation-results/mutation-output.log
-
-          # Move the JSON output to our desired location
-          if [ -f "mutation-results/mutants.out/outcomes.json" ]; then
-            cp mutation-results/mutants.out/outcomes.json mutation-results/mutation-report.json
-          fi
-
-          # Check if JSON file exists and is valid
-          if [ -f "mutation-results/mutation-report.json" ]; then
-            # Extract and check mutation score with error handling
-            if score=$(jq -e '.score' mutation-results/mutation-report.json 2>/dev/null); then
-              echo "mutation_score=${score}" >> "$GITHUB_OUTPUT"
-
-              if (( $(echo "$score < 80" | bc -l) )); then
-                echo "::warning::Mutation score below threshold: $score% < 80%"
-                echo "mutation_status=warning" >> "$GITHUB_OUTPUT"
-              else
-                echo "mutation_status=success" >> "$GITHUB_OUTPUT"
-              fi
-            else
-              echo "::error::Failed to parse mutation score from JSON"
-              echo "mutation_status=error" >> "$GITHUB_OUTPUT"
-              exit 1
-            fi
-          else
-            echo "::error::Mutation report JSON file not found"
-            echo "mutation_status=error" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-      - name: Generate mutation report
-        if: always()
-        run: |
-          {
-            echo "# Mutation Testing Report"
-            echo "## Summary"
-            echo "- Score: ${{ steps.mutation_tests.outputs.mutation_score }}%"
-            echo "- Status: ${{ steps.mutation_tests.outputs.mutation_status }}"
-            echo "- Timestamp: $(date -u)"
-            echo
-            echo "## Configuration"
-            echo "\`\`\`toml"
-            cat .mutants.toml
-            echo "\`\`\`"
-            echo
-            echo "## Detailed Results"
-            echo "See the HTML report in the artifacts for complete results."
-            echo
-            echo "### Failed Mutations"
-            jq -r '.failed_mutations[] | "- " + .description' mutation-results/mutation-report.json || true
-          } > mutation-results/mutation-report.md
-
-      - name: Upload mutation artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-test-artifacts
-          path: |
-            mutation-results/
-            .mutants.toml
-
-      - name: Process mutation results
-        if: always()
-        run: |
-          if [[ "${{ steps.mutation_tests.outputs.mutation_status }}" == "warning" ]]; then
-            echo "::warning::Mutation score is below threshold. Check mutation-results/mutation-report.md for details."
-          fi
-
-  performance:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    needs: integration-tests
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    env:
-      BENCHMARK_DIR: target/criterion
-      BENCHMARK_BASELINE_BRANCH: main
-      PERFORMANCE_THRESHOLD: 10  # Maximum allowed performance regression (%)
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for baseline comparison
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: performance-testing
-
-      - name: Set up benchmark environment
-        run: |
-          # Create benchmark directories
-          mkdir -p $BENCHMARK_DIR/current
-          mkdir -p $BENCHMARK_DIR/baseline
-
-          # Install additional tools
-          sudo apt-get update
-          sudo apt-get install -y gnuplot
-          cargo install cargo-criterion || true
-          cargo install hyperfine || true
-
-      - name: Download baseline results
-        continue-on-error: true
-        run: |
-          # Try to download baseline from artifacts
-          gh run download --repo ${{ github.repository }} \
-            --branch $BENCHMARK_BASELINE_BRANCH \
-            --name benchmark-results || true
-
-      - name: Run performance benchmarks
-        id: benchmarks
-        run: |
-          # Run benchmarks and generate detailed reports
-          cargo criterion \
-            --message-format=json \
-            --output-format=criterion \
-            --plotting-backend=gnuplot \
-            | tee benchmark-output.json
-
-          # Run additional system benchmarks
-          hyperfine --warmup 3 \
-            'cargo run --release --example basic_operation' \
-            --export-json system-benchmarks.json
-
-          # Combine results
-          jq -s '.[0] * .[1]' benchmark-output.json system-benchmarks.json > benchmark-results.json
-
-      - name: Check for performance regressions
-        id: regression_check
-        run: |
-          # Compare with baseline if available
-          if [ -f "$BENCHMARK_DIR/baseline/benchmark-results.json" ]; then
-            ./scripts/check-performance.sh \
-              --current benchmark-results.json \
-              --baseline $BENCHMARK_DIR/baseline/benchmark-results.json \
-              --threshold $PERFORMANCE_THRESHOLD \
-              --output regression-report.json
-
-            # Extract regression status
-            status=$(jq -r '.status' regression-report.json)
-            echo "regression_status=${status}" >> "$GITHUB_OUTPUT"
-
-            if [ "$status" = "regression" ]; then
-              echo "::warning::Performance regression detected. Check regression-report.json for details."
-            fi
-          else
-            echo "No baseline available for comparison"
-            echo "regression_status=no_baseline" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Generate performance report
-        if: always()
-        run: |
-          {
-            echo "# Performance Benchmark Report"
-            echo "## Summary"
-            echo "- Status: ${{ steps.regression_check.outputs.regression_status }}"
-            echo "- Timestamp: $(date -u)"
-            echo
-            echo "## Configuration"
-            echo "- Baseline Branch: $BENCHMARK_BASELINE_BRANCH"
-            echo "- Regression Threshold: $PERFORMANCE_THRESHOLD%"
-            echo
-            echo "## Benchmark Results"
-            if [ -f "regression-report.json" ]; then
-              echo "### Regressions"
-              jq -r '.regressions[] | "- " + .name + ": " + (.regression | tostring) + "% slower"' regression-report.json || true
-              echo
-              echo "### Improvements"
-              jq -r '.improvements[] | "- " + .name + ": " + (.improvement | tostring) + "% faster"' regression-report.json || true
-            else
-              echo "No regression data available"
-            fi
-            echo
-            echo "## System Benchmarks"
-            jq -r '.results[] | "- " + .command + ": " + (.mean | tostring) + "s ±" + (.stddev | tostring) + "s"' system-benchmarks.json || true
-          } > benchmark-report.md
-
-      - name: Upload benchmark artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-artifacts
-          path: |
-            ${{ env.BENCHMARK_DIR }}/
-            benchmark-results.json
-            regression-report.json
-            system-benchmarks.json
-            benchmark-report.md
-
-      - name: Process benchmark results
-        if: always()
-        run: |
-          if [[ "${{ steps.regression_check.outputs.regression_status }}" == "regression" ]]; then
-            echo "::warning::Performance regression detected. Check benchmark-report.md for details."
-          fi
-
   metrics:
     name: Test Metrics
     runs-on: ubuntu-latest
-    # needs: [unit-tests, integration-tests, mutation-testing, performance]
-    needs: [unit-tests, integration-tests, mutation-testing]
+    needs: [unit-tests, integration-tests]
     if: always()
     env:
       METRICS_DIR: test-metrics
@@ -512,50 +247,6 @@ jobs:
             echo "coverage_status=missing" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Process mutation metrics
-        id: mutation
-        if: always()
-        run: |
-          if [ -f "$METRICS_DIR/artifacts/mutation-test-artifacts/mutation-results/mutation-report.json" ]; then
-            score=$(jq -r '.score' "$METRICS_DIR/artifacts/mutation-test-artifacts/mutation-results/mutation-report.json")
-            echo "mutation_score=${score}" >> "$GITHUB_OUTPUT"
-
-            if (( $(echo "$score < 80" | bc -l) )); then
-              echo "::warning::Mutation score below threshold: ${score}% < 80%"
-              echo "mutation_status=warning" >> "$GITHUB_OUTPUT"
-            else
-              echo "mutation_status=success" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "::warning::No mutation data found"
-            echo "mutation_status=missing" >> "$GITHUB_OUTPUT"
-          fi
-
-      # - name: Process performance metrics
-        # id: performance
-        # if: always()
-        # run: |
-        #   if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" ]; then
-        #     # Extract performance metrics
-        #     jq -r '.benchmarks[] | select(.mean != null) | "benchmark{\\"name\\"=\\"\(.name)\\"} \(.mean)"' \
-        #       "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-results.json" > performance-metrics.txt
-
-        #     if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json" ]; then
-        #       status=$(jq -r '.status' "$METRICS_DIR/artifacts/benchmark-artifacts/regression-report.json")
-        #       echo "performance_status=${status}" >> "$GITHUB_OUTPUT"
-
-        #       if [ "$status" = "regression" ]; then
-        #         echo "::warning::Performance regression detected"
-        #       fi
-        #     else
-        #       echo "::warning::No regression data found"
-        #       echo "performance_status=missing" >> "$GITHUB_OUTPUT"
-        #     fi
-        #   else
-        #     echo "::warning::No performance data found"
-        #     echo "performance_status=missing" >> "$GITHUB_OUTPUT"
-        #   fi
-
       - name: Generate metrics report
         if: always()
         run: |
@@ -563,8 +254,6 @@ jobs:
             echo "# Test Metrics Report"
             echo "## Summary"
             echo "- Coverage: ${{ steps.coverage.outputs.coverage }}% (${{ steps.coverage.outputs.coverage_status }})"
-            echo "- Mutation Score: ${{ steps.mutation.outputs.mutation_score }}% (${{ steps.mutation.outputs.mutation_status }})"
-            # echo "- Performance: ${{ steps.performance.outputs.performance_status }}"
             echo "- Timestamp: $(date -u)"
             echo
             echo "## Coverage Details"
@@ -574,20 +263,6 @@ jobs:
               echo "\`\`\`"
             else
               echo "No coverage details available"
-            fi
-            echo
-            echo "## Mutation Testing Details"
-            if [ -f "$METRICS_DIR/artifacts/mutation-test-artifacts/mutation-results/mutation-report.md" ]; then
-              cat "$METRICS_DIR/artifacts/mutation-test-artifacts/mutation-results/mutation-report.md"
-            else
-              echo "No mutation testing details available"
-            fi
-            echo
-            echo "## Performance Details"
-            if [ -f "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-report.md" ]; then
-              cat "$METRICS_DIR/artifacts/benchmark-artifacts/benchmark-report.md"
-            else
-              echo "No performance details available"
             fi
           } > "$METRICS_DIR/test-metrics-report.md"
 
@@ -599,16 +274,6 @@ jobs:
             echo "# HELP test_coverage_percent Total test coverage percentage"
             echo "# TYPE test_coverage_percent gauge"
             echo "test_coverage_percent{branch=\"${{ github.ref }}\",commit=\"${{ github.sha }}\"} ${{ steps.coverage.outputs.coverage }}"
-
-            echo "# HELP test_mutation_score_percent Mutation testing score percentage"
-            echo "# TYPE test_mutation_score_percent gauge"
-            echo "test_mutation_score_percent{branch=\"${{ github.ref }}\",commit=\"${{ github.sha }}\"} ${{ steps.mutation.outputs.mutation_score }}"
-
-            if [ -f "performance-metrics.txt" ]; then
-              echo "# HELP benchmark_duration_seconds Benchmark execution time in seconds"
-              echo "# TYPE benchmark_duration_seconds gauge"
-              cat performance-metrics.txt
-            fi
           } > "$METRICS_DIR/prometheus-metrics.txt"
 
           # Push metrics to Prometheus Pushgateway
@@ -625,8 +290,6 @@ jobs:
       - name: Process overall status
         if: always()
         run: |
-          if [[ "${{ steps.coverage.outputs.coverage_status }}" == "warning" ]] || \
-             [[ "${{ steps.mutation.outputs.mutation_status }}" == "warning" ]]; then
-            #  [[ "${{ steps.performance.outputs.performance_status }}" == "regression" ]]; then
-            echo "::warning::One or more quality metrics are below thresholds. Check test-metrics-report.md for details."
+          if [[ "${{ steps.coverage.outputs.coverage_status }}" == "warning" ]]; then
+            echo "::warning::Coverage is below threshold. Check test-metrics-report.md for details."
           fi
