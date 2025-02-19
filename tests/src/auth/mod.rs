@@ -1,4 +1,5 @@
 pub mod auth_flow;
+pub mod password_hash_test;
 pub mod rate_limit_test;
 pub mod session_hijacking_test;
 pub mod token_mutation_test;
