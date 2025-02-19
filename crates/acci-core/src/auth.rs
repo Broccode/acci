@@ -289,9 +289,9 @@ pub fn hash_password(password: &str) -> Result<String, Error> {
     }
 
     // Complexity requirements
-    let has_uppercase = password.chars().any(|c| c.is_uppercase());
-    let has_lowercase = password.chars().any(|c| c.is_lowercase());
-    let has_number = password.chars().any(|c| c.is_numeric());
+    let has_uppercase = password.chars().any(char::is_uppercase);
+    let has_lowercase = password.chars().any(char::is_lowercase);
+    let has_number = password.chars().any(char::is_numeric);
     let has_special = password.chars().any(|c| !c.is_alphanumeric());
 
     if !has_uppercase || !has_lowercase || !has_number || !has_special {

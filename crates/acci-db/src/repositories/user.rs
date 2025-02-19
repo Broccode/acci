@@ -82,8 +82,7 @@ impl UserRepository for PgUserRepository {
 
         if existing_user.count.unwrap_or(0) > 0 {
             return Err(Error::Validation(format!(
-                "Username '{}' is already taken (case-insensitive)",
-                username
+                "Username '{username}' is already taken (case-insensitive)"
             )));
         }
 
