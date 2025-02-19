@@ -5,16 +5,10 @@ use argon2::{
     Argon2,
 };
 use async_trait::async_trait;
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use lazy_static::lazy_static;
-use rand::Rng;
 use rand_core::OsRng;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::Mutex;
 use thiserror::Error as ThisError;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
