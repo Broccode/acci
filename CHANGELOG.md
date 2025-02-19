@@ -160,6 +160,18 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added fallback for component count in case of JSON parsing errors
   - Improved error handling in SBOM report generation
 
+- **Test Database Configuration:**
+  - Updated database connection settings to use standardized credentials
+  - Changed database user from 'postgres' to 'acci'
+  - Updated database name to match development environment
+  - Ensured consistent database configuration across all test jobs
+
+- **Test Database Management:**
+  - Added database reset step before running unit and integration tests
+  - Ensured clean database state for each test run
+  - Improved test isolation and reliability
+  - Standardized database initialization process
+
 ### Fixed
 
 #### CI/CD Pipeline 🔄

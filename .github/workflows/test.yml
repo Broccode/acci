@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: info
-  DATABASE_URL: postgres://postgres:postgres@localhost:5432/acci_test
+  DATABASE_URL: postgres://acci:development_only@localhost:5432/acci
   CRITICAL_COVERAGE_THRESHOLD: 95
   CORE_COVERAGE_THRESHOLD: 90
   GENERAL_COVERAGE_THRESHOLD: 80
@@ -23,9 +23,9 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: acci_test
+          POSTGRES_USER: acci
+          POSTGRES_PASSWORD: development_only
+          POSTGRES_DB: acci
         ports:
           - 5432:5432
         options: >-
@@ -52,6 +52,9 @@ jobs:
           sudo apt-get install -y jq bc
           cargo install cargo-llvm-cov
 
+      - name: Reset database
+        run: make db-reset
+
       - name: Run unit tests
         id: unit_tests
         run: |
@@ -66,19 +69,19 @@ jobs:
           mkdir -p target/coverage-report
 
           # Generate LCOV report
-          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+          cargo llvm-cov --lib --bins --all-features --workspace \
             --lcov --output-path target/coverage-report/lcov.info
 
           # Generate HTML report
-          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+          cargo llvm-cov --lib --bins --all-features --workspace \
             --html --output-dir target/coverage-report/html
 
           # Generate JSON report
-          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+          cargo llvm-cov --lib --bins --all-features --workspace \
             --json --output-path target/coverage-report/coverage.json
 
           # Generate summary
-          cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
+          cargo llvm-cov --lib --bins --all-features --workspace \
             --summary-only > target/coverage-report/coverage-summary.txt
 
       - name: Check coverage thresholds
@@ -119,9 +122,9 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: acci_test
+          POSTGRES_USER: acci
+          POSTGRES_PASSWORD: development_only
+          POSTGRES_DB: acci
         ports:
           - 5432:5432
         options: >-
@@ -149,6 +152,9 @@ jobs:
           echo "RUST_LOG=debug" >> $GITHUB_ENV
           echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
           echo "TEST_LOG_DIR=$(pwd)/test-logs" >> $GITHUB_ENV
+
+      - name: Reset database
+        run: make db-reset
 
       - name: Run integration tests
         id: integration_tests
