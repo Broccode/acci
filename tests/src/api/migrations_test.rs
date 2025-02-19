@@ -91,14 +91,14 @@ async fn test_default_admin_authentication() -> Result<()> {
             assert!(is_admin, "Admin user should have is_admin = true");
             println!("Password hash from database: {}", password_hash);
 
-            // Generate hash of "whiskey123!" using the same hashing function
-            let expected_hash = crate::helpers::auth::hash_password("whiskey123!")
+            // Generate hash of "Admin123!@#" using the same hashing function
+            let expected_hash = crate::helpers::auth::hash_password("Admin123!@#")
                 .expect("Failed to hash default password in test");
-            println!("Expected hash of 'whiskey123!': {}", expected_hash);
+            println!("Expected hash of 'Admin123!@#': {}", expected_hash);
 
             // Verify the password directly using auth::verify_password
             let password_valid =
-                crate::helpers::auth::verify_password("whiskey123!", &password_hash)
+                crate::helpers::auth::verify_password("Admin123!@#", &password_hash)
                     .expect("Failed to verify password in test");
             println!("Password verification result: {}", password_valid);
         },
@@ -109,7 +109,7 @@ async fn test_default_admin_authentication() -> Result<()> {
 
     let credentials = Credentials {
         username: "admin".to_string(),
-        password: "whiskey123!".to_string(),
+        password: "Admin123!@#".to_string(),
     };
 
     let result = auth_provider.authenticate(credentials).await;

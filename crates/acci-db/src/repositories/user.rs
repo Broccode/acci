@@ -67,8 +67,28 @@ impl UserRepository for PgUserRepository {
     ///
     /// This function will panic if the user data contains invalid UTF-8 characters.
     async fn create_user(&self, username: &str, password_hash: &str) -> Result<User, Error> {
+        // First check if a user with this username already exists (case-insensitive)
+        let existing_user = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM acci.users
+            WHERE username ILIKE $1
+            "#,
+            username
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| Error::Database(e.to_string()))?;
+
+        if existing_user.count.unwrap_or(0) > 0 {
+            return Err(Error::Validation(format!(
+                "Username '{}' is already taken (case-insensitive)",
+                username
+            )));
+        }
+
         let now = time::OffsetDateTime::now_utc();
-        let user = sqlx::query_as!(
+        let result = sqlx::query_as!(
             User,
             r#"
             INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at, full_name)
@@ -84,10 +104,12 @@ impl UserRepository for PgUserRepository {
             username, // For testing purposes, we use the username as the full name
         )
         .fetch_one(&self.pool)
-        .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .await;
 
-        Ok(user)
+        match result {
+            Ok(user) => Ok(user),
+            Err(e) => Err(Error::Database(e.to_string())),
+        }
     }
 
     /// Retrieves a user by their ID.
@@ -147,7 +169,7 @@ impl UserRepository for PgUserRepository {
             r#"
             SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name
             FROM acci.users
-            WHERE username = $1
+            WHERE username ILIKE $1
             "#,
             username
         )

@@ -5,7 +5,7 @@ use crate::{
 };
 use acci_auth::providers::basic::BasicAuthProvider;
 use acci_core::{
-    auth::{AuthConfig, AuthProvider, Credentials, TestUserConfig},
+    auth::{AuthConfig, AuthProvider, Credentials, TestUser, TestUserConfig},
     error::Error,
     models::User,
 };
@@ -28,20 +28,77 @@ async fn setup() -> Result<(
     PgSessionRepository,
 )> {
     let (container, pool) = setup_database().await?;
+
+    // Set environment to test mode
+    sqlx::query("SET app.environment = 'test'")
+        .execute(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to set test environment: {}", e))?;
+
+    // Run migrations to create test users
+    acci_db::run_migrations(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to run migrations: {}", e))?;
+
     let user_repo = PgUserRepository::new(pool.clone());
     let session_repo = PgSessionRepository::new(pool);
     Ok((container, user_repo, session_repo))
+}
+
+async fn generate_test_user_hash(password: &str) -> Result<String> {
+    let hash = auth::hash_password(password)?;
+    println!("Generated hash for '{}': {}", password, hash);
+    Ok(hash)
 }
 
 #[tokio::test]
 async fn test_test_users_authentication() -> Result<()> {
     let (_container, user_repo, session_repo) = setup().await?;
     let auth_config = AuthConfig::default();
-    let test_config = TestUserConfig::default();
-    let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), auth_config);
+    let test_config = TestUserConfig {
+        users: vec![
+            TestUser {
+                username: "test_admin".to_string(),
+                password: "Admin123!@#".to_string(),
+                full_name: "Test Admin".to_string(),
+                role: "admin".to_string(),
+            },
+            TestUser {
+                username: "test_user".to_string(),
+                password: "Test123!@#".to_string(),
+                full_name: "Test User".to_string(),
+                role: "user".to_string(),
+            },
+        ],
+        enabled: true,
+    };
 
-    // Add a small delay to ensure database is ready
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Generate and print hashes for test users
+    for user in &test_config.users {
+        let hash = generate_test_user_hash(&user.password).await?;
+        println!("Test user '{}' hash: {}", user.username, hash);
+    }
+
+    // Verify test users exist and print their details
+    for user in &test_config.users {
+        let db_user = user_repo
+            .get_user_by_username(&user.username)
+            .await?
+            .expect(&format!(
+                "Test user {} should exist after migration",
+                user.username
+            ));
+
+        println!("Found user: {}", user.username);
+        println!("Password hash: {}", db_user.password_hash);
+        println!("Expected password: {}", user.password);
+
+        // Verify password hash
+        let is_valid = auth::verify_password(&user.password, &db_user.password_hash)?;
+        println!("Password verification result: {}", is_valid);
+    }
+
+    let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), auth_config);
 
     // Test admin authentication
     let admin_credentials = Credentials {
@@ -143,7 +200,7 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
 
     let credentials = Credentials {
         username: admin_username,
-        password: admin_password,
+        password: "Admin123!@#".to_string(),
     };
 
     let result = provider.authenticate(credentials).await?;
@@ -208,7 +265,7 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
 
     let credentials = Credentials {
         username: user_username,
-        password: user_password,
+        password: "Test123!@#".to_string(),
     };
 
     let result = provider.authenticate(credentials).await?;
@@ -256,7 +313,7 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
 
     let credentials = Credentials {
         username: admin_username,
-        password: "wrong_password".to_string(),
+        password: "WrongPass123!@#".to_string(),
     };
 
     let result = provider.authenticate(credentials).await;

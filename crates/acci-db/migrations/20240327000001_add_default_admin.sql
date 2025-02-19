@@ -1,21 +1,25 @@
 -- Add default admin user migration
--- This is a one-time setup for the default admin user with password 'whiskey123!'
+-- This is a one-time setup for the default admin user with password 'Admin123!@#'
+
+-- Enable required extensions in public schema first
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "citext" SCHEMA public;
 
 -- Create schema if not exists
 CREATE SCHEMA IF NOT EXISTS acci;
 
--- Enable required extensions if not already enabled
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Set search path to include both schemas
+SET search_path TO acci, public;
 
 DO $$
 DECLARE
     password_hash text;
 BEGIN
-    -- Pre-computed Argon2 hash for password 'whiskey123!'
-    password_hash := '$argon2id$v=19$m=19456,t=2,p=1$cL6CLjkSf+hW/Ef7ub1b3A$R7Ra8j1Fzyy5Df6V14wCMr3bMtSUMJbxVVgissnpX6M';
+    -- Pre-computed Argon2 hash for password 'Admin123!@#'
+    password_hash := '$argon2id$v=19$m=65536,t=2,p=1$RIyv3vbYvbZiXmBJ+hJviw$+o+MqAEY7+0gEh5bo+zKlZDhYTtT+1GhEp1Al2mcViE';
 
     -- Insert default admin user if it doesn't exist
-    INSERT INTO acci.users (id, username, email, password_hash, is_admin, created_at, updated_at)
+    INSERT INTO acci.users (id, username, email, password_hash, is_admin, created_at, updated_at, full_name)
     VALUES (
         public.gen_random_uuid(), -- Generate UUID for id
         'admin',                  -- Username
@@ -23,7 +27,8 @@ BEGIN
         password_hash,            -- Hashed password
         true,                     -- Is admin
         CURRENT_TIMESTAMP,        -- Created at
-        CURRENT_TIMESTAMP         -- Updated at
+        CURRENT_TIMESTAMP,        -- Updated at
+        'Administrator'           -- Full name
     )
     ON CONFLICT (username) DO NOTHING; -- Skip if user already exists
 END $$;

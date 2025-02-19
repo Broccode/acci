@@ -11,17 +11,27 @@
       {
         "ordinal": 1,
         "name": "username",
-        "type_info": "Varchar"
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
       },
       {
         "ordinal": 2,
         "name": "email",
-        "type_info": "Varchar"
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
       },
       {
         "ordinal": 3,
         "name": "password_hash",
-        "type_info": "Varchar"
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
@@ -41,18 +51,28 @@
       {
         "ordinal": 7,
         "name": "full_name",
-        "type_info": "Varchar"
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Varchar",
-        "Varchar",
-        "Varchar",
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text",
         "Bool",
         "Timestamptz",
         "Timestamptz",
-        "Varchar"
+        "Text"
       ]
     },
     "nullable": [

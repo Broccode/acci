@@ -1,3 +1,4 @@
+use acci_core::auth;
 use acci_core::auth::AuthConfig;
 use acci_core::error::Error;
 use argon2::{
@@ -12,23 +13,23 @@ use uuid::Uuid;
 
 // Configurable via environment variables, with secure defaults
 pub fn get_argon2_memory_size() -> u32 {
-    env::var("ARGON2_MEMORY_SIZE")
-        .unwrap_or_else(|_| "19456".to_string())
-        .parse()
-        .unwrap_or(19456)
+    std::env::var("ARGON2_MEMORY_SIZE")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(65536) // 64 MB default
 }
 
 pub fn get_argon2_iterations() -> u32 {
-    env::var("ARGON2_ITERATIONS")
-        .unwrap_or_else(|_| "2".to_string())
-        .parse()
+    std::env::var("ARGON2_ITERATIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(2)
 }
 
 pub fn get_argon2_parallelism() -> u32 {
-    env::var("ARGON2_PARALLELISM")
-        .unwrap_or_else(|_| "1".to_string())
-        .parse()
+    std::env::var("ARGON2_PARALLELISM")
+        .ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(1)
 }
 
@@ -52,29 +53,11 @@ fn create_argon2_instance() -> Argon2<'static> {
 }
 
 pub fn verify_password(password: &str, hash: &str) -> Result<bool, Error> {
-    let parsed_hash = PasswordHash::new(hash)
-        .map_err(|e| Error::internal(format!("Failed to parse password hash: {}", e)))?;
-    println!(
-        "Parsed Hash Parameters for Verification: {:?}",
-        parsed_hash.params
-    );
-    Ok(Argon2::default()
-        .verify_password(password.as_bytes(), &parsed_hash)
-        .is_ok())
+    auth::verify_password(password, hash)
 }
 
 pub fn hash_password(password: &str) -> Result<String, Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = create_argon2_instance();
-    println!(
-        "Argon2 Instance Params during hashing: {:?}",
-        argon2.params()
-    );
-    let password_hash = argon2
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| Error::internal(format!("Failed to hash password: {}", e)))?
-        .to_string();
-    Ok(password_hash)
+    auth::hash_password(password)
 }
 
 pub fn create_test_token(user_id: Uuid, config: &AuthConfig) -> Result<(String, i64, i64), Error> {

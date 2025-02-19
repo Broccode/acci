@@ -1150,3 +1150,8 @@ Create a git tag for the version (e.g., v0.2.0)
   - Removed unused self parameters in basic auth provider
   - Added allow attribute for large_stack_arrays in logging macros
   - Renamed unused variable ip to _ip in auth module
+
+### Fixed
+
+- Implemented case-insensitive username search in user repository to ensure consistent user lookup regardless of letter casing
+- Added explicit case-insensitive username uniqueness check during user creation

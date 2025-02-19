@@ -1,22 +1,24 @@
--- Create extensions and setup
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+-- Enable required extensions in public schema first
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "citext" SCHEMA public;
 
--- Create schema
+-- Create schema if not exists
 CREATE SCHEMA IF NOT EXISTS acci;
 
--- Set search path
-SET search_path TO public, acci;
+-- Set search path to include both schemas
+SET search_path TO acci, public;
 
--- Create users table
+-- Create users table with case-insensitive username
+DROP TABLE IF EXISTS acci.users CASCADE;
 CREATE TABLE acci.users (
-    id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    is_admin BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username CITEXT UNIQUE NOT NULL,
+    email CITEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    full_name TEXT NOT NULL
 );
 
 -- Create indexes
@@ -33,6 +35,7 @@ END;
 $$ language 'plpgsql';
 
 -- Create trigger for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON acci.users;
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON acci.users
     FOR EACH ROW

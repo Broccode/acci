@@ -11,6 +11,7 @@ use acci_db::{
         user::{PgUserRepository, UserRepository},
     },
 };
+use argon2::password_hash::PasswordHash;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -21,7 +22,7 @@ use mockall::predicate::eq;
 
 async fn setup_test_user(repo: &impl UserRepository) -> Result<(User, String), Error> {
     let username = format!("test_user_{}", Uuid::new_v4());
-    let password = "test_password123!";
+    let password = "Test123!@#";
     let hash = auth::hash_password(password).map_err(|e| Error::internal(e.to_string()))?;
 
     let user = repo
@@ -51,7 +52,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
                 id: user_id,
                 username: "test_user".to_string(),
                 email: "test_user@example.com".to_string(),
-                password_hash: auth::hash_password("test_password")
+                password_hash: auth::hash_password("Test123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
@@ -86,7 +87,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
     let result = auth_provider
         .authenticate(Credentials {
             username: "test_user".to_string(),
-            password: "test_password".to_string(),
+            password: "Test123!@#".to_string(),
         })
         .await?;
 
@@ -160,7 +161,7 @@ async fn test_session_management() -> Result<(), Error> {
                 id: user_id,
                 username: "test_user".to_string(),
                 email: "test_user@example.com".to_string(),
-                password_hash: auth::hash_password("test_password")
+                password_hash: auth::hash_password("Test123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
@@ -201,7 +202,7 @@ async fn test_session_management() -> Result<(), Error> {
             id,
             username: "test_user".to_string(),
             email: "test_user@example.com".to_string(),
-            password_hash: auth::hash_password("test_password")
+            password_hash: auth::hash_password("Test123!@#")
                 .expect("Password hashing should succeed in test setup"),
             full_name: "Test User".to_string(),
             is_admin: false,
@@ -220,7 +221,7 @@ async fn test_session_management() -> Result<(), Error> {
     let auth_result = auth_provider
         .authenticate(Credentials {
             username: "test_user".to_string(),
-            password: "test_password".to_string(),
+            password: "Test123!@#".to_string(),
         })
         .await?;
 
@@ -261,7 +262,7 @@ async fn test_token_validation() -> Result<(), Error> {
                 id: user_id,
                 username: "test_user".to_string(),
                 email: "test_user@example.com".to_string(),
-                password_hash: auth::hash_password("test_password")
+                password_hash: auth::hash_password("Test123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
@@ -304,7 +305,7 @@ async fn test_token_validation() -> Result<(), Error> {
     let auth_result = auth_provider
         .authenticate(Credentials {
             username: "test_user".to_string(),
-            password: "test_password".to_string(),
+            password: "Test123!@#".to_string(),
         })
         .await?;
     assert_eq!(
@@ -343,7 +344,8 @@ async fn test_logout() -> Result<(), Error> {
 
 #[test]
 fn test_password_hash_and_verify() -> Result<(), Error> {
-    let password = "test_password";
+    // Test valid password
+    let password = "Test123!@#";
     let hash = auth::hash_password(password)?;
 
     assert!(
@@ -354,12 +356,124 @@ fn test_password_hash_and_verify() -> Result<(), Error> {
         !auth::verify_password("wrong_password", &hash)?,
         "Password verification should fail with wrong password"
     );
+
+    // Test password complexity requirements
+    assert!(
+        auth::hash_password("short").is_err(),
+        "Should reject short passwords"
+    );
+    assert!(
+        auth::hash_password("nouppercase123!").is_err(),
+        "Should reject passwords without uppercase"
+    );
+    assert!(
+        auth::hash_password("NOLOWERCASE123!").is_err(),
+        "Should reject passwords without lowercase"
+    );
+    assert!(
+        auth::hash_password("NoNumbers!!").is_err(),
+        "Should reject passwords without numbers"
+    );
+    assert!(
+        auth::hash_password("NoSpecial123").is_err(),
+        "Should reject passwords without special characters"
+    );
+    assert!(
+        auth::hash_password(&"a".repeat(129)).is_err(),
+        "Should reject too long passwords"
+    );
+    assert!(
+        auth::hash_password("").is_err(),
+        "Should reject empty passwords"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_password_hash_format() -> Result<(), Error> {
+    let password = "Test123!@#";
+    let hash = auth::hash_password(password)?;
+
+    // Verify Argon2id format
+    assert!(
+        hash.starts_with("$argon2id$v=19$"),
+        "Hash should use Argon2id algorithm"
+    );
+
+    // Parse parameters
+    let parsed_hash = PasswordHash::new(&hash)
+        .map_err(|e| Error::Internal(format!("Failed to parse hash: {e}")))?;
+
+    // Verify memory cost (64 MB = 65536 KB)
+    assert_eq!(
+        parsed_hash
+            .params
+            .get("m")
+            .unwrap()
+            .to_string()
+            .parse::<u32>()
+            .unwrap(),
+        65536,
+        "Memory cost should be 64 MB"
+    );
+
+    // Verify iterations (t_cost)
+    assert_eq!(
+        parsed_hash
+            .params
+            .get("t")
+            .unwrap()
+            .to_string()
+            .parse::<u32>()
+            .unwrap(),
+        2,
+        "Time cost should be 2 iterations"
+    );
+
+    // Verify parallelism
+    assert_eq!(
+        parsed_hash
+            .params
+            .get("p")
+            .unwrap()
+            .to_string()
+            .parse::<u32>()
+            .unwrap(),
+        1,
+        "Parallelism should be 1"
+    );
+
+    // Verify output length
+    assert_eq!(
+        parsed_hash.hash.unwrap().len(),
+        32,
+        "Hash output should be 32 bytes"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_isolated_hash_verify() -> Result<(), Error> {
+    let password = "Test123!@#";
+    let hash = auth::hash_password(password)?;
+
+    assert!(
+        auth::verify_password(password, &hash)?,
+        "Password verification should succeed with correct password"
+    );
+    assert!(
+        !auth::verify_password("WrongPass123!@#", &hash)?,
+        "Password verification should fail with wrong password"
+    );
+
     Ok(())
 }
 
 #[test]
 fn test_password_hash_different_salts() -> Result<(), Error> {
-    let password = "test_password";
+    let password = "Test123!@#";
     let hash1 = auth::hash_password(password)?;
     let hash2 = auth::hash_password(password)?;
 
@@ -525,7 +639,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                 id: user_id,
                 username: username_clone.clone(),
                 email: "test@example.com".to_string(),
-                password_hash: auth::hash_password("test_password123!")
+                password_hash: auth::hash_password("Test123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
@@ -543,7 +657,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                 id,
                 username: username_clone2.clone(),
                 email: "test@example.com".to_string(),
-                password_hash: auth::hash_password("test_password123!")
+                password_hash: auth::hash_password("Test123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
@@ -598,7 +712,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
     // Create multiple sessions
     let credentials = Credentials {
         username,
-        password: "test_password123!".to_string(),
+        password: "Test123!@#".to_string(),
     };
 
     let session1 = provider.authenticate(credentials.clone()).await?;
@@ -668,7 +782,7 @@ async fn test_login_default_admin() -> Result<(), Error> {
                 id: user_id,
                 username: "admin".to_string(),
                 email: "admin@example.com".to_string(),
-                password_hash: auth::hash_password("whiskey123!")
+                password_hash: auth::hash_password("Admin123!@#")
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Admin User".to_string(),
                 is_admin: true,
@@ -698,7 +812,7 @@ async fn test_login_default_admin() -> Result<(), Error> {
 
     let credentials = Credentials {
         username: "admin".to_string(),
-        password: "whiskey123!".to_string(),
+        password: "Admin123!@#".to_string(),
     };
 
     let result = auth_provider.authenticate(credentials).await;
@@ -734,15 +848,5 @@ async fn test_login_invalid_credentials() -> Result<(), Error> {
         matches!(result, Err(Error::InvalidCredentials)),
         "Should return InvalidCredentials error for invalid credentials"
     );
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_isolated_hash_verify() -> Result<(), Error> {
-    let password = "whiskey123!";
-    let hash = auth::hash_password(password)?;
-    println!("Isolated Hash: {}", hash);
-    let is_valid = auth::verify_password(password, &hash)?;
-    assert!(is_valid, "Isolated verification should succeed");
     Ok(())
 }

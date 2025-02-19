@@ -8,11 +8,20 @@ use acci_db::{
     DbConfig, Environment,
 };
 use anyhow::Result;
-use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
+use testcontainers_modules::{
+    postgres,
+    testcontainers::{runners::AsyncRunner, ImageExt},
+};
 use uuid::Uuid;
 
 async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
-    let container = postgres::Postgres::default().start().await?;
+    let container = postgres::Postgres::default()
+        .with_tag("16-alpine")
+        .with_env_var("POSTGRES_USER", "postgres")
+        .with_env_var("POSTGRES_PASSWORD", "postgres")
+        .with_env_var("POSTGRES_DB", "postgres")
+        .start()
+        .await?;
     let port = container.get_host_port_ipv4(5432).await?;
 
     let config = DbConfig {
@@ -28,22 +37,38 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
 
     let pool = create_pool(config).await?;
 
-    // Enable crypto extension in postgres database
-    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"")
+    // Enable required extensions in public schema first
+    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\" SCHEMA public")
+        .execute(&pool)
+        .await?;
+    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"citext\" SCHEMA public")
         .execute(&pool)
         .await?;
 
-    // Enable UUID extension in postgres database
-    sqlx::query("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
-        .execute(&pool)
+    // Verify that citext extension is enabled by trying to use it
+    sqlx::query("SELECT 'TEST'::citext = 'test'::citext AS is_equal")
+        .fetch_one(&pool)
         .await?;
 
-    // Create schema and ensure extension is available
+    // Create schema if not exists
     sqlx::query("CREATE SCHEMA IF NOT EXISTS acci")
         .execute(&pool)
         .await?;
 
+    // Set search path to include both schemas
+    sqlx::query("SET search_path TO acci, public")
+        .execute(&pool)
+        .await?;
+
+    // Set environment to test mode
+    sqlx::query("SET app.environment = 'test'")
+        .execute(&pool)
+        .await?;
+
+    // Run migrations
     run_migrations(&pool).await?;
+
+    // Create repository
     let repo = PgUserRepository::new(pool);
     Ok((Box::new(container), repo))
 }
@@ -111,12 +136,14 @@ async fn test_update_user() {
     let (_container, repo) = setup().await.unwrap();
 
     let username = "test_update_user";
-    let password_hash = "hashed_password";
+    let password_hash =
+        auth::hash_password("Test123!@#").expect("Password hashing should succeed in test setup");
 
-    let created_user = repo.create_user(username, password_hash).await.unwrap();
+    let created_user = repo.create_user(username, &password_hash).await.unwrap();
 
-    let new_password_hash = "new_password_hash";
-    repo.update_password(created_user.id, new_password_hash)
+    let new_password_hash = auth::hash_password("NewTest123!@#")
+        .expect("Password hashing should succeed in test setup");
+    repo.update_password(created_user.id, &new_password_hash)
         .await
         .unwrap();
 
@@ -187,27 +214,64 @@ async fn test_duplicate_username() {
 }
 
 #[tokio::test]
-async fn test_username_case_sensitivity() -> Result<()> {
-    let (_container, pool) = setup_database().await?;
-    let user_repo = PgUserRepository::new(pool);
+async fn test_username_case_sensitivity() {
+    let (_container, repo) = setup().await.unwrap();
 
-    // Create a user with lowercase username
-    let username = format!("test_user_{}", Uuid::new_v4());
-    let password_hash = auth::hash_password("test_password123!")
-        .expect("Password hashing should succeed in test setup");
+    // Clean up the database first
+    cleanup_database(&repo.pool).await.unwrap();
 
-    let user = user_repo.create_user(&username, &password_hash).await?;
-    assert_eq!(user.username, username);
+    let username = "test_user";
+    let password_hash =
+        auth::hash_password("Test123!@#").expect("Password hashing should succeed in test setup");
 
-    // Try to find user with uppercase username
+    // Create initial user
+    let created_user = repo.create_user(username, &password_hash).await.unwrap();
+
+    // Try to create user with same username but different case
     let uppercase_username = username.to_uppercase();
-    let result = user_repo.get_user_by_username(&uppercase_username).await?;
+    let result = repo.create_user(&uppercase_username, &password_hash).await;
+
+    // Verify that the creation fails with the expected error message
+    match result {
+        Err(Error::Validation(msg)) => {
+            assert!(
+                msg.contains("already taken"),
+                "Error message should indicate that the username is already taken"
+            );
+            assert!(
+                msg.contains("case-insensitive"),
+                "Error message should mention case-insensitivity"
+            );
+        },
+        other => panic!(
+            "Expected Validation error, got {:?}",
+            other.map_err(|e| e.to_string())
+        ),
+    }
+
+    // Verify that we can find the user with case-insensitive search
+    let found_user = repo
+        .get_user_by_username(&uppercase_username)
+        .await
+        .unwrap();
+
+    // Add debug output
+    println!("Created user: {:?}", created_user);
+    println!("Found user: {:?}", found_user);
+    println!("Uppercase username: {}", uppercase_username);
+
     assert!(
-        result.is_none(),
-        "User should not be found with uppercase username"
+        found_user.is_some(),
+        "Should find user with case-insensitive search"
+    );
+    assert_eq!(
+        found_user.unwrap().id,
+        created_user.id,
+        "Should find the same user regardless of case"
     );
 
-    Ok(())
+    // Clean up
+    repo.delete_user(created_user.id).await.unwrap();
 }
 
 #[tokio::test]

@@ -66,13 +66,13 @@ impl Default for TestUserConfig {
             users: vec![
                 TestUser {
                     username: "test_admin".to_string(),
-                    password: "test123!admin".to_string(),
+                    password: "Admin123!@#".to_string(),
                     full_name: "Test Administrator".to_string(),
                     role: "admin".to_string(),
                 },
                 TestUser {
                     username: "test_user".to_string(),
-                    password: "test123!user".to_string(),
+                    password: "Test123!@#".to_string(),
                     full_name: "Test User".to_string(),
                     role: "user".to_string(),
                 },
@@ -257,8 +257,9 @@ pub struct Claims {
 
 /// Hash a password using Argon2
 ///
-/// This function uses the Argon2 password hashing algorithm with default parameters
-/// to securely hash the provided password.
+/// This function uses the Argon2id password hashing algorithm with secure parameters
+/// to hash the provided password. The parameters are chosen based on OWASP recommendations
+/// and current hardware capabilities.
 ///
 /// # Arguments
 ///
@@ -271,12 +272,50 @@ pub struct Claims {
 /// # Errors
 ///
 /// Returns an error if:
-/// * Password hashing fails due to invalid input
+/// * Password is empty or too long
+/// * Password doesn't meet complexity requirements
 /// * Memory allocation fails during hashing
 /// * The system fails to generate secure random salt
 pub fn hash_password(password: &str) -> Result<String, Error> {
+    // Input validation
+    if password.is_empty() {
+        return Err(Error::validation("Password cannot be empty"));
+    }
+    if password.len() > 128 {
+        return Err(Error::validation("Password too long (max 128 chars)"));
+    }
+    if password.len() < 8 {
+        return Err(Error::validation("Password too short (min 8 chars)"));
+    }
+
+    // Complexity requirements
+    let has_uppercase = password.chars().any(|c| c.is_uppercase());
+    let has_lowercase = password.chars().any(|c| c.is_lowercase());
+    let has_number = password.chars().any(|c| c.is_numeric());
+    let has_special = password.chars().any(|c| !c.is_alphanumeric());
+
+    if !has_uppercase || !has_lowercase || !has_number || !has_special {
+        return Err(Error::validation(
+            "Password must contain uppercase, lowercase, number, and special characters",
+        ));
+    }
+
+    // Generate secure salt
     let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
+
+    // Configure Argon2 with secure parameters
+    let params = argon2::Params::new(
+        65536,    // m_cost (64 MB)
+        2,        // t_cost (2 iterations)
+        1,        // p_cost (1 parallel thread)
+        Some(32), // output length (32 bytes)
+    )
+    .map_err(|e| Error::Internal(format!("Failed to configure Argon2: {e}")))?;
+
+    // Create Argon2id instance with explicit parameters
+    let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
+
+    // Hash the password
     argon2
         .hash_password(password.as_bytes(), &salt)
         .map(|hash| hash.to_string())
