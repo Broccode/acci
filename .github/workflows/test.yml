@@ -64,22 +64,20 @@ jobs:
         run: |
           # Generate detailed coverage data
           cargo llvm-cov --lib --bins --all-features --workspace --exclude acci-tests \
-            --lcov --output-path lcov.info \
-            --html --output-dir coverage-html \
-            --summary-only --output-path coverage-summary.txt \
-            --json --output-path coverage.json
+            --output-path target/coverage-report \
+            --lcov --html --json --summary-only
 
       - name: Check coverage thresholds
         if: always()
         run: |
           chmod +x scripts/check-coverage.sh
-          ./scripts/check-coverage.sh coverage.json 2>&1 | tee coverage-check.log
+          ./scripts/check-coverage.sh target/coverage-report/coverage.json 2>&1 | tee coverage-check.log
 
       - name: Upload coverage to Coveralls
         if: always()
         uses: coverallsapp/github-action@v2
         with:
-          file: lcov.info
+          file: target/coverage-report/lcov.info
 
       - name: Upload test artifacts
         if: always()
@@ -88,11 +86,8 @@ jobs:
           name: unit-test-artifacts
           path: |
             test-output.log
-            coverage-html/
-            coverage-summary.txt
-            coverage.json
+            target/coverage-report/
             coverage-check.log
-            lcov.info
 
       - name: Process test results
         if: always()

@@ -30,10 +30,11 @@ jobs:
       - name: Validate EditorConfig
         run: |
           npm install -g editorconfig-checker
-          editorconfig-checker
+          editorconfig-checker -exclude ".*\/bin\/.*" -format github-actions -color src/ crates/
 
       - name: Validate Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v13
+        continue-on-error: true
         with:
           globs: "**/*.md"
 

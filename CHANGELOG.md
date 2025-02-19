@@ -149,6 +149,12 @@ Create a git tag for the version (e.g., v0.2.0)
   - Added detailed reporting for all pipeline stages
   - Improved error handling and status reporting across all jobs
 
+- **EditorConfig Validation:**
+  - Enhanced EditorConfig checker configuration with proper regex-based exclusions
+  - Added GitHub Actions specific output formatting for better CI integration
+  - Enabled colored output for improved readability
+  - Optimized bin directory exclusion pattern using `.*\/bin\/.*`
+
 ## [0.1.26] - 2024-03-28
 
 ### Changed
