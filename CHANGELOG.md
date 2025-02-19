@@ -155,6 +155,11 @@ Create a git tag for the version (e.g., v0.2.0)
   - Enabled colored output for improved readability
   - Optimized bin directory exclusion pattern using `.*\/bin\/.*`
 
+- **SBOM Generation:**
+  - Updated cargo-cyclonedx command to use correct `--override-filename` argument instead of deprecated `--output-file`
+  - Added fallback for component count in case of JSON parsing errors
+  - Improved error handling in SBOM report generation
+
 ## [0.1.26] - 2024-03-28
 
 ### Changed

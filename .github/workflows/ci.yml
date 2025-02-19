@@ -94,11 +94,11 @@ jobs:
       - name: Generate SBOM
         run: |
           # Generate CycloneDX SBOM
-          cargo cyclonedx --format json --output-file bom.json
+          cargo cyclonedx --format json --override-filename bom
           echo "## Software Bill of Materials" >> security-report.md
           echo "- Generated: $(date)" >> security-report.md
           echo "- Format: CycloneDX" >> security-report.md
-          echo "- Components: $(jq '.components | length' bom.json)" >> security-report.md
+          echo "- Components: $(jq '.components | length' bom.json)" >> security-report.md || echo "- Components: Count not available" >> security-report.md
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -138,45 +138,45 @@ jobs:
             target/debug/
             target/doc/
 
-  deploy-docs:
-    name: Deploy Documentation
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
+  # deploy-docs:
+  #   name: Deploy Documentation
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+  #     - name: Install Rust toolchain
+  #       uses: dtolnay/rust-toolchain@stable
 
-      - name: Build documentation
-        run: |
-          # Build rustdoc documentation
-          cargo doc --workspace --all-features --no-deps
+  #     - name: Build documentation
+  #       run: |
+  #         # Build rustdoc documentation
+  #         cargo doc --workspace --all-features --no-deps
 
-          # Create index.html
-          echo '<meta http-equiv="refresh" content="0; url=acci/index.html">' > target/doc/index.html
+  #         # Create index.html
+  #         echo '<meta http-equiv="refresh" content="0; url=acci/index.html">' > target/doc/index.html
 
-          # Copy additional documentation
-          cp -r docs target/doc/
+  #         # Copy additional documentation
+  #         cp -r docs target/doc/
 
-          # Create documentation artifact
-          tar -czf documentation.tar.gz -C target/doc .
+  #         # Create documentation artifact
+  #         tar -czf documentation.tar.gz -C target/doc .
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+  #     - name: Setup Pages
+  #       uses: actions/configure-pages@v4
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: target/doc
+  #     - name: Upload Pages artifact
+  #       uses: actions/upload-pages-artifact@v3
+  #       with:
+  #         path: target/doc
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4
