@@ -24,10 +24,14 @@ pub mod prelude {
     pub use crate::models::User;
     // pub use crate::traits::*;
     // pub use crate::types::*;
+    pub use crate::clock::Clock;
 }
 
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Clock functionality for time-based operations and testing.
+pub mod clock;
 
 #[cfg(test)]
 mod tests {

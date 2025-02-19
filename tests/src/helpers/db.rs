@@ -1,10 +1,13 @@
+use acci_core::error::Result as CoreResult;
 use acci_db::{
     create_pool, run_migrations,
     sqlx::{self, PgPool},
     DbConfig,
 };
 use anyhow::Result;
+use std::time::Duration;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
+use tokio::time::timeout;
 
 /// Sets up a test database with all migrations applied
 ///
@@ -60,4 +63,20 @@ pub fn create_test_config(port: u16) -> DbConfig {
         max_lifetime_seconds: 3600,
         environment: acci_db::Environment::Test,
     }
+}
+
+/// Wartet, bis die Datenbank bereit ist
+pub async fn wait_for_db(pool: &PgPool) -> CoreResult<()> {
+    let timeout_duration = Duration::from_secs(5);
+
+    timeout(timeout_duration, async {
+        loop {
+            match sqlx::query("SELECT 1").execute(pool).await {
+                Ok(_) => return Ok(()),
+                Err(_) => tokio::task::yield_now().await,
+            }
+        }
+    })
+    .await
+    .map_err(|_| acci_core::error::Error::internal("Database connection timeout"))?
 }

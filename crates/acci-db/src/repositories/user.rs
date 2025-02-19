@@ -71,9 +71,9 @@ impl UserRepository for PgUserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, username, email, password_hash, is_admin, created_at, updated_at
+            INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at, full_name)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, username, email, password_hash, is_admin, created_at, updated_at, full_name
             "#,
             username,
             format!("{}@example.com", username), // For testing purposes
@@ -81,6 +81,7 @@ impl UserRepository for PgUserRepository {
             false,
             now,
             now,
+            username, // For testing purposes, we use the username as the full name
         )
         .fetch_one(&self.pool)
         .await
@@ -110,7 +111,7 @@ impl UserRepository for PgUserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, email, password_hash, is_admin, created_at, updated_at
+            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name
             FROM acci.users
             WHERE id = $1
             "#,
@@ -144,7 +145,7 @@ impl UserRepository for PgUserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, email, password_hash, is_admin, created_at, updated_at
+            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name
             FROM acci.users
             WHERE username = $1
             "#,
@@ -291,6 +292,7 @@ impl UserRepository for MockUserRepository {
             is_admin: false,
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
+            full_name: username.to_string(), // For testing purposes
         })
     }
 
@@ -373,6 +375,7 @@ mod tests {
             is_admin: false,
             created_at: now,
             updated_at: now,
+            full_name: "testuser".to_string(),
         };
 
         assert_eq!(user.id, Uuid::nil());
@@ -382,5 +385,6 @@ mod tests {
         assert_eq!(user.is_admin, false);
         assert_eq!(user.created_at, now);
         assert_eq!(user.updated_at, now);
+        assert_eq!(user.full_name, "testuser");
     }
 }

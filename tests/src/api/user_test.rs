@@ -1,12 +1,15 @@
+use acci_core::error::Error;
+use acci_core::models::User;
 use acci_db::{
     create_pool,
-    repositories::user::{CreateUser, PgUserRepository, UserRepository},
+    repositories::user::{PgUserRepository, UserRepository},
     run_migrations,
-    sqlx::{self, types::uuid::Uuid},
+    sqlx::{self, PgPool},
     DbConfig, Environment,
 };
 use anyhow::Result;
 use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
+use uuid::Uuid;
 
 async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
     let container = postgres::Postgres::default().start().await?;
@@ -45,215 +48,166 @@ async fn setup() -> Result<(Box<dyn std::any::Any>, PgUserRepository)> {
     Ok((Box::new(container), repo))
 }
 
-#[tokio::test]
-async fn test_create_user() {
-    let (_container, repo) = setup().await.unwrap();
-
-    let user = acci_db::repositories::user::CreateUser {
-        email: "test@example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "Test User".to_string(),
-    };
-
-    let created = repo.create(user).await.unwrap();
-    assert_eq!(created.email, "test@example.com");
-    assert_eq!(created.full_name, "Test User");
-    assert_eq!(created.password_hash, "hash123");
+async fn cleanup_database(pool: &PgPool) -> Result<(), Error> {
+    sqlx::query("DELETE FROM acci.users")
+        .execute(pool)
+        .await
+        .map_err(|e| Error::Database(e.to_string()))?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_get_user_by_email() {
+async fn test_create_user() {
+    let (_container, repo) = setup().await.unwrap();
+    cleanup_database(&repo.pool).await.unwrap();
+
+    let username = "test_user";
+    let password_hash = "hash123";
+
+    let created = repo.create_user(username, password_hash).await.unwrap();
+    assert_eq!(created.username, username, "Username should match");
+    assert_eq!(
+        created.password_hash, password_hash,
+        "Password hash should match"
+    );
+    assert!(!created.is_admin, "New user should not be admin by default");
+}
+
+#[tokio::test]
+async fn test_get_user_by_username() {
     let (_container, repo) = setup().await.unwrap();
 
-    let user = acci_db::repositories::user::CreateUser {
-        email: "find@example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "Find User".to_string(),
-    };
+    let username = "find_user";
+    let password_hash = "hash123";
 
-    let created = repo.create(user).await.unwrap();
-    let found = repo
-        .get_by_email("find@example.com")
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(created.id, found.id);
+    let created = repo.create_user(username, password_hash).await.unwrap();
+    let found = repo.get_user_by_username(username).await.unwrap().unwrap();
+    assert_eq!(created.id, found.id, "User IDs should match");
 }
 
 #[tokio::test]
 async fn test_get_by_id() {
     let (_container, repo) = setup().await.unwrap();
 
-    let create_user = acci_db::repositories::user::CreateUser {
-        email: "test_get@example.com".to_string(),
-        password_hash: "hashed_password".to_string(),
-        full_name: "Test Get User".to_string(),
-    };
+    let username = "test_get_user";
+    let password_hash = "hashed_password";
 
-    let created_user = repo.create(create_user).await.unwrap();
-    let found_user = repo.get_by_id(created_user.id).await.unwrap().unwrap();
+    let created_user = repo.create_user(username, password_hash).await.unwrap();
+    let found_user = repo.get_user_by_id(created_user.id).await.unwrap().unwrap();
 
-    assert_eq!(found_user.id, created_user.id);
-    assert_eq!(found_user.email, "test_get@example.com");
+    assert_eq!(found_user.id, created_user.id, "User IDs should match");
+    assert_eq!(found_user.username, username, "Usernames should match");
 
     // Test non-existent user
-    let non_existent = repo.get_by_id(Uuid::new_v4()).await.unwrap();
-    assert!(non_existent.is_none());
+    let non_existent = repo.get_user_by_id(Uuid::new_v4()).await.unwrap();
+    assert!(
+        non_existent.is_none(),
+        "Non-existent user should return None"
+    );
 }
 
 #[tokio::test]
 async fn test_update_user() {
     let (_container, repo) = setup().await.unwrap();
 
-    let create_user = acci_db::repositories::user::CreateUser {
-        email: "test_update@example.com".to_string(),
-        password_hash: "hashed_password".to_string(),
-        full_name: "Test Update User".to_string(),
-    };
+    let username = "test_update_user";
+    let password_hash = "hashed_password";
 
-    let created_user = repo.create(create_user).await.unwrap();
+    let created_user = repo.create_user(username, password_hash).await.unwrap();
 
-    let update_user = acci_db::repositories::user::UpdateUser {
-        email: Some("updated@example.com".to_string()),
-        password_hash: Some("new_password_hash".to_string()),
-        full_name: Some("Updated User".to_string()),
-    };
-
-    let updated_user = repo
-        .update(created_user.id, update_user)
+    let new_password_hash = "new_password_hash";
+    repo.update_password(created_user.id, new_password_hash)
         .await
-        .unwrap()
         .unwrap();
 
-    assert_eq!(updated_user.email, "updated@example.com");
-    assert_eq!(updated_user.password_hash, "new_password_hash");
-    assert_eq!(updated_user.full_name, "Updated User");
+    // Verify the update
+    let updated_user = repo.get_user_by_id(created_user.id).await.unwrap().unwrap();
+    assert_eq!(
+        updated_user.password_hash, new_password_hash,
+        "Password hash should be updated"
+    );
 
-    // Test partial update
-    let partial_update = acci_db::repositories::user::UpdateUser {
-        email: None,
-        password_hash: None,
-        full_name: Some("Partially Updated User".to_string()),
-    };
-
-    let partially_updated_user = repo
-        .update(updated_user.id, partial_update)
-        .await
-        .unwrap()
-        .unwrap();
-
-    assert_eq!(partially_updated_user.email, "updated@example.com"); // Unchanged
-    assert_eq!(partially_updated_user.password_hash, "new_password_hash"); // Unchanged
-    assert_eq!(partially_updated_user.full_name, "Partially Updated User"); // Changed
+    assert_eq!(
+        updated_user.username, username,
+        "Username should remain unchanged"
+    );
 }
 
 #[tokio::test]
 async fn test_delete_user() {
     let (_container, repo) = setup().await.unwrap();
 
-    let create_user = acci_db::repositories::user::CreateUser {
-        email: "test_delete@example.com".to_string(),
-        password_hash: "hashed_password".to_string(),
-        full_name: "Test Delete User".to_string(),
-    };
+    let username = "test_delete_user";
+    let password_hash = "hashed_password";
 
-    let created_user = repo.create(create_user).await.unwrap();
+    let created_user = repo.create_user(username, password_hash).await.unwrap();
 
     // Verify user exists
-    assert!(repo.get_by_id(created_user.id).await.unwrap().is_some());
+    assert!(
+        repo.get_user_by_id(created_user.id)
+            .await
+            .unwrap()
+            .is_some(),
+        "User should exist before deletion"
+    );
 
     // Delete user
-    let deleted = repo.delete(created_user.id).await.unwrap();
-    assert!(deleted);
+    repo.delete_user(created_user.id).await.unwrap();
 
     // Verify user no longer exists
-    assert!(repo.get_by_id(created_user.id).await.unwrap().is_none());
+    assert!(
+        repo.get_user_by_id(created_user.id)
+            .await
+            .unwrap()
+            .is_none(),
+        "User should not exist after deletion"
+    );
 
     // Try to delete non-existent user
-    let deleted = repo.delete(Uuid::new_v4()).await.unwrap();
-    assert!(!deleted);
+    repo.delete_user(Uuid::new_v4()).await.unwrap();
 }
 
 #[tokio::test]
-async fn test_duplicate_email() {
+async fn test_duplicate_username() {
     let (_container, repo) = setup().await.unwrap();
 
-    let user1 = acci_db::repositories::user::CreateUser {
-        email: "duplicate@example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "First User".to_string(),
-    };
-
-    let user2 = acci_db::repositories::user::CreateUser {
-        email: "duplicate@example.com".to_string(),
-        password_hash: "hash456".to_string(),
-        full_name: "Second User".to_string(),
-    };
+    let username = "duplicate_user";
+    let password_hash1 = "hash123";
+    let password_hash2 = "hash456";
 
     // First user should be created successfully
-    let _user1 = repo.create(user1).await.unwrap();
+    let _user1 = repo.create_user(username, password_hash1).await.unwrap();
 
-    // Second user with same email should fail
-    let result = repo.create(user2).await;
-    assert!(result.is_err());
+    // Second user with same username should fail
+    let result = repo.create_user(username, password_hash2).await;
+    assert!(
+        result.is_err(),
+        "Creating user with duplicate username should fail"
+    );
 }
 
 #[tokio::test]
-async fn test_update_to_existing_email() {
-    let (_container, repo) = setup().await.unwrap();
-
-    // Create first user
-    let user1 = acci_db::repositories::user::CreateUser {
-        email: "first@example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "First User".to_string(),
-    };
-    let _user1 = repo.create(user1).await.unwrap();
-
-    // Create second user
-    let user2 = acci_db::repositories::user::CreateUser {
-        email: "second@example.com".to_string(),
-        password_hash: "hash456".to_string(),
-        full_name: "Second User".to_string(),
-    };
-    let user2 = repo.create(user2).await.unwrap();
-
-    // Try to update second user with first user's email
-    let update = acci_db::repositories::user::UpdateUser {
-        email: Some("first@example.com".to_string()),
-        password_hash: None,
-        full_name: None,
-    };
-
-    let result = repo.update(user2.id, update).await;
-    assert!(result.is_err());
-}
-
-#[tokio::test]
-async fn test_email_case_sensitivity() -> Result<()> {
+async fn test_username_case_sensitivity() -> Result<()> {
     let (_container, repo) = setup().await?;
 
-    let user = CreateUser {
-        email: "Test@Example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "Test User".to_string(),
-    };
+    let username = "Test_User";
+    let password_hash = "hash123";
 
-    // Erstelle den Benutzer und behandle mögliche Fehler
-    repo.create(user).await?;
+    // Create the user and handle potential errors
+    repo.create_user(username, password_hash).await?;
 
-    // Warte kurz, um sicherzustellen, dass die Transaktion abgeschlossen ist
+    // Wait briefly to ensure the transaction is complete
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    // Suche mit verschiedenen Schreibweisen
-    let test_cases = vec!["test@example.com", "TEST@EXAMPLE.COM", "Test@Example.com"];
+    // Test with different casings
+    let test_cases = vec!["test_user", "TEST_USER", "Test_User"];
 
-    for email in test_cases {
-        let found = repo.get_by_email(email).await?;
+    for test_username in test_cases {
+        let found = repo.get_user_by_username(test_username).await?;
         assert!(
             found.is_some(),
-            "Benutzer nicht gefunden für E-Mail: {}",
-            email
+            "User not found for username: {}",
+            test_username
         );
     }
 
@@ -265,36 +219,29 @@ async fn test_concurrent_updates() {
     let (_container, repo) = setup().await.unwrap();
 
     // Create initial user
-    let user = acci_db::repositories::user::CreateUser {
-        email: "concurrent@example.com".to_string(),
-        password_hash: "hash123".to_string(),
-        full_name: "Test User".to_string(),
-    };
-    let user = repo.create(user).await.unwrap();
+    let username = "concurrent_user";
+    let password_hash = "hash123";
+    let user = repo.create_user(username, password_hash).await.unwrap();
 
     // Perform two concurrent updates
-    let update1 = acci_db::repositories::user::UpdateUser {
-        email: None,
-        password_hash: Some("new_hash1".to_string()),
-        full_name: None,
-    };
+    let new_hash1 = "new_hash1";
+    let new_hash2 = "new_hash2";
 
-    let update2 = acci_db::repositories::user::UpdateUser {
-        email: None,
-        password_hash: Some("new_hash2".to_string()),
-        full_name: None,
-    };
-
-    let (result1, result2) =
-        tokio::join!(repo.update(user.id, update1), repo.update(user.id, update2));
+    let (result1, result2) = tokio::join!(
+        repo.update_password(user.id, new_hash1),
+        repo.update_password(user.id, new_hash2)
+    );
 
     // Both updates should succeed
-    assert!(result1.is_ok());
-    assert!(result2.is_ok());
+    assert!(result1.is_ok(), "First update should succeed");
+    assert!(result2.is_ok(), "Second update should succeed");
 
     // Get final state
-    let final_user = repo.get_by_id(user.id).await.unwrap().unwrap();
+    let final_user = repo.get_user_by_id(user.id).await.unwrap().unwrap();
 
     // One of the updates should have won
-    assert!(final_user.password_hash == "new_hash1" || final_user.password_hash == "new_hash2");
+    assert!(
+        final_user.password_hash == new_hash1 || final_user.password_hash == new_hash2,
+        "Final password hash should match one of the updates"
+    );
 }

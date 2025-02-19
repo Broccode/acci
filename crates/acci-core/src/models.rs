@@ -11,6 +11,8 @@ pub struct User {
     pub username: String,
     /// Email address of the user.
     pub email: String,
+    /// Full name of the user.
+    pub full_name: String,
     /// Hashed password of the user.
     pub password_hash: String,
     /// Whether the user has administrative privileges.

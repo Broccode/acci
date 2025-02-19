@@ -240,6 +240,14 @@ Create a git tag for the version (e.g., v0.2.0)
     - Dashboard links for quick access
     - Runbook references with examples
 
+#### User Management 👤
+
+- **User Profile Enhancement:**
+  - Added `full_name` field to User model for better user identification
+  - Added database migration for `full_name` field
+  - Updated User repository implementation to handle the new field
+  - Added validation for full_name field in user creation and updates
+
 ### Changed
 
 #### Test Infrastructure 🔧
@@ -310,6 +318,7 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ### Fixed
 
+- **SQLx Configuration:** Fixed SQLx dependency configuration by removing the non-existent 'offline' feature from version 0.8.x, ensuring proper compilation and dependency resolution
 - **Test User Authentication:** Fixed an issue where test user password hashes in database migration did not match expected test user passwords, causing authentication failures in test environments and preventing proper test execution
 - **Docker Build Process:** Fixed Docker production build failures by adding missing root `main.rs` file and resolving build errors related to missing source files, ensuring a stable and reproducible production build process
 - **Session Repository Implementation:** Fixed session repository implementation in `crates/acci-db/src/repositories/session.rs` to properly handle session lifecycle and prevent memory leaks

@@ -1,8 +1,15 @@
-use acci_auth::{AuthConfig, AuthProvider, BasicAuthProvider, Credentials};
+use crate::helpers::db::wait_for_db;
+use acci_auth::providers::basic::BasicAuthProvider;
+use acci_core::{
+    auth::{AuthConfig, AuthProvider, Credentials},
+    models::User,
+};
 use acci_db::{
     create_pool,
-    repositories::session::PgSessionRepository,
-    repositories::user::{PgUserRepository, UserRepository},
+    repositories::{
+        session::{PgSessionRepository, SessionRepository},
+        user::{PgUserRepository, UserRepository},
+    },
     run_migrations,
     sqlx::{self, PgPool},
     DbConfig,
@@ -47,12 +54,16 @@ async fn test_default_admin_user_exists() -> Result<()> {
     let (_container, repo, _) = setup().await?;
 
     // Get the default admin user
-    let user = repo.get_by_email("admin").await?;
+    let user = repo.get_user_by_username("admin").await?;
 
     assert!(user.is_some(), "Default admin user should exist");
-    let user = user.unwrap();
-    assert_eq!(user.email, "admin");
-    assert_eq!(user.full_name, "Default Admin");
+    let user = user.expect("Default admin user should exist after migration");
+    assert_eq!(user.username, "admin");
+    assert_eq!(user.email, "admin@example.com");
+    assert!(
+        user.is_admin,
+        "Default admin user should have admin privileges"
+    );
 
     Ok(())
 }
@@ -61,8 +72,8 @@ async fn test_default_admin_user_exists() -> Result<()> {
 async fn test_default_admin_authentication() -> Result<()> {
     let (_container, repo, pool) = setup().await?;
 
-    // Add a small delay to ensure database is ready
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Ensure database is ready
+    wait_for_db(&pool).await?;
 
     // Create auth provider and try to authenticate
     let user_repo = Arc::new(repo);

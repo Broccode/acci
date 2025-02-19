@@ -101,6 +101,14 @@ pub trait SessionRepository: Send + Sync {
     ///
     /// `true` if the session is valid, `false` otherwise
     async fn validate_session(&self, id: Uuid) -> Result<bool, Error>;
+
+    /// Updates the token of a specific session.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the session to update
+    /// * `token` - The new token value
+    async fn update_session_token(&self, id: Uuid, token: &str) -> Result<(), Error>;
 }
 
 /// PostgreSQL implementation of the `SessionRepository` trait.
@@ -219,6 +227,23 @@ impl SessionRepository for PgSessionRepository {
         .map_err(Error::Database)?;
 
         Ok(count.count > 0)
+    }
+
+    async fn update_session_token(&self, id: Uuid, token: &str) -> Result<(), Error> {
+        sqlx::query!(
+            r#"
+            UPDATE acci.sessions
+            SET token = $2
+            WHERE id = $1
+            "#,
+            id,
+            token
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(Error::Database)?;
+
+        Ok(())
     }
 }
 

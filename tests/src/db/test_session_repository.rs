@@ -93,7 +93,10 @@ async fn test_get_session() -> Result<()> {
     let created_session = repo.create_session(&session).await?;
 
     // Act: Retrieve the session
-    let retrieved_session = repo.get_session(session.session_id).await?.unwrap();
+    let retrieved_session = repo
+        .get_session(session.session_id)
+        .await?
+        .expect("Session should exist after creation");
 
     // Assert: Verify the retrieved session matches the created one
     assert_eq!(
@@ -417,19 +420,32 @@ async fn test_invalidate_user_sessions() {
     };
 
     // Insert the sessions
-    repo.create_session(&session1).await.unwrap();
-    repo.create_session(&session2).await.unwrap();
+    repo.create_session(&session1)
+        .await
+        .expect("Should be able to create first session");
+    repo.create_session(&session2)
+        .await
+        .expect("Should be able to create second session");
 
     // Verify sessions exist
-    let sessions = repo.get_user_sessions(user_id).await.unwrap();
+    let sessions = repo
+        .get_user_sessions(user_id)
+        .await
+        .expect("Should be able to get user sessions");
     assert_eq!(sessions.len(), 2, "Expected 2 sessions to be created");
 
     // Invalidate all sessions for the user
-    let invalidated = repo.invalidate_user_sessions(user_id).await.unwrap();
+    let invalidated = repo
+        .invalidate_user_sessions(user_id)
+        .await
+        .expect("Should be able to invalidate user sessions");
     assert_eq!(invalidated, 2, "Expected 2 sessions to be invalidated");
 
     // Verify sessions were deleted
-    let sessions = repo.get_user_sessions(user_id).await.unwrap();
+    let sessions = repo
+        .get_user_sessions(user_id)
+        .await
+        .expect("Should be able to get user sessions after invalidation");
     assert!(
         sessions.is_empty(),
         "Expected all sessions to be invalidated"

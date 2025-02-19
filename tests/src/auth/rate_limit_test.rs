@@ -1,6 +1,20 @@
+use crate::mocks::{MockSessionRepository, MockUserRepository};
+use acci_auth::AuthService;
+use acci_core::{
+    auth::{AuthConfig, Credentials},
+    error::Error,
+    models::User,
+};
+use acci_db::models::Session;
+use mockall::predicate::eq;
 use proptest::prelude::*;
-use std::time::{Duration, SystemTime};
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+use time::OffsetDateTime;
 use tokio::time::sleep;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 enum RateLimitStrategy {
@@ -109,6 +123,76 @@ impl RateLimitStrategy {
             },
         }
     }
+}
+
+#[tokio::test]
+async fn test_rate_limiting_basic() -> Result<(), Error> {
+    let mut user_repo = MockUserRepository::new();
+    let mut session_repo = MockSessionRepository::new();
+    let now = OffsetDateTime::now_utc();
+    let user_id = Uuid::new_v4();
+
+    // Setup test user
+    let test_user = User {
+        id: user_id,
+        username: "test.user@example.com".to_string(),
+        email: "test.user@example.com".to_string(),
+        password_hash: "hashed_password".to_string(),
+        is_admin: false,
+        created_at: now,
+        updated_at: now,
+    };
+
+    user_repo
+        .expect_get_user_by_username()
+        .with(eq(&test_user.username))
+        .returning(move |_| Ok(Some(test_user.clone())))
+        .times(6); // Allow 5 attempts + 1 successful
+
+    let session_id = Uuid::new_v4();
+    let token = "test_token".to_string();
+    let expires_at = now + time::Duration::hours(24);
+
+    session_repo
+        .expect_create_session()
+        .with(eq(user_id), eq(token.as_str()), eq(expires_at))
+        .returning(move |user_id, token, expires_at| {
+            Ok(Session {
+                id: session_id,
+                user_id,
+                token: token.to_string(),
+                created_at: now,
+                expires_at,
+            })
+        });
+
+    let auth_service = AuthService::new(Arc::new(user_repo), Arc::new(session_repo));
+
+    let credentials = Credentials {
+        username: test_user.username.clone(),
+        password: "wrong_password".to_string(),
+    };
+
+    // Attempt rapid authentication
+    for _ in 0..5 {
+        let result = auth_service.authenticate(&credentials).await;
+        assert!(result.is_err());
+        sleep(Duration::from_millis(100)).await;
+    }
+
+    // Wait for rate limit to reset
+    sleep(Duration::from_secs(30)).await;
+
+    // Try again with correct password
+    let credentials = Credentials {
+        username: test_user.username,
+        password: "correct_password".to_string(),
+    };
+
+    let result = auth_service.authenticate(&credentials).await;
+    assert!(result.is_ok());
+
+    Ok(())
 }
 
 #[tokio::test]

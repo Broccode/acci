@@ -65,13 +65,13 @@ impl Default for TestUserConfig {
             enabled: false,
             users: vec![
                 TestUser {
-                    username: "test.admin@example.com".to_string(),
+                    username: "test_admin".to_string(),
                     password: "test123!admin".to_string(),
                     full_name: "Test Administrator".to_string(),
                     role: "admin".to_string(),
                 },
                 TestUser {
-                    username: "test.user@example.com".to_string(),
+                    username: "test_user".to_string(),
                     password: "test123!user".to_string(),
                     full_name: "Test User".to_string(),
                     role: "user".to_string(),

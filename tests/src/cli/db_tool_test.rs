@@ -23,7 +23,8 @@ async fn test_db_info_command() -> Result<(), Error> {
         .stdout(predicate::str::contains("Version:"))
         .stdout(predicate::str::contains("Connection Pool:"))
         // Validate version format (e.g., PostgreSQL 14.x)
-        .stdout(predicate::str::is_match(r"Version: PostgreSQL \d+\.\d+").unwrap());
+        .stdout(predicate::str::is_match(r"Version: PostgreSQL \d+\.\d+")
+            .expect("Failed to create version format regex"));
 
     Ok(())
 }
@@ -44,7 +45,8 @@ async fn test_db_status_command() -> Result<(), Error> {
         .stdout(predicate::str::contains("Database Status:"))
         .stdout(predicate::str::contains("Connected: true"))
         // Validate active connections format (number)
-        .stdout(predicate::str::is_match(r"Active Connections: \d+").unwrap());
+        .stdout(predicate::str::is_match(r"Active Connections: \d+")
+            .expect("Failed to create connections format regex"));
 
     Ok(())
 }
@@ -67,7 +69,8 @@ async fn test_db_schema_command() -> Result<(), Error> {
         .stdout(predicate::str::contains("users"))
         .stdout(predicate::str::contains("sessions"))
         // Ensure output is properly formatted
-        .stdout(predicate::str::is_match(r"Table: [a-z_]+\n(\s+Column: [a-z_]+ \([A-Z_]+\)\n)+").unwrap());
+        .stdout(predicate::str::is_match(r"Table: [a-z_]+\n(\s+Column: [a-z_]+ \([A-Z_]+\)\n)+")
+            .expect("Failed to create schema format regex"));
 
     Ok(())
 }
@@ -89,7 +92,8 @@ async fn test_db_migrations_command() -> Result<(), Error> {
         .stdout(predicate::str::contains("Applied Migrations:"))
         .stdout(predicate::str::contains("Pending Migrations:"))
         // Validate migration format (timestamp_name)
-        .stdout(predicate::str::is_match(r"\d{14}_[a-z_]+").unwrap());
+        .stdout(predicate::str::is_match(r"\d{14}_[a-z_]+")
+            .expect("Failed to create migration format regex"));
 
     Ok(())
 }
@@ -98,7 +102,7 @@ async fn test_db_migrations_command() -> Result<(), Error> {
 async fn test_db_connection_errors() {
     // Test invalid database URL format
     AssertCommand::cargo_bin("acci-db")
-        .unwrap()
+        .expect("Failed to create acci-db command")
         .arg("info")
         .env("DATABASE_URL", "not-a-url")
         .assert()
@@ -107,7 +111,7 @@ async fn test_db_connection_errors() {
 
     // Test non-existent database
     AssertCommand::cargo_bin("acci-db")
-        .unwrap()
+        .expect("Failed to create acci-db command")
         .arg("info")
         .env("DATABASE_URL", "postgres://localhost:5432/nonexistent")
         .assert()
@@ -118,7 +122,7 @@ async fn test_db_connection_errors() {
 
     // Test authentication failure
     AssertCommand::cargo_bin("acci-db")
-        .unwrap()
+        .expect("Failed to create acci-db command")
         .arg("info")
         .env(
             "DATABASE_URL",
@@ -130,7 +134,7 @@ async fn test_db_connection_errors() {
 
     // Test missing DATABASE_URL
     AssertCommand::cargo_bin("acci-db")
-        .unwrap()
+        .expect("Failed to create acci-db command")
         .arg("info")
         .env_remove("DATABASE_URL")
         .assert()
@@ -142,7 +146,7 @@ async fn test_db_connection_errors() {
 async fn test_db_invalid_commands() {
     // Test invalid subcommand
     AssertCommand::cargo_bin("acci-db")
-        .unwrap()
+        .expect("Failed to create acci-db command")
         .arg("invalid_command")
         .assert()
         .failure()

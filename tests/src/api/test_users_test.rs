@@ -2,14 +2,18 @@ use crate::{
     helpers::db::setup_database,
     mocks::{MockSessionRepository, MockUserRepository},
 };
-use acci_auth::{providers::basic::BasicAuthProvider, AuthConfig, AuthProvider, Credentials};
-use acci_core::{auth::TestUserConfig, error::Error};
+use acci_auth::providers::basic::BasicAuthProvider;
+use acci_core::{
+    auth::{AuthConfig, AuthProvider, AuthResponse, Credentials, TestUserConfig},
+    error::Error,
+    models::User,
+};
 use acci_db::{
+    models::Session,
     repositories::{
-        session::PgSessionRepository,
+        session::{PgSessionRepository, SessionRepository},
         user::{PgUserRepository, UserRepository},
     },
-    Session, User,
 };
 use anyhow::Result;
 use mockall::predicate::eq;
@@ -70,11 +74,15 @@ async fn test_test_users_exist() -> Result<()> {
     let test_config = TestUserConfig::default();
 
     // Check admin exists
-    let admin = user_repo.get_by_email(&test_config.users[0].email).await?;
+    let admin = user_repo
+        .get_user_by_username(&test_config.users[0].username)
+        .await?;
     assert!(admin.is_some(), "Test admin user should exist");
 
     // Check regular user exists
-    let user = user_repo.get_by_email(&test_config.users[1].email).await?;
+    let user = user_repo
+        .get_user_by_username(&test_config.users[1].username)
+        .await?;
     assert!(user.is_some(), "Test user should exist");
 
     Ok(())
@@ -87,40 +95,44 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
-    let admin_email = test_config.users[0].email.clone();
+    let admin_username = test_config.users[0].username.clone();
     let admin_password = test_config.users[0].password.clone();
 
     let user_id = Uuid::new_v4();
     let now = OffsetDateTime::now_utc();
-    let email_clone = admin_email.clone();
+    let email_clone = admin_username.clone();
 
     user_repo
-        .expect_get_by_email()
-        .with(eq(admin_email.clone()))
+        .expect_get_user_by_username()
+        .with(eq(admin_username.clone()))
         .returning(move |_| {
             Ok(Some(User {
                 id: user_id,
-                email: email_clone.clone(),
+                username: email_clone.clone(),
+                email: "test@example.com".to_string(),
                 password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
-                full_name: "Test Admin".to_string(),
+                is_admin: true,
                 created_at: now,
                 updated_at: now,
             }))
         });
 
-    session_repo.expect_create_session().returning(|session| {
-        Ok(Session {
-            session_id: Uuid::new_v4(),
-            user_id: session.user_id,
-            created_at: session.created_at,
-            expires_at: session.expires_at,
-        })
-    });
+    session_repo
+        .expect_create_session()
+        .returning(move |user_id, token, expires_at| {
+            Ok(Session {
+                id: Uuid::new_v4(),
+                user_id,
+                token: token.to_string(),
+                created_at: now,
+                expires_at,
+            })
+        });
 
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
 
     let credentials = Credentials {
-        username: admin_email,
+        username: admin_username,
         password: admin_password,
     };
 
@@ -139,40 +151,44 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
-    let user_email = test_config.users[1].email.clone();
+    let user_username = test_config.users[1].username.clone();
     let user_password = test_config.users[1].password.clone();
 
     let user_id = Uuid::new_v4();
     let now = OffsetDateTime::now_utc();
-    let email_clone = user_email.clone();
+    let email_clone = user_username.clone();
 
     user_repo
-        .expect_get_by_email()
-        .with(eq(user_email.clone()))
+        .expect_get_user_by_username()
+        .with(eq(user_username.clone()))
         .returning(move |_| {
             Ok(Some(User {
                 id: user_id,
-                email: email_clone.clone(),
+                username: email_clone.clone(),
+                email: "test@example.com".to_string(),
                 password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
-                full_name: "Test User".to_string(),
+                is_admin: false,
                 created_at: now,
                 updated_at: now,
             }))
         });
 
-    session_repo.expect_create_session().returning(|session| {
-        Ok(Session {
-            session_id: Uuid::new_v4(),
-            user_id: session.user_id,
-            created_at: session.created_at,
-            expires_at: session.expires_at,
-        })
-    });
+    session_repo
+        .expect_create_session()
+        .returning(move |user_id, token, expires_at| {
+            Ok(Session {
+                id: Uuid::new_v4(),
+                user_id,
+                token: token.to_string(),
+                created_at: now,
+                expires_at,
+            })
+        });
 
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
 
     let credentials = Credentials {
-        username: user_email,
+        username: user_username,
         password: user_password,
     };
 
@@ -191,21 +207,22 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
     let mut session_repo = MockSessionRepository::default();
     let config = AuthConfig::default();
     let test_config = TestUserConfig::default();
-    let admin_email = test_config.users[0].email.clone();
+    let admin_username = test_config.users[0].username.clone();
 
     let user_id = Uuid::new_v4();
     let now = OffsetDateTime::now_utc();
-    let email_clone = admin_email.clone();
+    let email_clone = admin_username.clone();
 
     user_repo
-        .expect_get_by_email()
-        .with(eq(admin_email.clone()))
+        .expect_get_user_by_username()
+        .with(eq(admin_username.clone()))
         .returning(move |_| {
             Ok(Some(User {
                 id: user_id,
-                email: email_clone.clone(),
+                username: email_clone.clone(),
+                email: "test@example.com".to_string(),
                 password_hash: "$argon2id$v=19$m=4096,t=3,p=1$salt$hash".to_string(),
-                full_name: "Test Admin".to_string(),
+                is_admin: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -214,7 +231,7 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
     let provider = BasicAuthProvider::new(Arc::new(user_repo), Arc::new(session_repo), config);
 
     let credentials = Credentials {
-        username: admin_email,
+        username: admin_username,
         password: "wrong_password".to_string(),
     };
 
@@ -236,7 +253,7 @@ async fn test_test_users_disabled_in_release() -> Result<(), Error> {
     let admin_user = &test_config.users[0];
 
     let credentials = Credentials {
-        username: admin_user.email.clone(),
+        username: admin_user.username.clone(),
         password: admin_user.password.clone(),
     };
 

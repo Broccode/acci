@@ -11,44 +11,65 @@ use std::sync::Arc;
 
 use acci_core::{
     auth::{AuthResult, AuthService as AuthServiceTrait, Credentials, ValidationResult},
+    clock::{Clock, SystemClock},
     error::Error,
 };
 use acci_db::repositories::{session::SessionRepository, user::UserRepository};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-mod providers;
+pub mod providers;
 
 pub use providers::basic::BasicAuthProvider;
 
 /// The main authentication service implementation.
 #[derive(Debug)]
-pub struct AuthService {
+pub struct AuthService<C: Clock = SystemClock> {
     user_repo: Arc<dyn UserRepository + Send + Sync>,
     session_repo: Arc<dyn SessionRepository + Send + Sync>,
+    clock: C,
 }
 
-impl AuthService {
+impl<C: Clock> AuthService<C> {
     /// Creates a new authentication service instance.
     ///
     /// # Arguments
     ///
     /// * `user_repo` - The user repository implementation
     /// * `session_repo` - The session repository implementation
+    /// * `clock` - The clock implementation to use
     #[must_use]
     pub fn new(
         user_repo: Arc<dyn UserRepository + Send + Sync>,
         session_repo: Arc<dyn SessionRepository + Send + Sync>,
+        clock: C,
     ) -> Self {
         Self {
             user_repo,
             session_repo,
+            clock,
         }
     }
 }
 
+impl AuthService<SystemClock> {
+    /// Creates a new authentication service instance with the system clock.
+    ///
+    /// # Arguments
+    ///
+    /// * `user_repo` - The user repository implementation
+    /// * `session_repo` - The session repository implementation
+    #[must_use]
+    pub fn with_system_clock(
+        user_repo: Arc<dyn UserRepository + Send + Sync>,
+        session_repo: Arc<dyn SessionRepository + Send + Sync>,
+    ) -> Self {
+        Self::new(user_repo, session_repo, SystemClock)
+    }
+}
+
 #[async_trait::async_trait]
-impl AuthServiceTrait for AuthService {
+impl<C: Clock> AuthServiceTrait for AuthService<C> {
     async fn register(&self, credentials: Credentials) -> Result<AuthResult, Error> {
         // Check if user exists
         if let Some(_) = self
@@ -74,7 +95,8 @@ impl AuthServiceTrait for AuthService {
         // Create session
         let token =
             acci_core::auth::create_token(user.id).map_err(|e| Error::Internal(e.to_string()))?;
-        let expires_at = OffsetDateTime::now_utc() + time::Duration::hours(24); // TODO: Make configurable
+        let now = OffsetDateTime::from(self.clock.now());
+        let expires_at = now + time::Duration::hours(24); // TODO: Make configurable
 
         let session = self
             .session_repo
@@ -108,7 +130,8 @@ impl AuthServiceTrait for AuthService {
         // Create session
         let token =
             acci_core::auth::create_token(user.id).map_err(|e| Error::Internal(e.to_string()))?;
-        let expires_at = OffsetDateTime::now_utc() + time::Duration::hours(24); // TODO: Make configurable
+        let now = OffsetDateTime::from(self.clock.now());
+        let expires_at = now + time::Duration::hours(24); // TODO: Make configurable
 
         let session = self
             .session_repo

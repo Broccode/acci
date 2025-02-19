@@ -102,7 +102,7 @@ async fn test_user_management_errors() -> anyhow::Result<()> {
     // Test duplicate user creation
     let create_user = |email: &str| {
         AssertCommand::cargo_bin("acci-users")
-            .unwrap()
+            .expect("Failed to create acci-users command")
             .arg("--database-url")
             .arg(&database_url)
             .arg("add")
@@ -243,7 +243,7 @@ async fn test_user_management_concurrent() -> anyhow::Result<()> {
         let database_url = database_url.clone();
         let handle = tokio::spawn(async move {
             AssertCommand::cargo_bin("acci-users")
-                .unwrap()
+                .expect("Failed to create acci-users command")
                 .arg("--database-url")
                 .arg(&database_url)
                 .arg("add")

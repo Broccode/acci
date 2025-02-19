@@ -22,18 +22,19 @@ async fn test_health_check() {
             Request::builder()
                 .uri("/health")
                 .body(Body::empty())
-                .unwrap(),
+                .expect("Failed to build request"),
         )
         .await
-        .unwrap();
+        .expect("Failed to execute request");
 
     // Assert
     assert_eq!(response.status(), StatusCode::OK);
 
     let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
-        .unwrap();
-    let health_response: HealthResponse = serde_json::from_reader(bytes.as_ref()).unwrap();
+        .expect("Failed to read response body");
+    let health_response: HealthResponse =
+        serde_json::from_reader(bytes.as_ref()).expect("Failed to parse health response JSON");
 
     assert_eq!(health_response.status, "ok");
     assert!(!health_response.version.is_empty());

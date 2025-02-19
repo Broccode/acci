@@ -8,7 +8,7 @@ use std::collections::HashSet;
 fn test_hash_password_command() {
     // Test with valid password
     let assert = AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg("secure_password123")
         .assert();
 
@@ -20,7 +20,8 @@ fn test_hash_password_command() {
 
     // Verify hash format using regex
     let hash_format =
-        Regex::new(r"\$argon2id\$v=19\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+").unwrap();
+        Regex::new(r"\$argon2id\$v=19\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+")
+            .expect("Failed to create hash format regex");
     assert!(
         hash_format.is_match(&hash),
         "Hash should match Argon2 format: {}",
@@ -46,10 +47,10 @@ fn test_hash_password_salt_uniqueness() {
     let mut hashes = HashSet::new();
     for _ in 0..5 {
         let output = AssertCommand::cargo_bin("hash_passwords")
-            .unwrap()
+            .expect("Failed to create hash_passwords command")
             .arg("same_password")
             .output()
-            .unwrap();
+            .expect("Failed to execute hash_passwords command");
 
         let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
         hashes.insert(hash);
@@ -74,7 +75,7 @@ fn test_hash_password_salt_uniqueness() {
 #[test]
 fn test_hash_password_empty() {
     AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -86,7 +87,7 @@ fn test_hash_password_empty() {
 #[test]
 fn test_hash_password_multiple_arguments() {
     AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .args(["pass1", "pass2"])
         .assert()
         .failure()
@@ -97,7 +98,7 @@ fn test_hash_password_multiple_arguments() {
 fn test_hash_password_special_characters() {
     let password = "P@ssw0rd!$%^&*()";
     let assert = AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg(password)
         .assert();
 
@@ -116,7 +117,7 @@ fn test_hash_password_special_characters() {
 fn test_hash_password_unicode() {
     let password = "パスワード123アБВ";
     let assert = AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg(password)
         .assert();
 
@@ -139,7 +140,7 @@ fn test_hash_password_performance() {
     let start = Instant::now();
 
     let assert = AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg(password)
         .assert();
 
@@ -161,7 +162,7 @@ fn test_hash_password_very_long() {
     // Test with a very long password (1024 characters)
     let long_password = "a".repeat(1024);
     let assert = AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg(&long_password)
         .assert();
 
@@ -181,7 +182,7 @@ fn test_hash_password_short() {
     // Test with a very short password
     let short_password = "ab";
     AssertCommand::cargo_bin("hash_passwords")
-        .unwrap()
+        .expect("Failed to create hash_passwords command")
         .arg(short_password)
         .assert()
         .failure()

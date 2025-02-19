@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, username, email, password_hash, is_admin, created_at, updated_at\n            FROM acci.users\n            WHERE username = $1\n            ",
+  "query": "\n            INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at, full_name)\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            RETURNING id, username, email, password_hash, is_admin, created_at, updated_at, full_name\n            ",
   "describe": {
     "columns": [
       {
@@ -37,11 +37,22 @@
         "ordinal": 6,
         "name": "updated_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "full_name",
+        "type_info": "Varchar"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz",
+        "Varchar"
       ]
     },
     "nullable": [
@@ -51,8 +62,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "23fa95a757f10d4e27db1eb861650395e35b888c8af23d9498af26b04ea1be2a"
+  "hash": "9d149a3c5ea75098d79dd481738d50847d1e49e51cfa51329af1ba80ed51a19b"
 }

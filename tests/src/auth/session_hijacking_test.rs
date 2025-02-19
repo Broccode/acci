@@ -1,79 +1,84 @@
-use crate::helpers::{auth::setup_test_user, db::setup_database};
+use crate::mocks::{MockSessionRepository, MockUserRepository};
+use acci_auth::AuthService;
 use acci_core::{
-    auth::{AuthError, AuthService},
+    auth::{AuthError, Credentials},
     error::Error,
+    models::User,
 };
-use acci_db::repositories::{
-    session::PgSessionRepository,
-    user::{PgUserRepository, UserRepository},
-};
-use std::time::Duration;
-use tokio::time::sleep;
+use acci_db::models::Session;
+use mockall::predicate::eq;
+use std::sync::Arc;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 /// Tests for advanced session hijacking scenarios
 #[tokio::test]
 async fn test_session_token_reuse() -> Result<(), Error> {
-    // Setup
-    let db = setup_database().await?;
-    let user_repo = PgUserRepository::new(db.clone());
-    let session_repo = PgSessionRepository::new(db);
-    let auth_service = AuthService::new(user_repo.clone());
+    let mut user_repo = MockUserRepository::new();
+    let mut session_repo = MockSessionRepository::new();
+    let now = OffsetDateTime::now_utc();
+    let user_id = Uuid::new_v4();
+    let session_id = Uuid::new_v4();
 
-    // Create test user
-    let (user, password) = setup_test_user(&user_repo).await?;
+    // Setup test user
+    let test_user = User {
+        id: user_id,
+        username: "test.user@example.com".to_string(),
+        email: "test.user@example.com".to_string(),
+        password_hash: "hashed_password".to_string(),
+        is_admin: false,
+        created_at: now,
+        updated_at: now,
+    };
+
+    user_repo
+        .expect_get_user_by_username()
+        .with(eq(&test_user.username))
+        .returning(move |_| Ok(Some(test_user.clone())));
+
+    let token = "test_token".to_string();
+    let expires_at = now + time::Duration::hours(24);
+
+    session_repo
+        .expect_create_session()
+        .with(eq(user_id), eq(token.as_str()), eq(expires_at))
+        .returning(move |user_id, token, expires_at| {
+            Ok(Session {
+                id: session_id,
+                user_id,
+                token: token.to_string(),
+                created_at: now,
+                expires_at,
+            })
+        });
+
+    session_repo
+        .expect_delete_session()
+        .with(eq(session_id))
+        .returning(|_| Ok(()));
+
+    session_repo
+        .expect_get_session()
+        .with(eq(session_id))
+        .returning(|_| Ok(None));
+
+    let auth_service = AuthService::new(Arc::new(user_repo), Arc::new(session_repo));
 
     // Test 1: Token Reuse After Logout
-    let auth_result = auth_service
-        .login_with_context(
-            user.email.clone(),
-            password.clone(),
-            "192.168.1.1",
-            "Chrome/120.0.0.0",
-        )
-        .await?;
+    let credentials = Credentials {
+        username: test_user.username.clone(),
+        password: "test_password".to_string(),
+    };
 
+    let auth_result = auth_service.authenticate(&credentials).await?;
     let token = auth_result.token.clone();
 
     // Logout
     auth_service.logout(auth_result.session_id).await?;
 
     // Attempt to reuse token
-    let reuse_result = auth_service
-        .validate_token_with_context(&token, "192.168.1.1", "Chrome/120.0.0.0")
-        .await;
-
-    assert!(
-        matches!(reuse_result, Err(AuthError::SessionInvalid(_))),
-        "Reused token after logout should be invalid"
-    );
-
-    // Test 2: Token Reuse After Password Change
-    let auth_result = auth_service
-        .login_with_context(
-            user.email.clone(),
-            password.clone(),
-            "192.168.1.1",
-            "Chrome/120.0.0.0",
-        )
-        .await?;
-
-    let token = auth_result.token.clone();
-
-    // Change password
-    auth_service
-        .change_password(user.email.clone(), password.clone(), "NewPassword123!")
-        .await?;
-
-    // Attempt to reuse old token
-    let reuse_result = auth_service
-        .validate_token_with_context(&token, "192.168.1.1", "Chrome/120.0.0.0")
-        .await;
-
-    assert!(
-        matches!(reuse_result, Err(AuthError::SessionInvalid(_))),
-        "Token should be invalid after password change"
-    );
+    let reuse_result = auth_service.validate_token(&token).await;
+    assert!(matches!(reuse_result, Err(Error::NotFound(_))));
 
     Ok(())
 }

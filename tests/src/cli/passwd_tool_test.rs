@@ -33,16 +33,49 @@ async fn test_password_hash_json_output() -> anyhow::Result<()> {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let json: Value = serde_json::from_str(&stdout)?;
 
-    assert!(json["hash"].as_str().unwrap().starts_with("$argon2"));
-    assert_eq!(json["algorithm"].as_str().unwrap(), "argon2id");
-    assert_eq!(json["version"].as_str().unwrap(), "19");
+    assert!(json["hash"]
+        .as_str()
+        .expect("Hash should be a string")
+        .starts_with("$argon2"));
+    assert_eq!(
+        json["algorithm"]
+            .as_str()
+            .expect("Algorithm should be a string"),
+        "argon2id"
+    );
+    assert_eq!(
+        json["version"]
+            .as_str()
+            .expect("Version should be a string"),
+        "19"
+    );
 
     // Verify Argon2 parameters
     let params = &json["parameters"];
-    assert_eq!(params["m_cost"].as_u64().unwrap(), 4096); // Memory cost
-    assert_eq!(params["t_cost"].as_u64().unwrap(), 3); // Time cost
-    assert_eq!(params["p_cost"].as_u64().unwrap(), 1); // Parallelism
-    assert_eq!(params["output_len"].as_u64().unwrap(), 32); // Hash length
+    assert_eq!(
+        params["m_cost"]
+            .as_u64()
+            .expect("Memory cost should be a number"),
+        4096
+    ); // Memory cost
+    assert_eq!(
+        params["t_cost"]
+            .as_u64()
+            .expect("Time cost should be a number"),
+        3
+    ); // Time cost
+    assert_eq!(
+        params["p_cost"]
+            .as_u64()
+            .expect("Parallelism should be a number"),
+        1
+    ); // Parallelism
+    assert_eq!(
+        params["output_len"]
+            .as_u64()
+            .expect("Output length should be a number"),
+        32
+    ); // Hash length
 
     Ok(())
 }
@@ -148,7 +181,7 @@ async fn test_password_hash_concurrent() -> anyhow::Result<()> {
     for i in 0..5 {
         let handle = tokio::spawn(async move {
             AssertCommand::cargo_bin("acci-passwd")
-                .unwrap()
+                .expect("Failed to create acci-passwd command")
                 .arg("--password")
                 .arg(format!("test123!{}", i))
                 .arg("--format")

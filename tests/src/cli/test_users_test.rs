@@ -22,7 +22,8 @@ async fn test_list_users_command() -> Result<(), Error> {
         .stdout(predicate::str::contains("Test Users:"))
         .stdout(predicate::str::contains("admin"))
         // Validate output format
-        .stdout(predicate::str::is_match(r"Username: [a-zA-Z0-9_]+\n\s+Status: (Active|Inactive)\n\s+Email: [^\n]+\n").unwrap());
+        .stdout(predicate::str::is_match(r"Username: [a-zA-Z0-9_]+\n\s+Status: (Active|Inactive)\n\s+Email: [^\n]+\n")
+            .expect("Failed to create regex for output format validation"));
 
     Ok(())
 }
@@ -163,7 +164,7 @@ async fn test_clean_idempotency() -> Result<(), Error> {
 #[tokio::test]
 async fn test_invalid_command() {
     AssertCommand::cargo_bin("test_users")
-        .unwrap()
+        .expect("Failed to create test_users command")
         .arg("invalid_command")
         .assert()
         .failure()
@@ -173,7 +174,7 @@ async fn test_invalid_command() {
 #[tokio::test]
 async fn test_missing_database_url() {
     AssertCommand::cargo_bin("test_users")
-        .unwrap()
+        .expect("Failed to create test_users command")
         .arg("list")
         .env_remove("DATABASE_URL")
         .assert()
@@ -184,7 +185,7 @@ async fn test_missing_database_url() {
 #[tokio::test]
 async fn test_invalid_database_url() {
     AssertCommand::cargo_bin("test_users")
-        .unwrap()
+        .expect("Failed to create test_users command")
         .arg("list")
         .env("DATABASE_URL", "invalid-url")
         .assert()

@@ -160,21 +160,43 @@ impl AuthProvider for BasicAuthProvider {
             .get_user_by_username(&credentials.username)
             .await
             .map_err(|e| Error::Database(e.to_string()))?
-            .ok_or_else(|| Error::NotFound("User not found".to_string()))?;
+            .ok_or(Error::InvalidCredentials)?;
 
         // Verify password
         if !self.verify_password(&credentials.password, &user.password_hash)? {
             return Err(Error::InvalidCredentials);
         }
 
-        // Create token
-        let token = self.create_token(user.id)?;
-
         // Create session
         let expires_at = OffsetDateTime::now_utc() + Duration::seconds(self.config.token_duration);
         let session = self
             .session_repo
-            .create_session(user.id, &token, expires_at)
+            .create_session(user.id, "", expires_at)
+            .await
+            .map_err(|e| Error::Database(e.to_string()))?;
+
+        // Create token with session ID as jti
+        let now = OffsetDateTime::now_utc();
+        let exp = now + Duration::seconds(self.config.token_duration);
+
+        let claims = Claims {
+            sub: user.id.to_string(),
+            iss: self.config.token_issuer.clone(),
+            exp: exp.unix_timestamp(),
+            iat: now.unix_timestamp(),
+            jti: session.id.to_string(),
+        };
+
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(self.config.jwt_secret.as_bytes()),
+        )
+        .map_err(|e| Error::Internal(format!("Failed to create token: {e}")))?;
+
+        // Update session with token
+        self.session_repo
+            .update_session_token(session.id, &token)
             .await
             .map_err(|e| Error::Database(e.to_string()))?;
 
