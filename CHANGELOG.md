@@ -1006,6 +1006,16 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+#### Project Structure 📁
+
+- **Database Migrations:**
+  - Removed redundant `/migrations` directory
+  - Consolidated all migrations in `/crates/acci-db/migrations/`
+  - Ensured consistent migration structure and naming
+  - Maintained single source of truth for database schema changes
+
 ### Fixed
 
 #### Integration Tests 🧪
