@@ -366,6 +366,8 @@ jobs:
           mkdir -p $BENCHMARK_DIR/baseline
 
           # Install additional tools
+          sudo apt-get update
+          sudo apt-get install -y gnuplot
           cargo install cargo-criterion || true
           cargo install hyperfine || true
 

@@ -179,6 +179,12 @@ Create a git tag for the version (e.g., v0.2.0)
   - Improved error handling and status tracking
   - Enhanced mutation test reliability
 
+- **Performance Testing:**
+  - Added Gnuplot installation for benchmark visualization
+  - Improved benchmark environment setup
+  - Enhanced plotting capabilities for performance reports
+  - Ensured proper tool dependencies for performance analysis
+
 ### Fixed
 
 #### CI/CD Pipeline 🔄
