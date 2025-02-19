@@ -120,6 +120,8 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+## [0.1.26] - 2024-03-28
+
 ### Changed
 
 #### Infrastructure 🏗️
