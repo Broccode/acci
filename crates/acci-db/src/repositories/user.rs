@@ -92,9 +92,12 @@ impl UserRepository for PgUserRepository {
         let result = sqlx::query_as!(
             User,
             r#"
-            INSERT INTO acci.users (username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name)
+            INSERT INTO acci.users (
+                username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
+            )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
+            RETURNING
+                id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
             "#,
             username,
             format!("{}@example.com", username), // For testing purposes

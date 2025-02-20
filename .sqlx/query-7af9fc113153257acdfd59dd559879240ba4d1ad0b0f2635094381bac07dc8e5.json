@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO acci.users (username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            RETURNING id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name\n            ",
+  "query": "\n            INSERT INTO acci.users (\n                username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            RETURNING\n                id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name\n            ",
   "describe": {
     "columns": [
       {
@@ -93,5 +93,5 @@
       false
     ]
   },
-  "hash": "a07fb514f9d4d5d4a586e3cfc54b89a7defee601b73d258a04ea2656ffa919fd"
+  "hash": "7af9fc113153257acdfd59dd559879240ba4d1ad0b0f2635094381bac07dc8e5"
 }
