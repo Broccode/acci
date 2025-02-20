@@ -70,6 +70,8 @@ mod tests {
     }
 }
 
+/// Authentication middleware for protecting routes and handling user sessions.
+/// This module provides middleware components for validating session tokens and managing user authentication state.
 pub mod auth;
 
 pub use axum::middleware::{from_fn, from_fn_with_state};

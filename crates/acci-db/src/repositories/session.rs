@@ -235,7 +235,7 @@ impl SessionRepository for PgSessionRepository {
         .await
         .map_err(Error::Database)?;
 
-        Ok(result.rows_affected() as i64)
+        i64::try_from(result.rows_affected()).map_err(|_| Error::Database(sqlx::Error::RowNotFound))
     }
 }
 

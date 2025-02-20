@@ -19,6 +19,8 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub mod providers;
+/// Contains background tasks and scheduled jobs for authentication-related operations.
+/// This includes tasks like session cleanup and token management.
 pub mod tasks;
 
 pub use providers::basic::BasicAuthProvider;
