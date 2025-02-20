@@ -1,0 +1,1 @@
+searchState.loadedDescShard("acci", 0, "Root crate for the ACCI project\nVersion of the ACCI project\nReturns the version of the ACCI project")
