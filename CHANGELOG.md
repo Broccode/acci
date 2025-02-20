@@ -120,7 +120,47 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
-### Added
+### Changed
+
+#### Code Quality 🔧
+
+- **Authentication Improvements:**
+  - Enhanced username search with case-insensitive ILIKE queries in user repository
+  - Improved session context handling with derive macro for Default implementation
+  - Added comprehensive error documentation for all authentication-related functions
+  - Enhanced password verification with better error messages
+
+- **Code Structure:**
+  - Improved pattern matching in shutdown signal handler using unit type
+  - Extracted database configuration into dedicated module for better organization
+  - Enhanced SQLx query caching with updated JSON files
+  - Added new database migration for user activation status
+
+- **Documentation:**
+  - Added detailed error documentation for database operations
+  - Enhanced panic documentation for UTF-8 validation in database functions
+  - Improved function documentation with clear error scenarios
+  - Added comprehensive documentation for authentication flows
+
+- **Error Handling:**
+  - Improved error handling in mock repositories by replacing `unwrap()` calls with proper error propagation
+  - Added error injection capabilities to `MockSessionRepository` and `MockUserRepository` for better testing
+  - Enhanced error messages with more context and details
+  - Added configurable error injection for all repository methods
+
+- **Code Cleanup:**
+  - Removed unused imports in `acci-auth` and `acci-api` crates
+  - Cleaned up unused dependencies
+  - Added tracing dependency for improved logging capabilities
+
+### Fixed
+
+#### Code Quality 🛠️
+
+- **Clippy Warnings:**
+  - Fixed unsafe integer cast in session repository by implementing proper error handling with `try_from`
+  - Added appropriate allow attribute for logging-related large stack arrays
+  - Resolved all clippy warnings across the codebase (excluding integration tests)
 
 #### Security Testing 🔒
 
@@ -141,8 +181,6 @@ Create a git tag for the version (e.g., v0.2.0)
   - Implemented Argon2 parameter validation tests
   - Added explicit error type assertions for validation failures
   - Enhanced test documentation with hardware-specific timing thresholds
-
-### Changed
 
 #### Test Infrastructure 🧪
 
