@@ -28,11 +28,6 @@ on:
         description: 'Additional glob pattern to exclude from mutation testing (e.g., "src/experimental/*")'
         required: false
         type: string
-      debug_mode:
-        description: 'Enable detailed debug output for mutation testing'
-        required: false
-        default: false
-        type: boolean
 
 env:
   CARGO_TERM_COLOR: always
@@ -99,24 +94,25 @@ jobs:
           # Create output directory
           mkdir -p mutation-results
 
-          # Build command based on inputs
-          CMD="cargo mutants --workspace --all-features --test-workspace true --output mutation-results --json"
+          # Build base command
+          BASE_CMD="cargo mutants --all-features --output mutation-results --json"
 
-          # Add optional parameters if provided
+          # Build final command based on inputs
           if [ -n "${{ inputs.test_target }}" ]; then
-            CMD="$CMD --test ${{ inputs.test_target }}"
+            # For specific package, don't use workspace flags
+            CMD="$BASE_CMD --package ${{ inputs.test_target }}"
+          else
+            # For all packages, use workspace flags
+            CMD="$BASE_CMD --workspace --test-workspace true"
           fi
 
+          # Add optional parameters
           if [ -n "${{ inputs.exclude_pattern }}" ]; then
             CMD="$CMD --exclude '${{ inputs.exclude_pattern }}'"
           fi
 
-          if [ "${{ inputs.debug_mode }}" == "true" ]; then
-            CMD="$CMD --verbose"
-            echo "Running command: $CMD"
-          fi
-
           # Execute mutation testing
+          echo "Running command: $CMD"
           eval "$CMD" 2>&1 | tee mutation-results/mutation-output.log
 
           # Move the JSON output to our desired location

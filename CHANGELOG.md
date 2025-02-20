@@ -120,7 +120,25 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Added
+
+- Mutation testing pipeline with GitHub Actions
+  - Configurable test target selection (single package or workspace)
+  - Adjustable timeout and thread count
+  - Optional file exclusion patterns
+  - Automatic mutation score calculation
+  - Warning threshold at 80% mutation coverage
+  - Weekly scheduled runs and manual trigger support
+
 ### Changed
+
+- Optimized mutation testing configuration for better package-specific testing
+- Improved mutation test reporting with detailed JSON output analysis
+
+### Fixed
+
+- Corrected package-specific mutation testing command structure
+- Fixed mutation score calculation from JSON output
 
 #### Documentation 📚
 
@@ -1285,3 +1303,13 @@ Create a git tag for the version (e.g., v0.2.0)
   - Enhanced SQLx query caching with updated JSON files
   - Added new database migration for user activation status
   - Extracted database configuration into separate module
+
+## [Unreleased]
+
+### CI/CD 🔄
+
+- Enhanced mutation testing pipeline
+  - Added package-specific test targeting
+  - Fixed mutation score calculation from JSON output
+  - Optimized workspace vs package testing configuration
+  - Added weekly scheduled runs (Sundays at 00:00 UTC)
