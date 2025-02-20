@@ -1,6 +1,13 @@
 -- Set search path
 SET search_path TO public, acci;
 
+-- Drop existing indexes if they exist
+DROP INDEX IF EXISTS acci.sessions_user_id_idx;
+DROP INDEX IF EXISTS acci.sessions_expires_at_idx;
+
+-- Drop existing table if it exists
+DROP TABLE IF EXISTS acci.sessions CASCADE;
+
 -- Create sessions table
 CREATE TABLE acci.sessions (
     id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),

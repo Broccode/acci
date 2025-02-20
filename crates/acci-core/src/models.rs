@@ -18,6 +18,8 @@ pub struct User {
     pub password_hash: String,
     /// Whether the user has administrative privileges.
     pub is_admin: bool,
+    /// Whether the user account is active.
+    pub is_active: bool,
     /// Timestamp when the user was created.
     pub created_at: OffsetDateTime,
     /// Timestamp when the user was last updated.

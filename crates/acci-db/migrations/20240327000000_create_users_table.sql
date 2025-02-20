@@ -8,6 +8,10 @@ CREATE SCHEMA IF NOT EXISTS acci;
 -- Set search path to include both schemas
 SET search_path TO acci, public;
 
+-- Drop existing indexes if they exist
+DROP INDEX IF EXISTS acci.users_username_idx;
+DROP INDEX IF EXISTS acci.users_email_idx;
+
 -- Create users table with case-insensitive username
 DROP TABLE IF EXISTS acci.users CASCADE;
 CREATE TABLE acci.users (

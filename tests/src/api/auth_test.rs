@@ -56,6 +56,7 @@ async fn test_basic_auth_flow() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -136,7 +137,7 @@ async fn test_invalid_credentials() -> Result<(), Error> {
         .await;
 
     assert!(
-        matches!(result, Err(Error::InvalidCredentials)),
+        matches!(result, Err(Error::InvalidCredentials(_))),
         "Should return InvalidCredentials error for non-existent user"
     );
 
@@ -165,6 +166,7 @@ async fn test_session_management() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -206,6 +208,7 @@ async fn test_session_management() -> Result<(), Error> {
                 .expect("Password hashing should succeed in test setup"),
             full_name: "Test User".to_string(),
             is_admin: false,
+            is_active: true,
             created_at: now,
             updated_at: now,
         }))
@@ -266,6 +269,7 @@ async fn test_token_validation() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -551,7 +555,7 @@ async fn test_authenticate_invalid_password() -> Result<(), Error> {
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
-        matches!(result, Err(Error::InvalidCredentials)),
+        matches!(result, Err(Error::InvalidCredentials(_))),
         "Should return InvalidCredentials error for wrong password"
     );
     Ok(())
@@ -575,7 +579,7 @@ async fn test_authenticate_nonexistent_user() -> Result<(), Error> {
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
-        matches!(result, Err(Error::InvalidCredentials)),
+        matches!(result, Err(Error::InvalidCredentials(_))),
         "Should return InvalidCredentials error for non-existent user"
     );
     Ok(())
@@ -643,6 +647,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -661,6 +666,7 @@ async fn test_concurrent_sessions() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -786,6 +792,7 @@ async fn test_login_default_admin() -> Result<(), Error> {
                     .expect("Password hashing should succeed in test setup"),
                 full_name: "Admin User".to_string(),
                 is_admin: true,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -845,7 +852,7 @@ async fn test_login_invalid_credentials() -> Result<(), Error> {
 
     let result = auth_provider.authenticate(credentials).await;
     assert!(
-        matches!(result, Err(Error::InvalidCredentials)),
+        matches!(result, Err(Error::InvalidCredentials(_))),
         "Should return InvalidCredentials error for invalid credentials"
     );
     Ok(())

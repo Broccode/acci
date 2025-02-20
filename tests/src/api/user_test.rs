@@ -77,7 +77,7 @@ async fn cleanup_database(pool: &PgPool) -> Result<(), Error> {
     sqlx::query("DELETE FROM acci.users")
         .execute(pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(|e| Error::Database(e))?;
     Ok(())
 }
 
@@ -96,6 +96,7 @@ async fn test_create_user() {
         "Password hash should match"
     );
     assert!(!created.is_admin, "New user should not be admin by default");
+    assert!(created.is_active, "New user should be active by default");
 }
 
 #[tokio::test]

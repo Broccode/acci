@@ -44,6 +44,9 @@ rand = { workspace = true }
 # Lazy Static
 lazy_static = { workspace = true }
 
+# Database
+sqlx = { workspace = true }
+
 [lints]
 workspace = true # Enable workspace-wide lints
 

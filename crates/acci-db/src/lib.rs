@@ -8,15 +8,16 @@
 use anyhow::Result;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
-use thiserror::Error;
 
-mod error;
+pub use acci_core::error::Error;
+
+/// Error types for database operations.
+pub mod error;
 /// Data models representing the core entities in the system.
 pub mod models;
 /// Repository implementations for database operations.
 pub mod repositories;
 
-pub use error::DbError;
 pub use repositories::session::{PgSessionRepository, SessionRepository};
 pub use repositories::user::{PgUserRepository, UserRepository};
 pub use sqlx;
@@ -158,14 +159,6 @@ pub async fn test_connection(pool: &PgPool) -> Result<bool> {
     let result = sqlx::query!("SELECT 1 as one").fetch_one(pool).await?;
 
     Ok(result.one == Some(1))
-}
-
-/// Represents errors that can occur during database operations.
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    /// Represents database-specific errors from `SQLx`.
-    #[error("Database error: {0}")]
-    Database(#[from] sqlx::Error),
 }
 
 pub use models::Session;

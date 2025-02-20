@@ -33,8 +33,8 @@ pub enum Error {
     AuthenticationFailed(String),
 
     /// The provided credentials are invalid.
-    #[error("Invalid credentials")]
-    InvalidCredentials,
+    #[error("Invalid credentials: {0}")]
+    InvalidCredentials(String),
 
     /// Token validation failed with the specified error message.
     #[error("Token validation failed: {0}")]
@@ -50,7 +50,7 @@ pub enum Error {
 
     /// A database error occurred with the specified message.
     #[error("Database error: {0}")]
-    Database(String),
+    Database(#[from] sqlx::Error),
 
     /// The provided credentials are already in use.
     #[error("Already exists: {0}")]
@@ -75,6 +75,10 @@ pub enum Error {
     /// Session error occurred with the specified message.
     #[error("Session error: {0}")]
     Session(String),
+
+    /// Forbidden error occurred with the specified message.
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
 }
 
 impl Error {

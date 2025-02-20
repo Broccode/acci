@@ -1,10 +1,9 @@
 //! Health check endpoint implementation.
 
-use axum::{routing::get, Json, Router};
+use axum::http::StatusCode;
+use axum::{routing::get, Router};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
-
-use crate::error::ApiResult;
 
 /// Health check response
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,18 +14,23 @@ pub struct HealthResponse {
     pub version: String,
 }
 
-/// Creates a router for health check endpoints
-pub fn router() -> Router {
+/// Creates the health routes
+///
+/// # Returns
+///
+/// The router with the health routes
+pub fn create_health_routes() -> Router {
     Router::new().route("/health", get(health_check))
 }
 
 /// Health check handler
+///
+/// # Returns
+///
+/// 200 OK if the service is healthy
 #[instrument(skip_all)]
-async fn health_check() -> ApiResult<Json<HealthResponse>> {
-    Ok(Json(HealthResponse {
-        status: "ok".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-    }))
+pub async fn health_check() -> StatusCode {
+    StatusCode::OK
 }
 
 #[cfg(test)]
@@ -36,12 +40,10 @@ mod tests {
     #[tokio::test]
     async fn test_health_check_response() {
         // Act
-        let result = health_check().await.unwrap();
-        let response = result.0;
+        let result = health_check().await;
 
         // Assert
-        assert_eq!(response.status, "ok");
-        assert_eq!(response.version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(result, StatusCode::OK);
     }
 
     #[test]

@@ -39,6 +39,7 @@ struct Claims {
 
 /// Session context for validation
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct SessionContext {
     /// IP address of the client
     pub ip_address: Option<IpAddr>,
@@ -46,14 +47,6 @@ pub struct SessionContext {
     pub user_agent: Option<String>,
 }
 
-impl Default for SessionContext {
-    fn default() -> Self {
-        Self {
-            ip_address: None,
-            user_agent: None,
-        }
-    }
-}
 
 /// Basic authentication provider that uses JWT tokens for session management.
 #[derive(Debug)]

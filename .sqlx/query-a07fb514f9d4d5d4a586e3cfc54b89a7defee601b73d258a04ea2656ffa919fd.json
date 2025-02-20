@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name\n            FROM acci.users\n            WHERE username ILIKE $1\n            ",
+  "query": "\n            INSERT INTO acci.users (username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            RETURNING id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name\n            ",
   "describe": {
     "columns": [
       {
@@ -40,16 +40,21 @@
       },
       {
         "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "full_name",
         "type_info": "Text"
       }
@@ -61,7 +66,19 @@
             "name": "citext",
             "kind": "Simple"
           }
-        }
+        },
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text",
+        "Bool",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz",
+        "Text"
       ]
     },
     "nullable": [
@@ -72,8 +89,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "271f4984a710db71987ff70f3b323b6d0f1467252676d1b8bc03b0020e306635"
+  "hash": "a07fb514f9d4d5d4a586e3cfc54b89a7defee601b73d258a04ea2656ffa919fd"
 }

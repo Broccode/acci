@@ -34,7 +34,10 @@ dev-rebuild:
 	docker compose -f deploy/docker/docker-compose.dev.yml build --no-cache
 	docker compose -f deploy/docker/docker-compose.dev.yml up -d
 
-db-reset: db-down db-up db-migrate db-prepare
+db-reset: db-down db-up
+	cd crates/acci-db && cargo sqlx database reset -y -f --database-url postgres://acci:development_only@localhost:5432/acci
+	$(MAKE) sqlx-prepare
+	$(MAKE) test-users-reset
 
 db-down:
 	docker compose -f deploy/docker/docker-compose.dev.yml down -v
@@ -47,7 +50,6 @@ db-migrate:
 	cd crates/acci-db && cargo sqlx database reset -y -f --database-url postgres://acci:development_only@localhost:5432/acci
 
 db-prepare:
-	-(cd crates/acci-db && cargo sqlx migrate run --database-url postgres://acci:development_only@localhost:5432/acci)
 	$(MAKE) sqlx-prepare
 	$(MAKE) test-users-reset
 

@@ -1,15 +1,26 @@
-use thiserror::Error;
+//! Error types for database operations.
+//!
+//! This module defines the error types that can occur during database operations.
+//! It provides a unified error type that can be used across the database layer.
 
-/// Database specific error types
-#[derive(Debug, Error)]
-pub enum DbError {
-    /// Database connection error
-    #[error("Database error: {0}")]
-    Sqlx(#[from] sqlx::Error),
+use acci_core::error::Error;
 
-    /// Migration error
-    #[error("Migration error: {0}")]
-    Migration(String),
+/// Maps a `SQLx` error to our core error type
+#[must_use] pub fn map_sqlx_error(error: sqlx::Error) -> Error {
+    match &error {
+        sqlx::Error::RowNotFound => Error::NotFound("Entity not found".to_string()),
+        sqlx::Error::Database(e) => {
+            if let Some(code) = e.code() {
+                match code.as_ref() {
+                    "23505" => Error::Validation("Unique constraint violation".to_string()),
+                    _ => Error::Database(error),
+                }
+            } else {
+                Error::Database(error)
+            }
+        },
+        _ => Error::Database(error),
+    }
 }
 
 #[cfg(test)]
@@ -18,34 +29,14 @@ mod tests {
     use sqlx::error::Error as SqlxError;
 
     #[test]
-    fn test_db_error_display_sqlx() {
-        let inner = SqlxError::PoolTimedOut;
-        let error = DbError::Sqlx(inner);
-        assert!(error.to_string().contains("Database error"));
+    fn test_map_sqlx_error_not_found() {
+        let error = map_sqlx_error(SqlxError::RowNotFound);
+        assert!(matches!(error, Error::NotFound(_)));
     }
 
     #[test]
-    fn test_db_error_display_migration() {
-        let error = DbError::Migration("Failed to apply migration".to_string());
-        assert!(error.to_string().contains("Migration error"));
-        assert!(error.to_string().contains("Failed to apply migration"));
-    }
-
-    #[test]
-    fn test_db_error_debug() {
-        let error = DbError::Migration("Test error".to_string());
-        let debug_str = format!("{:?}", error);
-        assert!(debug_str.contains("Migration"));
-        assert!(debug_str.contains("Test error"));
-    }
-
-    #[test]
-    fn test_db_error_from_sqlx() {
-        let sqlx_error = SqlxError::PoolTimedOut;
-        let db_error: DbError = sqlx_error.into();
-        match db_error {
-            DbError::Sqlx(_) => (),
-            _ => panic!("Expected SqlxError variant"),
-        }
+    fn test_map_sqlx_error_database() {
+        let error = map_sqlx_error(SqlxError::Protocol("test error".to_string()));
+        assert!(matches!(error, Error::Database(_)));
     }
 }

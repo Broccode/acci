@@ -30,6 +30,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_json",
+ "sqlx",
  "thiserror",
  "time",
  "tokio",
@@ -49,7 +50,9 @@ dependencies = [
  "anyhow",
  "argon2",
  "async-trait",
+ "base64 0.21.7",
  "jsonwebtoken",
+ "rand",
  "serde",
  "time",
  "tokio",
@@ -92,6 +95,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_json",
+ "sqlx",
  "thiserror",
  "time",
  "tokio",
@@ -148,6 +152,7 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
+ "tracing",
  "uuid",
 ]
 

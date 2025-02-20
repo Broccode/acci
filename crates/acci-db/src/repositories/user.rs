@@ -7,6 +7,8 @@ use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use crate::error::map_sqlx_error;
+
 /// Repository trait for user-related database operations.
 #[async_trait]
 pub trait UserRepository: Send + Sync {
@@ -78,7 +80,7 @@ impl UserRepository for PgUserRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         if existing_user.count.unwrap_or(0) > 0 {
             return Err(Error::Validation(format!(
@@ -90,25 +92,24 @@ impl UserRepository for PgUserRepository {
         let result = sqlx::query_as!(
             User,
             r#"
-            INSERT INTO acci.users (username, email, password_hash, is_admin, created_at, updated_at, full_name)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, username, email, password_hash, is_admin, created_at, updated_at, full_name
+            INSERT INTO acci.users (username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
             "#,
             username,
             format!("{}@example.com", username), // For testing purposes
             password_hash,
             false,
+            true, // New users are active by default
             now,
             now,
             username, // For testing purposes, we use the username as the full name
         )
         .fetch_one(&self.pool)
-        .await;
+        .await
+        .map_err(map_sqlx_error)?;
 
-        match result {
-            Ok(user) => Ok(user),
-            Err(e) => Err(Error::Database(e.to_string())),
-        }
+        Ok(result)
     }
 
     /// Retrieves a user by their ID.
@@ -132,7 +133,7 @@ impl UserRepository for PgUserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name
+            SELECT id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
             FROM acci.users
             WHERE id = $1
             "#,
@@ -140,7 +141,7 @@ impl UserRepository for PgUserRepository {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         Ok(user)
     }
@@ -166,7 +167,7 @@ impl UserRepository for PgUserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name
+            SELECT id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name
             FROM acci.users
             WHERE username ILIKE $1
             "#,
@@ -174,7 +175,7 @@ impl UserRepository for PgUserRepository {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         Ok(user)
     }
@@ -211,7 +212,7 @@ impl UserRepository for PgUserRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -243,7 +244,7 @@ impl UserRepository for PgUserRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -280,7 +281,7 @@ impl UserRepository for PgUserRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| Error::Database(e.to_string()))?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -311,6 +312,7 @@ impl UserRepository for MockUserRepository {
             email: format!("{username}@example.com"),
             password_hash: password_hash.to_string(),
             is_admin: false,
+            is_active: true, // New users are active by default
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             full_name: username.to_string(), // For testing purposes
@@ -394,6 +396,7 @@ mod tests {
             email: "test@example.com".to_string(),
             password_hash: "hash123".to_string(),
             is_admin: false,
+            is_active: true,
             created_at: now,
             updated_at: now,
             full_name: "testuser".to_string(),
@@ -404,6 +407,7 @@ mod tests {
         assert_eq!(user.email, "test@example.com");
         assert_eq!(user.password_hash, "hash123");
         assert_eq!(user.is_admin, false);
+        assert_eq!(user.is_active, true);
         assert_eq!(user.created_at, now);
         assert_eq!(user.updated_at, now);
         assert_eq!(user.full_name, "testuser");

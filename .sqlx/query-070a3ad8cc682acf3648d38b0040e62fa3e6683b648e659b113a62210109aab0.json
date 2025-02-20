@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, username, email, password_hash, is_admin, created_at, updated_at, full_name\n            FROM acci.users\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT id, username, email, password_hash, is_admin, is_active, created_at, updated_at, full_name\n            FROM acci.users\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -40,16 +40,21 @@
       },
       {
         "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "full_name",
         "type_info": "Text"
       }
@@ -67,8 +72,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "cc8906d5b39c5318f1078a1e7167a263102b897aff11c6081ef101db7195242b"
+  "hash": "070a3ad8cc682acf3648d38b0040e62fa3e6683b648e659b113a62210109aab0"
 }

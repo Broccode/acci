@@ -78,8 +78,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         if self
             .user_repo
             .get_user_by_username(&credentials.username)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .is_some()
         {
             return Err(Error::AlreadyExists("User already exists".to_string()));
@@ -93,8 +92,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let user = self
             .user_repo
             .create_user(&credentials.username, &password_hash)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+            .await?;
 
         // Create session
         let token =
@@ -105,8 +103,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let session = self
             .session_repo
             .create_session(user.id, &token, expires_at)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+            .await?;
 
         Ok(AuthResult {
             token,
@@ -120,15 +117,14 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let user = self
             .user_repo
             .get_user_by_username(&credentials.username)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("User not found".to_string()))?;
 
         // Verify password
         if !acci_core::auth::verify_password(&credentials.password, &user.password_hash)
             .map_err(|e| Error::Internal(e.to_string()))?
         {
-            return Err(Error::InvalidCredentials);
+            return Err(Error::InvalidCredentials("Invalid password".to_string()));
         }
 
         // Create session
@@ -140,8 +136,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let session = self
             .session_repo
             .create_session(user.id, &token, expires_at)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+            .await?;
 
         Ok(AuthResult {
             token,
@@ -159,8 +154,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let session = self
             .session_repo
             .get_session(claims.session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("Session not found".to_string()))?;
 
         Ok(ValidationResult {
@@ -183,8 +177,7 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let session = self
             .session_repo
             .get_session(claims.session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("Session not found".to_string()))?;
 
         // TODO: Validate IP context
@@ -197,18 +190,11 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
     }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.session_repo
-            .delete_session(session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))
+        self.session_repo.delete_session(session_id).await
     }
 
     async fn get_active_sessions(&self, user_id: Uuid) -> Result<Vec<Uuid>, Error> {
-        let sessions = self
-            .session_repo
-            .get_active_sessions(user_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+        let sessions = self.session_repo.get_active_sessions(user_id).await?;
         Ok(sessions.into_iter().map(|s| s.id).collect())
     }
 
@@ -221,16 +207,14 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         let admin_session = self
             .session_repo
             .get_session(admin_session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("Admin session not found".to_string()))?;
 
         // Verify admin
         let admin = self
             .user_repo
             .get_user_by_id(admin_session.user_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("Admin user not found".to_string()))?;
 
         if !admin.is_admin {
@@ -238,9 +222,6 @@ impl<C: Clock> AuthServiceTrait for AuthService<C> {
         }
 
         // Delete target session
-        self.session_repo
-            .delete_session(target_session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))
+        self.session_repo.delete_session(target_session_id).await
     }
 }

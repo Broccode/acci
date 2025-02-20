@@ -4,7 +4,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::models::session::Session;
-use crate::Error;
+use crate::{error::map_sqlx_error, Error};
 
 /// Defines the interface for managing user sessions in the database.
 ///
@@ -132,7 +132,7 @@ impl SessionRepository for PgSessionRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(session)
     }
@@ -150,7 +150,7 @@ impl SessionRepository for PgSessionRepository {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(session)
     }
@@ -169,7 +169,7 @@ impl SessionRepository for PgSessionRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(sessions)
     }
@@ -184,7 +184,7 @@ impl SessionRepository for PgSessionRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -194,14 +194,14 @@ impl SessionRepository for PgSessionRepository {
             r#"
             SELECT COUNT(*) as "count!"
             FROM acci.sessions
-            WHERE user_id = $1 AND expires_at > $2
+            WHERE id = $1 AND expires_at > $2
             "#,
             id,
             OffsetDateTime::now_utc(),
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(count.count > 0)
     }
@@ -218,7 +218,7 @@ impl SessionRepository for PgSessionRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -233,9 +233,9 @@ impl SessionRepository for PgSessionRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(Error::Database)?;
+        .map_err(map_sqlx_error)?;
 
-        i64::try_from(result.rows_affected()).map_err(|_| Error::Database(sqlx::Error::RowNotFound))
+        i64::try_from(result.rows_affected()).map_err(|e| Error::Internal(e.to_string()))
     }
 }
 

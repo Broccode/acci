@@ -175,6 +175,7 @@ async fn test_authenticate_test_admin_user() -> Result<(), Error> {
                 password_hash: password_hash.clone(),
                 full_name: "Test Admin".to_string(),
                 is_admin: true,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -240,6 +241,7 @@ async fn test_authenticate_test_regular_user() -> Result<(), Error> {
                 password_hash: password_hash.clone(),
                 full_name: "Test User".to_string(),
                 is_admin: false,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -304,6 +306,7 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
                 password_hash: password_hash.clone(),
                 full_name: "Test Admin".to_string(),
                 is_admin: true,
+                is_active: true,
                 created_at: now,
                 updated_at: now,
             }))
@@ -318,7 +321,7 @@ async fn test_authenticate_test_user_invalid_password() -> Result<(), Error> {
 
     let result = provider.authenticate(credentials).await;
     assert!(
-        matches!(result, Err(Error::InvalidCredentials)),
+        matches!(result, Err(Error::InvalidCredentials(_))),
         "Should return InvalidCredentials error for wrong password"
     );
 

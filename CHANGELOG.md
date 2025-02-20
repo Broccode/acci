@@ -1222,3 +1222,12 @@ Create a git tag for the version (e.g., v0.2.0)
   - Removed unused imports in `acci-auth` and `acci-api` crates
   - Cleaned up unused dependencies
   - Added tracing dependency for improved logging capabilities
+
+#### Code Improvements 💻
+
+- **Code Improvements:**
+  - Replaced manual `Default` implementation for `SessionContext` with derive macro
+  - Improved pattern matching in `shutdown_signal` using unit type `()` instead of wildcard `_`
+  - Enhanced SQLx query caching with updated JSON files
+  - Added new database migration for user activation status
+  - Extracted database configuration into separate module
