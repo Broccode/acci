@@ -21,6 +21,7 @@ acci-db = { workspace = true }
 anyhow = { workspace = true }
 argon2 = { workspace = true }
 async-trait = { workspace = true }
+tokio = { workspace = true }
 jsonwebtoken = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true }

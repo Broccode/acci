@@ -26,6 +26,14 @@ impl SessionRepository for RealSessionRepository {
         Ok(session)
     }
 
+    async fn cleanup_expired_sessions(&self) -> Result<i64, Error> {
+        let now = OffsetDateTime::now_utc();
+        let mut sessions = self.sessions.lock().unwrap();
+        let initial_len = sessions.len();
+        sessions.retain(|s| s.expires_at > now);
+        Ok((initial_len - sessions.len()) as i64)
+    }
+
     async fn get_session(&self, id: Uuid) -> Result<Option<Session>, Error> {
         Ok(self
             .sessions

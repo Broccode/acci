@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM acci.sessions\n            WHERE expires_at <= $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "175eb0522372fb2d6adea1802840684f4182f4f3f0c253edb2eb73b12218b6ab"
+}

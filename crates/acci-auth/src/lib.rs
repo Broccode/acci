@@ -19,6 +19,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub mod providers;
+pub mod tasks;
 
 pub use providers::basic::BasicAuthProvider;
 

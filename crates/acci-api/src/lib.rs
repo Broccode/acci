@@ -8,8 +8,9 @@ pub mod error;
 pub mod middleware;
 pub mod routes;
 
+use acci_auth::tasks::session_cleanup;
 use acci_db::sqlx::PgPool;
-use axum::Router;
+use axum::{middleware::from_fn_with_state, Router};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -69,9 +70,29 @@ pub async fn serve(config: ApiConfig) -> anyhow::Result<()> {
 pub async fn start(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting API server on {}", config.bind_addr);
 
+    // Create the auth router and get session repository
+    let (auth_router, session_repo, auth_provider) =
+        routes::auth::create_auth_router(config.db_config.clone()).await;
+
+    // Start session cleanup task
+    let cleanup_session_repo = session_repo.clone();
+    tokio::spawn(async move {
+        session_cleanup::run_session_cleanup(cleanup_session_repo, 3600).await;
+    });
+
+    // Create protected routes that require authentication
+    let protected_routes = Router::new()
+        // Add protected routes here
+        .route_layer(from_fn_with_state(
+            auth_provider,
+            middleware::auth::validate_session,
+        ));
+
+    // Combine all routes
     let app = Router::new()
         .merge(routes::health::router())
-        .merge(routes::auth::create_auth_router(config.db_config).await)
+        .merge(auth_router)
+        .merge(protected_routes)
         .layer(CorsLayer::permissive());
 
     let listener = TcpListener::bind(&config.bind_addr).await?;

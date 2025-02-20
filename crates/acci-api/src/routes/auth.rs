@@ -15,7 +15,7 @@ use acci_auth::BasicAuthProvider;
 use acci_core::auth::{AuthConfig, AuthProvider, Credentials};
 use acci_db::{
     create_pool,
-    repositories::{PgSessionRepository, PgUserRepository},
+    repositories::{session::SessionRepository, PgSessionRepository, PgUserRepository},
     sqlx::PgPool,
     DbConfig,
 };
@@ -38,23 +38,42 @@ pub struct LoginResponse {
 
 /// Creates the authentication router with all routes.
 ///
+/// # Returns
+///
+/// Returns a tuple containing:
+/// - The configured Router
+/// - The session repository for background tasks
+/// - The auth provider for middleware
+///
 /// # Panics
 /// Panics if the database connection pool cannot be created.
-pub async fn create_auth_router(db_config: DbConfig) -> Router {
+pub async fn create_auth_router(
+    db_config: DbConfig,
+) -> (
+    Router,
+    Arc<dyn SessionRepository + Send + Sync>,
+    Arc<BasicAuthProvider>,
+) {
     let pool = create_pool(db_config)
         .await
         .expect("Failed to create database connection pool");
     let user_repo = Arc::new(PgUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PgSessionRepository::new(pool));
     let auth_config = AuthConfig::default();
-    let auth_provider = Arc::new(BasicAuthProvider::new(user_repo, session_repo, auth_config));
+    let auth_provider = Arc::new(BasicAuthProvider::new(
+        user_repo,
+        session_repo.clone(),
+        auth_config,
+    ));
 
-    Router::new()
+    let router = Router::new()
         .route("/auth/register", post(register))
         .route("/auth/login", post(login))
         .route("/auth/logout", post(logout))
         .route("/auth/validate", get(validate))
-        .with_state(auth_provider)
+        .with_state(auth_provider.clone());
+
+    (router, session_repo, auth_provider)
 }
 
 /// Login handler

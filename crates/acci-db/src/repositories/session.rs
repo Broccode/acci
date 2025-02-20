@@ -77,6 +77,15 @@ pub trait SessionRepository: Send + Sync {
     /// * `id` - The ID of the session to update
     /// * `token` - The new token value
     async fn update_session_token(&self, id: Uuid, token: &str) -> Result<(), Error>;
+
+    /// Removes all expired sessions from the database.
+    ///
+    /// This method deletes all sessions that have expired (expires_at <= current time).
+    ///
+    /// # Returns
+    ///
+    /// The number of sessions that were removed
+    async fn cleanup_expired_sessions(&self) -> Result<i64, Error>;
 }
 
 /// PostgreSQL implementation of the `SessionRepository` trait.
@@ -212,6 +221,21 @@ impl SessionRepository for PgSessionRepository {
         .map_err(Error::Database)?;
 
         Ok(())
+    }
+
+    async fn cleanup_expired_sessions(&self) -> Result<i64, Error> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM acci.sessions
+            WHERE expires_at <= $1
+            "#,
+            OffsetDateTime::now_utc()
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(Error::Database)?;
+
+        Ok(result.rows_affected() as i64)
     }
 }
 
