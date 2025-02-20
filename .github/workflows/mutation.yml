@@ -126,18 +126,30 @@ jobs:
 
           # Check if JSON file exists and is valid
           if [ -f "mutation-results/mutation-report.json" ]; then
-            # Extract and check mutation score with error handling
-            if score=$(jq -e '.score' mutation-results/mutation-report.json 2>/dev/null); then
-              echo "mutation_score=${score}" >> "$GITHUB_OUTPUT"
+            # Extract values and calculate score
+            if total=$(jq -e '.total_mutants' mutation-results/mutation-report.json 2>/dev/null) && \
+               unviable=$(jq -e '.unviable' mutation-results/mutation-report.json 2>/dev/null) && \
+               caught=$(jq -e '.caught' mutation-results/mutation-report.json 2>/dev/null); then
 
-              if (( $(echo "$score < 80" | bc -l) )); then
-                echo "::warning::Mutation score below threshold: $score% < 80%"
-                echo "mutation_status=warning" >> "$GITHUB_OUTPUT"
+              # Calculate score: (caught / (total - unviable)) * 100
+              # Using bc for floating point arithmetic
+              if [ $((total - unviable)) -ne 0 ]; then
+                score=$(echo "scale=2; ($caught * 100) / ($total - $unviable)" | bc)
+                echo "mutation_score=${score}" >> "$GITHUB_OUTPUT"
+
+                if (( $(echo "$score < 80" | bc -l) )); then
+                  echo "::warning::Mutation score below threshold: $score% < 80%"
+                  echo "mutation_status=warning" >> "$GITHUB_OUTPUT"
+                else
+                  echo "mutation_status=success" >> "$GITHUB_OUTPUT"
+                fi
               else
-                echo "mutation_status=success" >> "$GITHUB_OUTPUT"
+                echo "::error::No viable mutations to test"
+                echo "mutation_status=error" >> "$GITHUB_OUTPUT"
+                exit 1
               fi
             else
-              echo "::error::Failed to parse mutation score from JSON"
+              echo "::error::Failed to parse mutation metrics from JSON"
               echo "mutation_status=error" >> "$GITHUB_OUTPUT"
               exit 1
             fi
