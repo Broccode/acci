@@ -120,6 +120,20 @@ Create a git tag for the version (e.g., v0.2.0)
 
 ## [Unreleased]
 
+### Changed
+
+#### Documentation 📚
+
+- **Milestone Documentation:**
+  - Standardized task completion format across all milestones using both Markdown checkboxes and emojis:
+    - Completed tasks: `[x]` with ✅
+    - Incomplete tasks: `[ ]`
+    - Completed sections: Header with ✅
+    - In-progress/planned sections: Header with 🚧
+  - Moved API Documentation, Observability, and Security Hardening tasks from M1.2 to M2.1
+  - Enhanced visual clarity and consistency in milestone tracking
+  - Improved progress tracking with standardized status indicators
+
 ## [0.1.27] - 2024-03-28
 
 ### Changed
