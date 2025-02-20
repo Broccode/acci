@@ -6,7 +6,8 @@
 use acci_core::error::Error;
 
 /// Maps a `SQLx` error to our core error type
-#[must_use] pub fn map_sqlx_error(error: sqlx::Error) -> Error {
+#[must_use]
+pub fn map_sqlx_error(error: sqlx::Error) -> Error {
     match &error {
         sqlx::Error::RowNotFound => Error::NotFound("Entity not found".to_string()),
         sqlx::Error::Database(e) => {
