@@ -6,13 +6,16 @@ use acci_core::{
 };
 use acci_db::repositories::{session::SessionRepository, user::UserRepository};
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordVerifier},
     Argon2,
 };
+use base64::{engine::general_purpose::URL_SAFE, Engine};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
-use std::{str::FromStr, sync::Arc};
+use std::{net::IpAddr, str::FromStr, sync::Arc};
 use time::{Duration, OffsetDateTime};
+use tracing::warn;
 use uuid::Uuid;
 
 /// Claims structure for JWT tokens
@@ -26,8 +29,30 @@ struct Claims {
     exp: i64,
     /// Issued at (as Unix timestamp)
     iat: i64,
-    /// JWT ID
+    /// JWT ID (session ID)
     jti: String,
+    /// IP address of the client
+    ip: Option<String>,
+    /// User agent of the client
+    ua: Option<String>,
+}
+
+/// Session context for validation
+#[derive(Debug, Clone)]
+pub struct SessionContext {
+    /// IP address of the client
+    pub ip_address: Option<IpAddr>,
+    /// User agent string
+    pub user_agent: Option<String>,
+}
+
+impl Default for SessionContext {
+    fn default() -> Self {
+        Self {
+            ip_address: None,
+            user_agent: None,
+        }
+    }
 }
 
 /// Basic authentication provider that uses JWT tokens for session management.
@@ -41,8 +66,25 @@ pub struct BasicAuthProvider {
     config: AuthConfig,
 }
 
-#[allow(dead_code, clippy::unused_self)]
 impl BasicAuthProvider {
+    /// Generates a cryptographically secure random token.
+    ///
+    /// This function uses the system's secure random number generator to create
+    /// a URL-safe base64 encoded token of the specified length.
+    ///
+    /// # Arguments
+    ///
+    /// * `length` - The desired length of the random bytes before encoding
+    ///
+    /// # Returns
+    ///
+    /// A URL-safe base64 encoded string of random bytes
+    fn generate_secure_token(length: usize) -> String {
+        let mut buffer = vec![0u8; length];
+        OsRng.fill_bytes(&mut buffer);
+        URL_SAFE.encode(buffer)
+    }
+
     /// Creates a new basic authentication provider instance.
     ///
     /// # Arguments
@@ -63,23 +105,6 @@ impl BasicAuthProvider {
         }
     }
 
-    /// Hashes a password using Argon2id.
-    ///
-    /// # Errors
-    /// Returns an error if:
-    /// - Password hashing fails
-    /// - Memory allocation fails
-    /// - Algorithm parameters are invalid
-    fn hash_password(&self, password: &str) -> Result<String, Error> {
-        let salt = SaltString::generate(&mut OsRng);
-        let argon2 = Argon2::default();
-        let password_hash = argon2
-            .hash_password(password.as_bytes(), &salt)
-            .map_err(|e| Error::Internal(format!("Failed to hash password: {e}")))?
-            .to_string();
-        Ok(password_hash)
-    }
-
     /// Verifies a password against its hash.
     ///
     /// # Errors
@@ -94,32 +119,6 @@ impl BasicAuthProvider {
         Ok(Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)
             .is_ok())
-    }
-
-    /// Creates a JWT token for a user.
-    ///
-    /// # Errors
-    /// Returns an error if:
-    /// - Token creation fails
-    /// - Signing process fails
-    fn create_token(&self, user_id: Uuid) -> Result<String, Error> {
-        let now = OffsetDateTime::now_utc();
-        let exp = now + Duration::seconds(self.config.token_duration);
-
-        let claims = Claims {
-            sub: user_id.to_string(),
-            iss: self.config.token_issuer.clone(),
-            exp: exp.unix_timestamp(),
-            iat: now.unix_timestamp(),
-            jti: Uuid::new_v4().to_string(),
-        };
-
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(self.config.jwt_secret.as_bytes()),
-        )
-        .map_err(|e| Error::Internal(format!("Failed to create token: {e}")))
     }
 
     /// Validates a JWT token.
@@ -140,62 +139,79 @@ impl BasicAuthProvider {
 
         Ok(token_data.claims)
     }
-}
 
-#[async_trait::async_trait]
-impl AuthProvider for BasicAuthProvider {
-    async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
+    /// Authenticates a user with additional session context.
+    ///
+    /// # Arguments
+    ///
+    /// * `credentials` - The user credentials
+    /// * `context` - Additional context for session validation
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The credentials are invalid
+    /// - The user is not found
+    /// - The user account is disabled
+    /// - Session creation fails
+    pub async fn authenticate_with_context(
+        &self,
+        credentials: Credentials,
+        context: SessionContext,
+    ) -> Result<AuthResponse, Error> {
         // Get user
         let user = self
             .user_repo
             .get_user_by_username(&credentials.username)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
-            .ok_or(Error::InvalidCredentials)?;
+            .await?
+            .ok_or_else(|| Error::InvalidCredentials("User not found".to_string()))?;
+
+        // Check if user is active
+        if !user.is_active {
+            return Err(Error::Forbidden("User account is disabled".to_string()));
+        }
 
         // Verify password
         if !self.verify_password(&credentials.password, &user.password_hash)? {
-            return Err(Error::InvalidCredentials);
+            return Err(Error::InvalidCredentials("Invalid password".to_string()));
         }
 
-        // Create session
-        let expires_at = OffsetDateTime::now_utc() + Duration::seconds(self.config.token_duration);
+        // Generate secure session token
+        let token = Self::generate_secure_token(32);
+
+        // Create session with initial token
+        let now = OffsetDateTime::now_utc();
+        let expires_at = now + Duration::seconds(self.config.token_duration);
+
+        // Create initial session
         let session = self
             .session_repo
-            .create_session(user.id, "", expires_at)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+            .create_session(user.id, &token, expires_at)
+            .await?;
 
-        // Create token with session ID as jti
-        let now = OffsetDateTime::now_utc();
-        let exp = now + Duration::seconds(self.config.token_duration);
-
+        // Create JWT token with session ID and context
         let claims = Claims {
             sub: user.id.to_string(),
             iss: self.config.token_issuer.clone(),
-            exp: exp.unix_timestamp(),
+            exp: expires_at.unix_timestamp(),
             iat: now.unix_timestamp(),
             jti: session.id.to_string(),
+            ip: context.ip_address.map(|ip| ip.to_string()),
+            ua: context.user_agent,
         };
 
-        let token = encode(
+        let jwt_token = encode(
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(self.config.jwt_secret.as_bytes()),
         )
         .map_err(|e| Error::Internal(format!("Failed to create token: {e}")))?;
 
-        // Update session with token
-        self.session_repo
-            .update_session_token(session.id, &token)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
-
         Ok(AuthResponse {
             session: AuthSession {
                 session_id: session.id,
                 user_id: user.id,
-                token: token.clone(),
+                token: jwt_token,
                 created_at: session.created_at.unix_timestamp(),
                 expires_at: session.expires_at.unix_timestamp(),
             },
@@ -203,16 +219,58 @@ impl AuthProvider for BasicAuthProvider {
         })
     }
 
-    async fn validate_token(&self, token: String) -> Result<AuthSession, Error> {
+    /// Validates a token with additional session context.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The token to validate
+    /// * `context` - Additional context for session validation
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The token is invalid
+    /// - The session is not found
+    /// - The context validation fails
+    pub async fn validate_token_with_context(
+        &self,
+        token: String,
+        context: SessionContext,
+    ) -> Result<AuthSession, Error> {
         // Validate token
         let claims = self.validate_token(&token)?;
+
+        // Validate context if present in claims
+        if let Some(token_ip) = claims.ip {
+            if let Some(request_ip) = context.ip_address {
+                if token_ip != request_ip.to_string() {
+                    warn!(
+                        token_ip = %token_ip,
+                        request_ip = %request_ip,
+                        "IP address mismatch"
+                    );
+                    return Err(Error::InvalidToken("IP address mismatch".to_string()));
+                }
+            }
+        }
+
+        if let Some(token_ua) = claims.ua {
+            if let Some(request_ua) = context.user_agent {
+                if token_ua != request_ua {
+                    warn!(
+                        "User agent mismatch: token={}, request={}",
+                        token_ua, request_ua
+                    );
+                    return Err(Error::InvalidToken("User agent mismatch".to_string()));
+                }
+            }
+        }
 
         // Get session
         let session = self
             .session_repo
             .get_session(Uuid::from_str(&claims.jti).map_err(|e| Error::Internal(e.to_string()))?)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?
+            .await?
             .ok_or_else(|| Error::NotFound("Session not found".to_string()))?;
 
         Ok(AuthSession {
@@ -223,27 +281,30 @@ impl AuthProvider for BasicAuthProvider {
             expires_at: session.expires_at.unix_timestamp(),
         })
     }
+}
+
+#[async_trait::async_trait]
+impl AuthProvider for BasicAuthProvider {
+    async fn authenticate(&self, credentials: Credentials) -> Result<AuthResponse, Error> {
+        self.authenticate_with_context(credentials, SessionContext::default())
+            .await
+    }
+
+    async fn validate_token(&self, token: String) -> Result<AuthSession, Error> {
+        self.validate_token_with_context(token, SessionContext::default())
+            .await
+    }
 
     async fn logout(&self, session_id: Uuid) -> Result<(), Error> {
-        self.session_repo
-            .delete_session(session_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))
+        self.session_repo.delete_session(session_id).await
     }
 
     async fn invalidate_user_sessions(&self, user_id: Uuid) -> Result<u64, Error> {
-        let sessions = self
-            .session_repo
-            .get_active_sessions(user_id)
-            .await
-            .map_err(|e| Error::Database(e.to_string()))?;
+        let sessions = self.session_repo.get_active_sessions(user_id).await?;
 
         let mut count = 0;
         for session in sessions {
-            self.session_repo
-                .delete_session(session.id)
-                .await
-                .map_err(|e| Error::Database(e.to_string()))?;
+            self.session_repo.delete_session(session.id).await?;
             count += 1;
         }
 

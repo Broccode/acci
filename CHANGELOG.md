@@ -1207,3 +1207,18 @@ Create a git tag for the version (e.g., v0.2.0)
   - Fixed unsafe integer cast in session repository by implementing proper error handling with `try_from`
   - Added appropriate allow attribute for logging-related large stack arrays
   - Resolved all clippy warnings across the codebase (excluding integration tests)
+
+### Changed
+
+#### Code Quality 🔧
+
+- **Error Handling:**
+  - Improved error handling in mock repositories by replacing `unwrap()` calls with proper error propagation
+  - Added error injection capabilities to `MockSessionRepository` and `MockUserRepository` for better testing
+  - Enhanced error messages with more context and details
+  - Added configurable error injection for all repository methods
+
+- **Code Cleanup:**
+  - Removed unused imports in `acci-auth` and `acci-api` crates
+  - Cleaned up unused dependencies
+  - Added tracing dependency for improved logging capabilities
