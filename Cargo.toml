@@ -112,7 +112,7 @@ tempfile = "3.17.1"
 # New dependencies
 once_cell = "1.19.0"
 metrics = "0.22.1"
-base64 = "0.21.7"
+base64 = "0.22.1"
 lazy_static = "1.4.0"
 
 [workspace.lints.rust]
