@@ -100,7 +100,7 @@ thiserror = "2.0.11"
 anyhow = "1.0.95"
 
 # Testing
-testcontainers = "0.23.2"
+testcontainers = "0.23.3"
 testcontainers-modules = { version = "0.11.6", features = ["postgres"] }
 mockall = "0.12.1"
 assert_cmd = "2.0.11"
