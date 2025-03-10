@@ -89,7 +89,7 @@ async-trait = "0.1"
 validator = { version = "0.20.0", features = ["derive"] }
 
 # Serialization
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
 
 # Logging & Metrics
 tracing = "0.1.41"
